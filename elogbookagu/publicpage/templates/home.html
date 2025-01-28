@@ -23,6 +23,7 @@
   .animate-fade-in {
     animation: fadeIn 1s ease-in-out;
   }
+
   @keyframes bounce {
     0%,
     100% {
@@ -36,7 +37,29 @@
   .animate-bounce {
     animation: bounce 1s infinite;
   }
+
+  <style>
+    .slider {
+      display: flex;
+      transition: transform 0.5s ease-in-out;
+      width: 300%;
+    }
+    .slide {
+      flex: 1;
+      transition: opacity 1s ease-in-out;
+      opacity: 0;
+    }
+    .slide.opacity-100 {
+      opacity: 1;
+    }
 </style>
+
+
+
+
+
+
+
 {% block content %}
   <!-- Hero Section -->
   <section class="bg-gradient-to-r from-blue-600 to-purple-700 dark:from-gray-800 dark:to-gray-900 py-20">
@@ -48,28 +71,27 @@
   </section>
 
   <!-- Featured Content (Modern Cards) -->
-  <!-- Featured Content (Modern Cards) -->
   <section class="py-16">
     <div class="container mx-auto px-4">
       <h2 class="text-3xl font-bold text-center mb-12 animate-fade-in">Our Services</h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <!-- Card 1 -->
         <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-100">
-          <img src="https://source.unsplash.com/featured/?medical" alt="Medical Records" class="rounded-xl mb-4 shadow-lg" />
+          <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Medical Records" class="rounded-xl mb-4 shadow-lg" />
           <h3 class="text-2xl font-semibold mb-4">Medical Records</h3>
           <p class="text-gray-600 dark:text-gray-300">Efficiently manage and access patient records with our secure platform.</p>
           <a href="#" class="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline font-medium">Learn More →</a>
         </div>
         <!-- Card 2 -->
         <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-200">
-          <img src="https://source.unsplash.com/featured/?research" alt="Research Tools" class="rounded-xl mb-4 shadow-lg" />
+          <img src="https://images.unsplash.com/photo-1579165466814-e646cfa4a3be?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Research Tools" class="rounded-xl mb-4 shadow-lg" />
           <h3 class="text-2xl font-semibold mb-4">Research Tools</h3>
           <p class="text-gray-600 dark:text-gray-300">Access cutting-edge tools for medical research and collaboration.</p>
           <a href="#" class="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline font-medium">Learn More →</a>
         </div>
         <!-- Card 3 -->
         <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-300">
-          <img src="https://source.unsplash.com/featured/?education" alt="Learning Resources" class="rounded-xl mb-4 shadow-lg" />
+          <img src="https://images.unsplash.com/photo-1530026186672-2cd00ffc50fe?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Learning Resources" class="rounded-xl mb-4 shadow-lg" />
           <h3 class="text-2xl font-semibold mb-4">Learning Resources</h3>
           <p class="text-gray-600 dark:text-gray-300">Explore a vast library of medical textbooks, journals, and case studies.</p>
           <a href="#" class="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline font-medium">Learn More →</a>
@@ -78,36 +100,39 @@
     </div>
   </section>
 
-  <section>
-    <div class="bg-gray-800 dark:bg-gray-100 w-full font-[sans-serif]">
-      <div class="grid md:grid-cols-2 items-center md:max-h-[475px] overflow-hidden">
-        <!-- Text Content -->
-        <div class="p-8">
-          <h1 class="sm:text-4xl text-2xl font-bold text-white dark:text-gray-900">Readymadeui <span class="text-orange-400 dark:text-orange-500">Jumbotron Design</span></h1>
-          <p class="mt-4 text-sm text-gray-300 dark:text-gray-700">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis accumsan, nunc et tempus blandit, metus mi consectetur nibh, a pharetra felis turpis vitae ligula. Etiam laoreet velit nec neque ultrices, non consequat mauris tincidunt.</p>
-          <p class="mt-2 text-sm text-gray-300 dark:text-gray-700">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis accumsan, nunc et tempus blandit, metus mi consectetur nibh.</p>
-          <button type="button" class="px-6 py-3 mt-8 rounded-md text-white dark:text-gray-100 text-sm tracking-wider border-none outline-none bg-orange-500 dark:bg-orange-600 hover:bg-orange-600 dark:hover:bg-orange-700">Get started</button>
-        </div>
 
-        <!-- Image Section -->
-        <img src="https://readymadeui.com/team-image.webp" class="w-full h-full object-cover shrink-0" />
+  
+
+<!-- Gallery Section -->
+<section class="py-16 bg-gray-100 dark:bg-gray-800">
+  <div class="container mx-auto px-4">
+    <h2 class="text-3xl font-bold text-center mb-12">Our Gallery</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Gallery Item 1 -->
+      <div class="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-200">
+        <img src="https://th.bing.com/th/id/OIP.SJfvSb5ewD3S-CPfuMOZowHaEL?rs=1&pid=ImgDetMain" alt="Gallery Image 1" class="w-full h-80 object-cover transition-transform duration-500 transform hover:scale-110" />
+        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition duration-500"></div>
+      </div>
+      <!-- Gallery Item 2 -->
+      <div class="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-200">
+        <img src="https://th.bing.com/th/id/OIP.a2ZJzhD_Uo-iv8LFkxOmEQHaEo?rs=1&pid=ImgDetMain" alt="Gallery Image 2" class="w-full h-80 object-cover transition-transform duration-500 transform hover:scale-110" />
+        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition duration-500"></div>
+      </div>
+      <!-- Gallery Item 3 -->
+      <div class="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-200">
+        <img src="https://th.bing.com/th/id/OIP.QKeQcLcmq2YfYGLqAGaOGQHaEK?w=640&h=360&rs=1&pid=ImgDetMain" alt="Gallery Image 3" class="w-full h-80 object-cover transition-transform duration-500 transform hover:scale-110" />
+        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition duration-500"></div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  <!-- Gallery -->
-  <section class="py-16 bg-gray-100 dark:bg-gray-800">
-    <div class="container mx-auto px-4">
-      <h2 class="text-3xl font-bold text-center mb-12 animate-fade-in">Our Gallery</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <img src="https://via.placeholder.com/400x300" alt="Gallery Image 1" class="rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-fade-in-left" />
-        <img src="https://via.placeholder.com/400x300" alt="Gallery Image 2" class="rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-fade-in-up" />
-        <img src="https://via.placeholder.com/400x300" alt="Gallery Image 3" class="rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-fade-in-right" />
-      </div>
-    </div>
-  </section>
+<!-- Add this to your HTML for animations -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 
-  <!-- Testimonials -->
+
+
+  <!-- Testimonials Section -->
   <section class="py-16">
     <div class="container mx-auto px-4">
       <h2 class="text-3xl font-bold text-center mb-12 animate-fade-in">What Our Users Say</h2>
@@ -137,4 +162,7 @@
       </div>
     </div>
   </section>
+
+
+  
 {% endblock %}

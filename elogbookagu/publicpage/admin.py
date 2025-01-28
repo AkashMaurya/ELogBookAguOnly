@@ -8,9 +8,9 @@ class LogYearAdmin(admin.ModelAdmin):
 
 @admin.register(LogYearSection)
 class LogYearSectionAdmin(admin.ModelAdmin):
-    list_display = ('year_section_name', 'year_name')
+    list_display = ('year_section_name', 'year_name',)
     list_filter = ('year_name',)
-    search_fields = ('year_section_name', 'year_name')
+    search_fields = ('year_section_name', 'year_name',)
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
@@ -20,9 +20,9 @@ class DepartmentAdmin(admin.ModelAdmin):
 
 @admin.register(Group)
 class GroupAdmin(admin.ModelAdmin):
-    list_display = ('name', 'log_year',)
+    list_display = ('group_name', 'log_year', 'log_year_section',) 
     list_filter = ('log_year',)
-    search_fields = ('name',)
+    search_fields = ('group_name',)
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
