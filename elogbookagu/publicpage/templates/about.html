@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}About - ElogBook{% endblock %}
+{% block navbar %}
+  {% include './components/public_navbar.html' %}
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-gradient-to-r from-blue-600 to-purple-700 dark:from-gray-800 dark:to-gray-900 py-20">
+    <div class="container mx-auto text-center">
+        <h1 class="text-5xl font-bold text-white animate-fade-in">About ElogBook</h1>
+        <p class="mt-4 text-xl text-white animate-fade-in delay-100">Medical Education Technology <br>
+        with Arabian Gulf University</p>
+    </div>
+</section>
+
+<!-- Mission Section -->
+<section class="py-16">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div class="animate-fade-in-left">
+                <h2 class="text-3xl font-bold mb-6">Our Mission</h2>
+                <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
+                    To revolutionize medical education through innovative technology solutions, 
+                    empowering healthcare professionals with cutting-edge tools for learning 
+                    and patient care.
+                </p>
+            </div>
+            <div class="animate-fade-in-right">
+                <img src="https://via.placeholder.com/600x400" alt="Medical Team" class="rounded-lg shadow-xl">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="bg-gray-100 dark:bg-gray-800 py-16">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-lg animate-fade-in-up">
+                <div class="text-4xl font-bold text-blue-600 dark:text-blue-400">5000+</div>
+                <div class="mt-2 text-gray-600 dark:text-gray-300">Active Users</div>
+            </div>
+            <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-lg animate-fade-in-up delay-100">
+                <div class="text-4xl font-bold text-purple-600 dark:text-purple-400">100+</div>
+                <div class="mt-2 text-gray-600 dark:text-gray-300">Institutions</div>
+            </div>
+            <div class="bg-white dark:bg-gray-700 p-6 rounded-lg shadow-lg animate-fade-in-up delay-200">
+                <div class="text-4xl font-bold text-green-600 dark:text-green-400">1M+</div>
+                <div class="mt-2 text-gray-600 dark:text-gray-300">Resources Accessed</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Team Section -->
+<section class="py-16">
+    <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-12">Our Team</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition duration-300">
+                <img src="https://via.placeholder.com/400x300" alt="Team Member" class="rounded-lg mb-4">
+                <h3 class="text-xl font-bold">Dr. Ahmed Al-Mansoori</h3>
+                <p class="text-gray-600 dark:text-gray-300">Chief Medical Officer</p>
+            </div>
+            <!-- Add more team members -->
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Updates - ElogBook{% endblock %}
+{% block navbar %}
+  {% include './components/public_navbar.html' %}
+{% endblock %}
+{% block content %}
+<!-- Hero Section -->
+<section class="bg-gradient-to-r from-blue-600 to-purple-700 dark:from-gray-800 dark:to-gray-900 py-20">
+    <div class="container mx-auto text-center">
+        <h1 class="text-5xl font-bold text-white animate-fade-in">Latest Updates</h1>
+        <p class="mt-4 text-xl text-white animate-fade-in delay-100">Stay informed with the latest news and announcements</p>
+    </div>
+</section>
+
+<!-- Updates Section -->
+<section class="py-16">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Update Card -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-fade-in-up">
+                <img src="https://via.placeholder.com/400x250" alt="Update Image" class="w-full h-48 object-cover rounded-t-lg">
+                <div class="p-6">
+                    <span class="text-sm text-blue-500 dark:text-blue-400">News</span>
+                    <h3 class="text-xl font-bold mt-2">New Research Tools Released</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mt-2">Explore the latest tools for medical research and collaboration.</p>
+                    <a href="#" class="mt-4 inline-block text-blue-500 dark:text-blue-400 hover:underline">Read More →</a>
+                </div>
+            </div>
+
+            <!-- Add more update cards -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-fade-in-up delay-100">
+                <img src="https://via.placeholder.com/400x250" alt="Update Image" class="w-full h-48 object-cover rounded-t-lg">
+                <div class="p-6">
+                    <span class="text-sm text-green-500 dark:text-green-400">Announcement</span>
+                    <h3 class="text-xl font-bold mt-2">Upcoming Webinar on AI in Medicine</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mt-2">Join us for an insightful session on AI applications in healthcare.</p>
+                    <a href="#" class="mt-4 inline-block text-blue-500 dark:text-blue-400 hover:underline">Read More →</a>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-fade-in-up delay-200">
+                <img src="https://via.placeholder.com/400x250" alt="Update Image" class="w-full h-48 object-cover rounded-t-lg">
+                <div class="p-6">
+                    <span class="text-sm text-purple-500 dark:text-purple-400">Feature</span>
+                    <h3 class="text-xl font-bold mt-2">New Learning Modules Added</h3>
+                    <p class="text-gray-600 dark:text-gray-300 mt-2">Access new modules on cardiology and neurology.</p>
+                    <a href="#" class="mt-4 inline-block text-blue-500 dark:text-blue-400 hover:underline">Read More →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

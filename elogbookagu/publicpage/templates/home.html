@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Home Page
+{% endblock %}
+
+{% block navbar %}
+  {% include './components/public_navbar.html' %}
+{% endblock %}
+
+<style>
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 1s ease-in-out;
+  }
+  @keyframes bounce {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+  
+  .animate-bounce {
+    animation: bounce 1s infinite;
+  }
+</style>
+{% block content %}
+  <!-- Hero Section -->
+  <section class="bg-gradient-to-r from-blue-600 to-purple-700 dark:from-gray-800 dark:to-gray-900 py-20">
+    <div class="container mx-auto text-center">
+      <h1 class="text-5xl font-bold text-white animate-fade-in">Welcome to ElogBook</h1>
+      <p class="mt-4 text-xl text-white animate-fade-in delay-100">Revolutionizing Medical Education at Arabian Gulf University</p>
+      <a href="#" class="mt-8 inline-block bg-white text-blue-600 dark:bg-gray-900 dark:text-white px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-bounce delay-200">Get Started</a>
+    </div>
+  </section>
+
+  <!-- Featured Content (Modern Cards) -->
+  <!-- Featured Content (Modern Cards) -->
+  <section class="py-16">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center mb-12 animate-fade-in">Our Services</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Card 1 -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-100">
+          <img src="https://source.unsplash.com/featured/?medical" alt="Medical Records" class="rounded-xl mb-4 shadow-lg" />
+          <h3 class="text-2xl font-semibold mb-4">Medical Records</h3>
+          <p class="text-gray-600 dark:text-gray-300">Efficiently manage and access patient records with our secure platform.</p>
+          <a href="#" class="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline font-medium">Learn More →</a>
+        </div>
+        <!-- Card 2 -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-200">
+          <img src="https://source.unsplash.com/featured/?research" alt="Research Tools" class="rounded-xl mb-4 shadow-lg" />
+          <h3 class="text-2xl font-semibold mb-4">Research Tools</h3>
+          <p class="text-gray-600 dark:text-gray-300">Access cutting-edge tools for medical research and collaboration.</p>
+          <a href="#" class="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline font-medium">Learn More →</a>
+        </div>
+        <!-- Card 3 -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-300">
+          <img src="https://source.unsplash.com/featured/?education" alt="Learning Resources" class="rounded-xl mb-4 shadow-lg" />
+          <h3 class="text-2xl font-semibold mb-4">Learning Resources</h3>
+          <p class="text-gray-600 dark:text-gray-300">Explore a vast library of medical textbooks, journals, and case studies.</p>
+          <a href="#" class="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline font-medium">Learn More →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="bg-gray-800 dark:bg-gray-100 w-full font-[sans-serif]">
+      <div class="grid md:grid-cols-2 items-center md:max-h-[475px] overflow-hidden">
+        <!-- Text Content -->
+        <div class="p-8">
+          <h1 class="sm:text-4xl text-2xl font-bold text-white dark:text-gray-900">Readymadeui <span class="text-orange-400 dark:text-orange-500">Jumbotron Design</span></h1>
+          <p class="mt-4 text-sm text-gray-300 dark:text-gray-700">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis accumsan, nunc et tempus blandit, metus mi consectetur nibh, a pharetra felis turpis vitae ligula. Etiam laoreet velit nec neque ultrices, non consequat mauris tincidunt.</p>
+          <p class="mt-2 text-sm text-gray-300 dark:text-gray-700">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis accumsan, nunc et tempus blandit, metus mi consectetur nibh.</p>
+          <button type="button" class="px-6 py-3 mt-8 rounded-md text-white dark:text-gray-100 text-sm tracking-wider border-none outline-none bg-orange-500 dark:bg-orange-600 hover:bg-orange-600 dark:hover:bg-orange-700">Get started</button>
+        </div>
+
+        <!-- Image Section -->
+        <img src="https://readymadeui.com/team-image.webp" class="w-full h-full object-cover shrink-0" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Gallery -->
+  <section class="py-16 bg-gray-100 dark:bg-gray-800">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center mb-12 animate-fade-in">Our Gallery</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <img src="https://via.placeholder.com/400x300" alt="Gallery Image 1" class="rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-fade-in-left" />
+        <img src="https://via.placeholder.com/400x300" alt="Gallery Image 2" class="rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-fade-in-up" />
+        <img src="https://via.placeholder.com/400x300" alt="Gallery Image 3" class="rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-fade-in-right" />
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="py-16">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center mb-12 animate-fade-in">What Our Users Say</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Testimonial 1 -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-fade-in-left">
+          <div class="flex items-center mb-4">
+            <img src="https://via.placeholder.com/50" alt="Dr. Ahmed Al-Mansoori" class="rounded-full w-12 h-12" />
+            <div class="ml-4">
+              <p class="font-bold">Dr. Ahmed Al-Mansoori</p>
+              <p class="text-sm text-gray-600 dark:text-gray-300">Medical Director</p>
+            </div>
+          </div>
+          <p class="text-gray-600 dark:text-gray-300">"ElogBook has transformed the way we manage medical records. It's a game-changer!"</p>
+        </div>
+        <!-- Testimonial 2 -->
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-fade-in-right">
+          <div class="flex items-center mb-4">
+            <img src="https://via.placeholder.com/50" alt="Dr. Fatima Al-Hassan" class="rounded-full w-12 h-12" />
+            <div class="ml-4">
+              <p class="font-bold">Dr. Fatima Al-Hassan</p>
+              <p class="text-sm text-gray-600 dark:text-gray-300">Research Scientist</p>
+            </div>
+          </div>
+          <p class="text-gray-600 dark:text-gray-300">"The research tools are incredible. Highly recommended for medical professionals."</p>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
