@@ -14,7 +14,7 @@ class LogYearSectionAdmin(admin.ModelAdmin):
 
 @admin.register(Department)
 class DepartmentAdmin(admin.ModelAdmin):
-    list_display = ('name', 'log_year',)
+    list_display = ('name', 'log_year','log_year_section')
     list_filter = ('log_year',)
     search_fields = ('name',)
 

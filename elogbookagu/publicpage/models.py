@@ -39,7 +39,9 @@ class LogYear(models.Model):
 
 
 class LogYearSection(models.Model):
-    year_section_name = models.CharField(max_length=20,)
+    year_section_name = models.CharField(
+        max_length=20,
+    )
     year_name = models.ForeignKey(
         LogYear, on_delete=models.CASCADE, related_name="LogYear"
     )
@@ -48,14 +50,68 @@ class LogYearSection(models.Model):
     def __str__(self):
         return self.year_section_name
 
+
 class Department(models.Model):
     name = models.CharField(max_length=50)
     log_year = models.ForeignKey(
         LogYear, on_delete=models.CASCADE, related_name="departments"
     )
+    log_year_section = models.ForeignKey(
+        LogYearSection,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="departments",
+    )
 
     def __str__(self):
-        return f"{self.name} ({self.log_year.year_name})"
+        return f"{self.name} ({self.log_year.year_name}), {self.log_year_section.year_section_name}"
+
+
+# autometically creating the departments according to the and logyearsection
+@receiver(post_save, sender=LogYearSection)
+def create_department_for_section(sender, instance, created, **kwargs):
+    if created:
+        # Access the LogYear instance from the related field log_year
+        log_year = instance.year_name  # Correctly access the LogYear instance from LogYearSection
+        year_section_name = instance.year_section_name  # Access the year_section_name from the instance
+        # Check if the log year is "Year 5"
+        if year_section_name.lower() == "year 5":
+            department_names = ["Internal Medicine", "OBGYN", "Pediatrics"]
+            for name in department_names:
+                # Check if the department already exists
+                existing_department = Department.objects.filter(
+                    name=name, log_year=log_year, log_year_section=instance
+                ).first()
+
+                if not existing_department:  # If the department doesn't exist, create it
+                    Department.objects.create(
+                        name=name,
+                        log_year=log_year,
+                        log_year_section=instance,
+                    )
+        # Check if the log year is "Year 6"
+        elif  year_section_name.lower() == "year 6":
+            department_names = ['ENT', 'Surgery', 'Family Medicine', 'Ophthalmology', 'Psychiatry']
+            for name in department_names:
+                # Check if the department already exists
+                existing_department = Department.objects.filter(
+                    name=name, log_year=log_year, log_year_section=instance
+                ).first()
+
+                if not existing_department:  # If the department doesn't exist, create it
+                    Department.objects.create(
+                        name=name,
+                        log_year=log_year,
+                        log_year_section=instance,
+                    )
+
+        print(
+            f"Departments checked/created for {log_year.year_name} - {instance.year_section_name}"
+        )
+    else:
+        print(f"LogYearSection '{instance.year_section_name}' already exists")
+
 
 
 class Group(models.Model):
@@ -90,9 +146,9 @@ def creating_group_for_log_year_section(sender, instance, created, **kwargs):
 
         # Determine the groups based on year_section_name
         if year_section_name.lower() == "year 5":
-            group_names = ["A1", "A2", "A3", "A4"]
-        elif year_section_name.lower() == "year 6":
             group_names = ["B1", "B2", "B3", "B4"]
+        elif year_section_name.lower() == "year 6":
+            group_names = ["A1", "A2", "A3", "A4"]
         else:
             group_names = []
 
