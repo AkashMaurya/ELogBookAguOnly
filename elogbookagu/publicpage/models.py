@@ -73,8 +73,12 @@ class Department(models.Model):
 def create_department_for_section(sender, instance, created, **kwargs):
     if created:
         # Access the LogYear instance from the related field log_year
-        log_year = instance.year_name  # Correctly access the LogYear instance from LogYearSection
-        year_section_name = instance.year_section_name  # Access the year_section_name from the instance
+        log_year = (
+            instance.year_name
+        )  # Correctly access the LogYear instance from LogYearSection
+        year_section_name = (
+            instance.year_section_name
+        )  # Access the year_section_name from the instance
         # Check if the log year is "Year 5"
         if year_section_name.lower() == "year 5":
             department_names = ["Internal Medicine", "OBGYN", "Pediatrics"]
@@ -84,22 +88,32 @@ def create_department_for_section(sender, instance, created, **kwargs):
                     name=name, log_year=log_year, log_year_section=instance
                 ).first()
 
-                if not existing_department:  # If the department doesn't exist, create it
+                if (
+                    not existing_department
+                ):  # If the department doesn't exist, create it
                     Department.objects.create(
                         name=name,
                         log_year=log_year,
                         log_year_section=instance,
                     )
         # Check if the log year is "Year 6"
-        elif  year_section_name.lower() == "year 6":
-            department_names = ['ENT', 'Surgery', 'Family Medicine', 'Ophthalmology', 'Psychiatry']
+        elif year_section_name.lower() == "year 6":
+            department_names = [
+                "ENT",
+                "Surgery",
+                "Family Medicine",
+                "Ophthalmology",
+                "Psychiatry",
+            ]
             for name in department_names:
                 # Check if the department already exists
                 existing_department = Department.objects.filter(
                     name=name, log_year=log_year, log_year_section=instance
                 ).first()
 
-                if not existing_department:  # If the department doesn't exist, create it
+                if (
+                    not existing_department
+                ):  # If the department doesn't exist, create it
                     Department.objects.create(
                         name=name,
                         log_year=log_year,
@@ -111,7 +125,6 @@ def create_department_for_section(sender, instance, created, **kwargs):
         )
     else:
         print(f"LogYearSection '{instance.year_section_name}' already exists")
-
 
 
 class Group(models.Model):
@@ -224,3 +237,46 @@ class AdminProfile(models.Model):
 
     def __str__(self):
         return self.user.username
+
+
+class TrainingSite(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    log_year = models.ForeignKey(
+        LogYear, related_name="training_sites", on_delete=models.CASCADE
+    )
+
+    def __str__(self):
+        return self.name
+
+
+# Add Automatically Training Sites when LogYear is created
+@receiver(post_save, sender=LogYear)
+def create_training_sites(sender, instance, created, **kwargs):
+    if created:
+        log_year = instance.year_name  # Access the LogYear instance
+        # Define the activity types you want to create
+        training_sites = [
+            "SMC",
+            "KHUH",
+            "MKCC",
+            "Health Center",
+            "Psychiatry Hospital",
+            "AGU",
+            "Medical Skill & Simulation Center",
+        ]  # training Sites types
+
+        for training_name in training_sites:
+            # Check if the training site already exists for this log year
+            if not TrainingSite.objects.filter(
+                name=training_name, log_year=instance
+            ).exists():
+                TrainingSite.objects.create(name=training_name, log_year=instance)
+            else:
+                print(
+                    f"Training site '{training_name}' already exists for log year '{instance}'"
+                )
+
+        print(f"Training sites created for log year '{instance}'")
+    else:
+        print(f"LogYear '{instance}' already exists")
+
