@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<!DOCTYPE html>
+
 <html lang="en" class="{% if request.session.theme == 'dark' %}dark{% endif %}">
   <head>
     <meta charset="UTF-8" />
@@ -8,9 +8,10 @@
 
     <title>
       {% block title %}
-
+        My Website
       {% endblock %}
     </title>
+
     <link rel="stylesheet" href="{% static 'css/main.css' %}" />
     <script>
       // Function to set the theme based on session or localStorage
@@ -26,7 +27,7 @@
       // Set the theme on page load
       setTheme()
     </script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   </head>
   <body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
     {% block navbar %}
@@ -40,30 +41,30 @@
     <!-- JavaScript for Dark Mode Toggle -->
     <script>
       const themeToggleBtn = document.getElementById('theme-toggle')
-      const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon')
-      const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon')
+      if (themeToggleBtn) {
+        // Proceed with the toggle event listener
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon')
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon')
+        themeToggleBtn.addEventListener('click', () => {
+          // Toggle icons
+          themeToggleDarkIcon.classList.toggle('hidden')
+          themeToggleLightIcon.classList.toggle('hidden')
       
-      themeToggleBtn.addEventListener('click', () => {
-        // Toggle icons
-        themeToggleDarkIcon.classList.toggle('hidden')
-        themeToggleLightIcon.classList.toggle('hidden')
+          // Toggle theme
+          const isDarkMode = document.documentElement.classList.toggle('dark')
+          localStorage.setItem('theme', isDarkMode ? 'dark' : 'light')
       
-        // Toggle theme
-        const isDarkMode = document.documentElement.classList.toggle('dark')
-        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light')
-      
-        // Send theme preference to the server (optional)
-        fetch('/set-theme/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-          },
-          body: JSON.stringify({ theme: isDarkMode ? 'dark' : 'light' })
+          // Optionally send theme preference to the server
+          fetch('/set-theme/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ theme: isDarkMode ? 'dark' : 'light' })
+          })
         })
-      })
+      }
     </script>
-   
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   </body>
 </html>
