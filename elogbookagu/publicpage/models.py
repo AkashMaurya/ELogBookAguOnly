@@ -1,16 +1,24 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
-# for creating automatically Groups with signals and receiver
+# Django Signals (automatic actions when model instances are created or updated)
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 
+# Custom User Model (Extending AbstractUser)
 class CustomUser(AbstractUser):
-    # Adding custom fields
+    """
+    कस्टम यूजर मॉडल जिसमें प्रोफाइल फोटो और रोल-आधारित परमिशन जोड़े गए हैं।
+    """
+
+    # Email ko unique banayein aur username ko optional banaayein
+    email = models.EmailField(unique=True)
     profile_photo = models.ImageField(upload_to="profiles/", blank=True, null=True)
 
-    # Role-based permissions
+    # Define user roles
     ROLE_CHOICES = (
         ("student", "Student"),
         ("doctor", "Doctor"),
@@ -19,7 +27,7 @@ class CustomUser(AbstractUser):
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="student")
 
-    # Override related_name to avoid clashes
+    # Override default related names to avoid conflicts
     groups = models.ManyToManyField(
         "auth.Group", related_name="customuser_set", blank=True
     )
@@ -27,31 +35,56 @@ class CustomUser(AbstractUser):
         "auth.Permission", related_name="customuser_set", blank=True
     )
 
+    USERNAME_FIELD = 'email'  # Email ko username field ke roop mein use karo
+    REQUIRED_FIELDS = ['username']  # Superuser ke liye username zaroori hai
+
     def __str__(self):
-        return self.username
+        return self.email
 
-
+# LogYear Model (For defining different academic years)
 class LogYear(models.Model):
+    """
+    लॉग ईयर मॉडल जिसमें अलग-अलग वर्षों को नाम दिया जाएगा (Year 5, Year 6, आदि)।
+    """
+
     year_name = models.CharField(max_length=20, unique=True)
 
     def __str__(self):
         return self.year_name
 
 
+# LogYearSection Model (Divisions within a LogYear)
 class LogYearSection(models.Model):
-    year_section_name = models.CharField(
-        max_length=20,
-    )
+    """
+    लॉग ईयर सेक्शन मॉडल जो प्रत्येक लॉग ईयर में सेक्शन (Year 5, Year 6) को दर्शाता है।
+    """
+
+    year_section_name = models.CharField(max_length=20)
     year_name = models.ForeignKey(
-        LogYear, on_delete=models.CASCADE, related_name="LogYear"
+        LogYear, on_delete=models.CASCADE, related_name="log_year_sections"
     )
-    is_deleted = models.BooleanField(default=False)  # Soft deletion flag
+    is_deleted = models.BooleanField(default=False)  # Soft delete functionality
+
+    def clean(self):
+        """
+        Validate that only 'Year 5' or 'Year 6' is allowed as a section name.
+        """
+        valid_sections = ["Year 5", "Year 6"]
+        if self.year_section_name not in valid_sections:
+            raise ValidationError(
+                f"{self.year_section_name} is not a valid section name. It should be 'Year 5' or 'Year 6'."
+            )
 
     def __str__(self):
         return self.year_section_name
 
 
+# Department Model
 class Department(models.Model):
+    """
+    विभाग (Department) मॉडल जो लॉग ईयर और सेक्शन से जुड़ा होता है।
+    """
+
     name = models.CharField(max_length=50)
     log_year = models.ForeignKey(
         LogYear, on_delete=models.CASCADE, related_name="departments"
@@ -62,72 +95,52 @@ class Department(models.Model):
         null=True,
         blank=True,
         related_name="departments",
+        db_index=True,
     )
 
-    def __str__(self):
-        return f"{self.name} ({self.log_year.year_name}), {self.log_year_section.year_section_name}"
+
+# Function to create default departments for each LogYearSection
+def create_departments_for_log_year_section(log_year, year_section, department_names):
+    """
+    यह फंक्शन एक लॉग ईयर सेक्शन के लिए डिफ़ॉल्ट डिपार्टमेंट्स (Departments) क्रिएट करता है।
+    """
+    for name in department_names:
+        if not Department.objects.filter(
+            name=name, log_year=log_year, log_year_section=year_section
+        ).exists():
+            Department.objects.create(
+                name=name, log_year=log_year, log_year_section=year_section
+            )
 
 
-# autometically creating the departments according to the and logyearsection
+# Signal: Automatically create departments when a new LogYearSection is added
 @receiver(post_save, sender=LogYearSection)
-def create_department_for_section(sender, instance, created, **kwargs):
+def handle_log_year_section_creation(sender, instance, created, **kwargs):
+    """
+    जब भी कोई नया LogYearSection बनेगा, यह सिग्नल डिफ़ॉल्ट डिपार्टमेंट्स बनाएगा।
+    """
     if created:
-        # Access the LogYear instance from the related field log_year
-        log_year = (
-            instance.year_name
-        )  # Correctly access the LogYear instance from LogYearSection
-        year_section_name = (
-            instance.year_section_name
-        )  # Access the year_section_name from the instance
-        # Check if the log year is "Year 5"
-        if year_section_name.lower() == "year 5":
-            department_names = ["Internal Medicine", "OBGYN", "Pediatrics"]
-            for name in department_names:
-                # Check if the department already exists
-                existing_department = Department.objects.filter(
-                    name=name, log_year=log_year, log_year_section=instance
-                ).first()
+        log_year = instance.year_name
+        year_section_name = instance.year_section_name.lower()
 
-                if (
-                    not existing_department
-                ):  # If the department doesn't exist, create it
-                    Department.objects.create(
-                        name=name,
-                        log_year=log_year,
-                        log_year_section=instance,
-                    )
-        # Check if the log year is "Year 6"
-        elif year_section_name.lower() == "year 6":
-            department_names = [
-                "ENT",
-                "Surgery",
-                "Family Medicine",
-                "Ophthalmology",
-                "Psychiatry",
-            ]
-            for name in department_names:
-                # Check if the department already exists
-                existing_department = Department.objects.filter(
-                    name=name, log_year=log_year, log_year_section=instance
-                ).first()
-
-                if (
-                    not existing_department
-                ):  # If the department doesn't exist, create it
-                    Department.objects.create(
-                        name=name,
-                        log_year=log_year,
-                        log_year_section=instance,
-                    )
-
-        print(
-            f"Departments checked/created for {log_year.year_name} - {instance.year_section_name}"
-        )
-    else:
-        print(f"LogYearSection '{instance.year_section_name}' already exists")
+        if year_section_name == "year 5":
+            create_departments_for_log_year_section(
+                log_year, instance, ["Internal Medicine", "OBGYN", "Pediatrics"]
+            )
+        elif year_section_name == "year 6":
+            create_departments_for_log_year_section(
+                log_year,
+                instance,
+                ["ENT", "Surgery", "Family Medicine", "Ophthalmology", "Psychiatry"],
+            )
 
 
+# Group Model
 class Group(models.Model):
+    """
+    ग्रुप मॉडल जो लॉग ईयर और लॉग ईयर सेक्शन से जुड़ा होता है।
+    """
+
     group_name = models.CharField(max_length=50)
     log_year = models.ForeignKey(
         LogYear, on_delete=models.CASCADE, related_name="groups"
@@ -141,50 +154,41 @@ class Group(models.Model):
     )
 
     def __str__(self):
-        # Check if log_year_section is not None before accessing its attribute
-        if self.log_year_section:
-            return f"{self.group_name} ({self.log_year.year_name}) and {self.log_year_section.year_section_name}"
-        else:
-            return f"{self.group_name} ({self.log_year.year_name}) and No Section"
+        return f"{self.group_name} ({self.log_year.year_name}) - {self.log_year_section.year_section_name if self.log_year_section else 'No Section'}"
 
 
-# Signal receiver for creating groups when LogYearSection is created
+# Signal: Create default groups when a new LogYearSection is added
 @receiver(post_save, sender=LogYearSection)
 def creating_group_for_log_year_section(sender, instance, created, **kwargs):
+    """
+    जब भी कोई नया LogYearSection बनेगा, यह सिग्नल डिफ़ॉल्ट ग्रुप्स बनाएगा।
+    """
     if created:
-        log_year = instance.year_name  # Access the LogYear instance
-        year_section_name = (
-            instance.year_section_name
-        )  # Access the year_section_name from the instance
+        log_year = instance.year_name
+        year_section_name_cleaned = instance.year_section_name.strip().lower()
 
-        # Determine the groups based on year_section_name
-        if year_section_name.lower() == "year 5":
-            group_names = ["B1", "B2", "B3", "B4"]
-        elif year_section_name.lower() == "year 6":
-            group_names = ["A1", "A2", "A3", "A4"]
-        else:
-            group_names = []
+        group_mapping = {
+            "year 5": ["B1", "B2", "B3", "B4"],
+            "year 6": ["A1", "A2", "A3", "A4"],
+        }
 
-        # Check if the groups already exist for this year and section
-        for group_name_obj in group_names:
-            existing_group = Group.objects.filter(
-                group_name=group_name_obj,  # Use 'group_name' instead of 'group_names'
-                log_year=log_year,
-                log_year_section=instance,
-            ).first()
+        group_names = group_mapping.get(year_section_name_cleaned, [])
 
-            if not existing_group:  # If the group doesn't exist, create it
+        for group_name in group_names:
+            if not Group.objects.filter(
+                group_name=group_name, log_year=log_year, log_year_section=instance
+            ).exists():
                 Group.objects.create(
-                    group_name=group_name_obj,  # Use 'group_name' instead of 'group_names'
-                    log_year=log_year,
-                    log_year_section=instance,
+                    group_name=group_name, log_year=log_year, log_year_section=instance
                 )
-        print(f"Groups created for {year_section_name}")
-    else:
-        print(f"LogYearSection '{instance.year_section_name}' already exists")
 
 
+# Student Model
 class Student(models.Model):
+    """
+    स्टूडेंट मॉडल जो कस्टम यूजर, ग्रुप और अन्य विवरणों से जुड़ा होता है।
+    """
+
     user = models.OneToOneField(
         CustomUser, on_delete=models.CASCADE, related_name="student_profile"
     )
@@ -193,53 +197,45 @@ class Student(models.Model):
         Group, on_delete=models.SET_NULL, null=True, blank=True, related_name="students"
     )
 
-    city = models.CharField(max_length=100, blank=True, null=True)
-    country = models.CharField(max_length=100, blank=True, null=True)
-
     def __str__(self):
         return self.user.username
 
 
+# Doctor Model
 class Doctor(models.Model):
+    """
+    डॉक्टर मॉडल जिसमें यूजर, डिपार्टमेंट और स्थान शामिल हैं।
+    """
+
     user = models.OneToOneField(
         CustomUser, on_delete=models.CASCADE, related_name="doctor_profile"
     )
-    department = models.ForeignKey(
-        Department,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="doctors",
-    )
-    city = models.CharField(max_length=100, blank=True, null=True)
-    country = models.CharField(max_length=100, blank=True, null=True)
+    departments = models.ManyToManyField(Department, related_name="doctors", blank=True)
 
     def __str__(self):
         return self.user.username
 
 
+# Staff Model
 class Staff(models.Model):
+    """
+    स्टाफ मॉडल जो केवल यूजर डिटेल्स को स्टोर करता है।
+    """
+
     user = models.OneToOneField(
         CustomUser, on_delete=models.CASCADE, related_name="staff_profile"
     )
-    city = models.CharField(max_length=100, blank=True, null=True)
-    country = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
         return self.user.username
 
 
-# Custom Admin model for admin-only CRUD operations
-class AdminProfile(models.Model):
-    user = models.OneToOneField(
-        CustomUser, on_delete=models.CASCADE, related_name="admin_profile"
-    )
-
-    def __str__(self):
-        return self.user.username
-
-
+# Training Site Model
 class TrainingSite(models.Model):
+    """
+    ट्रेनिंग साइट मॉडल जो लॉग ईयर से जुड़ा होता है।
+    """
+
     name = models.CharField(max_length=100, unique=True)
     log_year = models.ForeignKey(
         LogYear, related_name="training_sites", on_delete=models.CASCADE
@@ -249,12 +245,13 @@ class TrainingSite(models.Model):
         return self.name
 
 
-# Add Automatically Training Sites when LogYear is created
+# Signal: Create default training sites when a new LogYear is added
 @receiver(post_save, sender=LogYear)
 def create_training_sites(sender, instance, created, **kwargs):
+    """
+    जब भी नया लॉग ईयर बनाया जाता है, यह सिग्नल ट्रेनिंग साइट्स जोड़ता है।
+    """
     if created:
-        log_year = instance.year_name  # Access the LogYear instance
-        # Define the activity types you want to create
         training_sites = [
             "SMC",
             "KHUH",
@@ -263,20 +260,7 @@ def create_training_sites(sender, instance, created, **kwargs):
             "Psychiatry Hospital",
             "AGU",
             "Medical Skill & Simulation Center",
-        ]  # training Sites types
-
-        for training_name in training_sites:
-            # Check if the training site already exists for this log year
-            if not TrainingSite.objects.filter(
-                name=training_name, log_year=instance
-            ).exists():
-                TrainingSite.objects.create(name=training_name, log_year=instance)
-            else:
-                print(
-                    f"Training site '{training_name}' already exists for log year '{instance}'"
-                )
-
-        print(f"Training sites created for log year '{instance}'")
-    else:
-        print(f"LogYear '{instance}' already exists")
-
+        ]
+        for site in training_sites:
+            if not TrainingSite.objects.filter(name=site, log_year=instance).exists():
+                TrainingSite.objects.create(name=site, log_year=instance)

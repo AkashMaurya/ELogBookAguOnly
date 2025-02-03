@@ -1,0 +1,102 @@
+<!-- Fixed Header -->
+<div class="flex flex-row dark:bg-gray-800 bg-gray-100 py-3 top-0 left-0 right-0 z-20 shadow-md">
+  <button id="sidebar-toggle" class="bg-gray-200 dark:bg-gray-800 py-2 px-4 ml-4 rounded-lg text-center cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95"><i class="fas fa-bars"></i></button>
+  <h1 class="text-2xl font-bold text-center flex-grow">Doctor Dashboard</h1>
+</div>
+
+<!-- Fixed Sidebar -->
+<aside id="sidebar" class="w-64 bg-gray-100 dark:bg-gray-800 p-4 flex flex-col fixed top-16 bottom-0 left-0 transition-transform transform translate-x-0 z-30 md:translate-x-0">
+  <nav class="flex-grow">
+    <ul>
+      <li class="flex items-center space-x-2">
+        <i class="fas fa-chart-line"></i>
+        <a href="{% url 'doctor_dash' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Dashboard</a>
+      </li>
+      <li class="flex items-center space-x-2">
+        <i class="fas fa-user-md"></i>
+        <a href="{% url 'doctor_profile' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Profile</a>
+      </li>
+      <li class="flex items-center space-x-2">
+        <i class="far fa-edit"></i>
+        <a href="{% url 'doctor_blogs' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Posts</a>
+      </li>
+      <li class="flex items-center space-x-2">
+        <i class="fab fa-hire-a-helper"></i>
+        <a href="{% url 'doctor_help' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Help</a>
+      </li>
+      <li class="flex items-center space-x-2">
+        <i class="fas fa-book-reader"></i>
+        <a href="{% url 'doctor_reviews' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Review</a>
+      </li>
+      <li class="flex items-center space-x-2">
+        <i class="fas fa-sign-out-alt"></i>
+        <a href="#" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Logout</a>
+      </li>
+      <li class="flex items-center space-x-2 mt-4">
+        <button id="theme-toggle" class="text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300 transition duration-300 ease-in-out">
+          <svg id="theme-toggle-dark-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+          </svg>
+          <svg id="theme-toggle-light-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path>
+          </svg>
+        </button>
+      </li>
+    </ul>
+  </nav>
+</aside>
+
+<!-- Scripts -->
+<script>
+  // Theme toggle functionality
+  const themeToggleBtn = document.getElementById('theme-toggle')
+  const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon')
+  const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon')
+  themeToggleBtn.addEventListener('click', () => {
+    themeToggleDarkIcon.classList.toggle('hidden')
+    themeToggleLightIcon.classList.toggle('hidden')
+    document.documentElement.classList.toggle('dark')
+    localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light')
+  })
+  
+  // Sidebar toggle functionality
+  const sidebarToggleBtn = document.getElementById('sidebar-toggle')
+  const sidebar = document.getElementById('sidebar')
+  const mainContent = document.getElementById('main-content')
+  
+  sidebarToggleBtn.addEventListener('click', () => {
+    // Toggle sidebar sliding in/out
+    sidebar.classList.toggle('-translate-x-full')
+  
+    // For larger screens, adjust the main content margin
+    if (window.innerWidth >= 768) {
+      // md breakpoint in Tailwind
+      if (sidebar.classList.contains('-translate-x-full')) {
+        mainContent.classList.remove('ml-64')
+      } else {
+        mainContent.classList.add('ml-64')
+      }
+    }
+  })
+  
+  // Optional: Close sidebar on small screens when clicking outside
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth < 768) {
+      if (!sidebar.contains(e.target) && !sidebarToggleBtn.contains(e.target)) {
+        sidebar.classList.add('-translate-x-full')
+      }
+    }
+  })
+</script>
+
+<!-- Styles -->
+<style>
+  /* Smooth transition for sidebar sliding */
+  #sidebar {
+    transition: transform 0.3s ease-in-out;
+  }
+  /* When sidebar is hidden */
+  #sidebar.-translate-x-full {
+    transform: translateX(-100%);
+  }
+</style>
