@@ -10,28 +10,30 @@
     <ul>
       <li class="flex items-center space-x-2">
         <i class="fas fa-chart-line"></i>
-        <a href="{% url 'doctor_dash' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Dashboard</a>
+        <a href="{% url 'doctor_section:doctor_dash' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Dashboard</a>
       </li>
       <li class="flex items-center space-x-2">
         <i class="fas fa-user-md"></i>
-        <a href="{% url 'doctor_profile' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Profile</a>
+        <a href="{% url 'doctor_section:doctor_profile' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Profile</a>
       </li>
       <li class="flex items-center space-x-2">
         <i class="far fa-edit"></i>
-        <a href="{% url 'doctor_blogs' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Posts</a>
+        <a href="{% url 'doctor_section:doctor_blogs' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Posts</a>
       </li>
       <li class="flex items-center space-x-2">
         <i class="fab fa-hire-a-helper"></i>
-        <a href="{% url 'doctor_help' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Help</a>
+        <a href="{% url 'doctor_section:doctor_help' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Help</a>
       </li>
       <li class="flex items-center space-x-2">
         <i class="fas fa-book-reader"></i>
-        <a href="{% url 'doctor_reviews' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Review</a>
+        <a href="{% url 'doctor_section:doctor_reviews' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Review</a>
       </li>
-      <li class="flex items-center space-x-2">
-        <i class="fas fa-sign-out-alt"></i>
-        <a href="#" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Logout</a>
-      </li>
+      <form method="POST" action="{% url 'doctor_section:logout' %}">
+        <li class="flex items-center space-x-2">
+          {% csrf_token %}
+          <button type="submit" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </li>
+      </form>
       <li class="flex items-center space-x-2 mt-4">
         <button id="theme-toggle" class="text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300 transition duration-300 ease-in-out">
           <svg id="theme-toggle-dark-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
