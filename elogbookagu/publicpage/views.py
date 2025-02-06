@@ -27,8 +27,7 @@ def update(request):
     return render(request, "update.html")
 
 
-def contact(request):
-    return render(request, "contact.html")
+
 
 
 def login(request):
