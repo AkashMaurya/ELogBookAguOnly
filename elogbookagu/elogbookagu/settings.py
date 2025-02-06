@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-4q2u_l7xp6hq5!y2fi^%cu#bn6o$d)p%n2jnja8lnvvuxu&)1v"
+SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -39,11 +39,19 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # my projects app names
     "publicpage",
     "accounts",
     "doctor_section",
     "admin_section",
+    "student_section",
+    "staff_section",
+    # Third-party apps
     "django_extensions",
+    # Allauth apps ke names
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
 ]
 
 MIDDLEWARE = [
@@ -54,6 +62,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Add this line for Allauth middleware
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "elogbookagu.urls"
@@ -123,6 +133,11 @@ USE_I18N = True
 USE_TZ = True
 
 
+AUTH_USER_MODEL = "accounts.CustomUser"
+LOGIN_URL = "/login/"
+LOGOUT_REDIRECT_URL = "login"  # Or any other URL you'd like
+
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
@@ -141,7 +156,22 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000", "https://yourdomain.com"]
+CSRF_COOKIE_SECURE = False
 
-AUTH_USER_MODEL = "accounts.CustomUser"
-LOGIN_URL = "/login/"
-LOGOUT_REDIRECT_URL = 'login'  # Or any other URL you'd like
+
+AUTHENTICATION_BACKENDS = (
+    "django.contrib.auth.backends.ModelBackend",  # Default backend for Django Admin
+    "allauth.account.auth_backends.AuthenticationBackend",  # allauth backend
+)
+
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+
+# email Reset
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "dailyhackshindi@gmail.com"  # Your Gmail address
+EMAIL_HOST_PASSWORD = "zobm otwz nymq emiq"  # Your generated app password
