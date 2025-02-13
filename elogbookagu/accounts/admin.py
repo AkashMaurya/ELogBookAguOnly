@@ -3,11 +3,16 @@ from django.contrib import admin
 from .models import *
 from django.contrib.auth.admin import UserAdmin
 
+
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
     list_display = ("user", "student_id", "group")
     list_filter = ("group",)
-    search_fields = ("user__username", "user__email", "student_id")  # ईमेल से भी सर्च कर सकते हैं
+    search_fields = (
+        "user__username",
+        "user__email",
+        "student_id",
+    )  # ईमेल से भी सर्च कर सकते हैं
 
 
 @admin.register(Doctor)
@@ -34,18 +39,66 @@ class StaffAdmin(admin.ModelAdmin):
 # Custom User Admin with Profile Photo Display
 class CustomUserAdmin(UserAdmin):
     model = CustomUser
-    list_display = ('username', 'email', 'role', 'is_staff', 'display_image',)
-    list_filter = ('role', 'is_staff', 'is_superuser',)
-    search_fields = ('username', 'email',)
+    list_display = (
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "role",
+        "is_staff",
+        "profile_photo",
+    )
+    list_filter = (
+        "role",
+        "is_staff",
+        "is_superuser",
+    )
+    search_fields = (
+        "username",
+        "email",
+    )
 
     fieldsets = (
-        (None, {'fields': ('username', 'email', 'password', 'role', 'profile_photo', 'is_active', 'is_staff', 'is_superuser')}),
-        ('Permissions', {'fields': ('groups', 'user_permissions')}),
-        ('Important dates', {'fields': ('last_login', 'date_joined')}),
+        (
+            None,
+            {
+                "fields": (
+                    "username",
+                    "first_name",
+                    "last_name",
+                    "email",
+                    "password",
+                    "role",
+                    "profile_photo",
+                    "city",
+                    "country",
+                    "phone_no",
+                    "bio",
+                    "speciality",
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                )
+            },
+        ),
+        ("Permissions", {"fields": ("groups", "user_permissions")}),
+        ("Important dates", {"fields": ("last_login", "date_joined")}),
     )
 
     add_fieldsets = (
-        (None, {'fields': ('username', 'email', 'password1', 'password2', 'role', 'profile_photo')}),
+        (
+            None,
+            {
+                "fields": (
+                    "username",
+                    "email",
+                    "password1",
+                    "password2",
+                    "role",
+                    "profile_photo",
+                )
+            },
+        ),
     )
 
     def display_image(self, obj):
@@ -53,10 +106,14 @@ class CustomUserAdmin(UserAdmin):
         एडमिन पैनल में यूज़र की प्रोफाइल फोटो को थंबनेल के रूप में दिखाने के लिए।
         """
         if obj.profile_photo:
-            return format_html('<img src="{}" width="40" height="40" style="border-radius:50%;" />', obj.profile_photo.url)
+            return format_html(
+                '<img src="{}" width="40" height="40" style="border-radius:50%;" />',
+                obj.profile_photo.url,
+            )
         return "No Image"
 
     display_image.short_description = "Profile Photo"
+
 
 # Register the CustomUser model with the custom admin
 admin.site.register(CustomUser, CustomUserAdmin)

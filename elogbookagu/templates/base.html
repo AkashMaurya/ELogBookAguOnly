@@ -13,6 +13,10 @@
     </title>
 
     <link rel="stylesheet" href="{% static 'css/main.css' %}" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <!-- Favicon -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.4"></script>
     <script>
       // Function to set the theme based on session or localStorage
       function setTheme() {
@@ -36,7 +40,7 @@
     {% block content %}
 
     {% endblock %}
-  
+
     {% include './components/footer.html' %}
     <!-- JavaScript for Dark Mode Toggle -->
     <script>
@@ -66,5 +70,6 @@
         })
       }
     </script>
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
   </body>
 </html>

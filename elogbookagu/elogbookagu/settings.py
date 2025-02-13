@@ -141,22 +141,29 @@ LOGOUT_REDIRECT_URL = "login"  # Or any other URL you'd like
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
+
+# CORS_ALLOW_ALL_ORIGINS = True
+
+
+# STATIC फ़ाइलों को सर्व करने के लिए
 STATIC_URL = "static/"
-STATICFILES_DIRS = [BASE_DIR, "static"]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
-
-# The URL to access media files
+# for Media files
 MEDIA_URL = "/media/"
-
-# The directory where media files will be stored on the server
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000", "https://yourdomain.com"]
+CSRF_TRUSTED_ORIGINS = [
+    "http://127.0.0.1:8000",
+    "https://yourdomain.com",
+    "http://127.0.0.1:3453",
+]
 CSRF_COOKIE_SECURE = False
 
 

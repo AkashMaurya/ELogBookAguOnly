@@ -15,7 +15,7 @@
           {% with request.resolver_match.url_name as url_name %}
           <a href="{% url 'home_page' %}" 
    class="px-4 py-2 rounded-lg transition-all duration-300 transform 
-          hover:px-8 hover:py-5 hover:scale-110
+          hover:scale-110
           {% if url_name == 'home_page' %}
             bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300
           {% else %}
@@ -28,7 +28,7 @@
 
           <a href="{% url 'about_page' %}"
              class="px-4 py-2 rounded-lg transition-all duration-300 transform 
-          hover:px-8 hover:py-5 hover:scale-110
+           hover:scale-110
              {% if url_name == 'about_page' %}
                bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300
              {% else %}
@@ -38,7 +38,7 @@
           </a>
           <a href="{% url 'resources_page' %}"
              class="px-4 py-2 rounded-lg transition-all duration-300 transform 
-          hover:px-8 hover:py-5 hover:scale-110
+          hover:scale-110
              {% if url_name == 'resources_page' %}
                bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300
              {% else %}
@@ -48,7 +48,7 @@
           </a>
           <a href="{% url 'update_page' %}"
              class="px-4 py-2 rounded-lg transition-all duration-300 transform 
-          hover:px-8 hover:py-5 hover:scale-110
+         hover:scale-110
              {% if url_name == 'update_page' %}
                bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300
              {% else %}

@@ -3,15 +3,130 @@
 {% block title %}
   Doctor Profile
 {% endblock %}
+
 {% block navbar %}
   {% include './components/doc_auth_navbar.html' %}
 {% endblock %}
 
 {% block content %}
-  <!-- Hero Section -->
-    <!-- Main Content -->
-  <main class="flex-wrap p-6 bg-white dark:bg-gray-900">
-    <h2 class="text-3xl font-bold">Welcome to Your Profile Section</h2>
-    <p class="mt-4">This is the main content area. Add your page content here.</p>
-  </main>
+  <div class="container mx-auto px-4 py-8">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 transition-colors duration-200">
+      <!-- Profile Header with Edit Icon -->
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Doctor Profile</h1>
+        <button id="editProfile" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"><i class="fas fa-edit text-xl"></i></button>
+      </div>
+
+      <!-- Profile Content -->
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- Left Column -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-center">
+            <div class="relative">
+              <!-- <img src="{{ profile_photo }}" alt="Profile Picture" class="w-20 h-20 rounded-full object-cover border-1 border-blue-500 dark:border-blue-400" /> -->
+              <img src="{{ profile_photo  }}" alt="Profile Photo" onerror="this.src='/media/profiles/default.jpg';" class="w-50 h-50 rounded-full object-cover border-1 border-blue-500 dark:border-blue-400" />
+
+
+
+
+            </div>
+
+          </div>
+
+          <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg transition-colors duration-200">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">Personal Information</h2>
+            <div class="space-y-3">
+              <p class="flex items-center">
+                <span class="font-medium w-32 text-gray-700 dark:text-gray-300">Full Name:</span>
+                &nbsp;<span class="dark:text-white">{{ full_name }}</span>
+              </p>
+              <p class="flex items-center">
+                <span class="font-medium w-32 text-gray-700 dark:text-gray-300">Email:</span>
+                <span class="dark:text-white">{{ user_email }}</span>
+              </p>
+              <p class="flex items-center">
+                <span class="font-medium w-32 text-gray-700 dark:text-gray-300">Specialty:</span>
+                <span class="dark:text-white">{{ user_speciality }}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="space-y-4">
+          <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg transition-colors duration-200">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">Contact Information</h2>
+            <div class="space-y-3">
+              <p class="flex items-center">
+                <span class="font-medium w-32 text-gray-700 dark:text-gray-300">Phone:</span>
+                <span class="dark:text-white">{{ user_phone }}</span>
+              </p>
+              <p class="flex items-center">
+                <span class="font-medium w-32 text-gray-700 dark:text-gray-300">City:</span>
+                <span class="dark:text-white">{{ user_city }}</span>
+              </p>
+              <p class="flex items-center">
+                <span class="font-medium w-32 text-gray-700 dark:text-gray-300">Country:</span>
+                <span class="dark:text-white">{{ user_country }}</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg transition-colors duration-200">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">Professional Details</h2>
+            <div class="space-y-3">
+              <p class="flex items-center">
+                <span class="font-medium w-32 text-gray-700 dark:text-gray-300">User Roll:</span>
+                <span class="dark:text-white">{{ user_role }}</span>
+              </p>
+              <p class="flex items-center">
+                {% comment %} <span class="font-medium w-32 text-gray-700 dark:text-gray-300">Department:</span>
+                {% if user_department %}
+                  <span class="dark:text-white">{{ user_department|join:', ' }}</span>
+                {% endif %} {% endcomment %}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Profile Modal -->
+  <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+    <div class="flex items-center justify-center min-h-screen px-4">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold dark:text-white">Edit Profile</h2>
+            <button class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300" id="closeModal"><i class="fas fa-times"></i></button>
+          </div>
+          <!-- Add your edit form here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const editButton = document.getElementById('editProfile')
+      const modal = document.getElementById('editModal')
+      const closeModal = document.getElementById('closeModal')
+    
+      editButton.addEventListener('click', function () {
+        modal.classList.remove('hidden')
+      })
+    
+      closeModal.addEventListener('click', function () {
+        modal.classList.add('hidden')
+      })
+    
+      // Close modal when clicking outside
+      modal.addEventListener('click', function (e) {
+        if (e.target === modal) {
+          modal.classList.add('hidden')
+        }
+      })
+    })
+  </script>
 {% endblock %}

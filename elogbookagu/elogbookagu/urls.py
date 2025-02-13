@@ -21,15 +21,20 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 
-urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("", include("publicpage.urls")),
-    path("accounts/", include("accounts.urls")),
-    path("doctors/", include("doctor_section.urls")),
-    path("admin_section/", include("admin_section.urls")),
-    path("staff_section/", include("staff_section.urls")),
-    path("student_section/", include("student_section.urls")),
-    path("accounts/", include("allauth.urls")),
-]
-urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns = (
+    [
+        path("admin/", admin.site.urls),
+        path("", include("publicpage.urls")),
+        path("accounts/", include("accounts.urls")),
+        path("doctors/", include("doctor_section.urls")),
+        path("admin_section/", include("admin_section.urls")),
+        path("staff_section/", include("staff_section.urls")),
+        path("student_section/", include("student_section.urls")),
+        path("accounts/", include("allauth.urls")),
+    ]
+    + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+)
+
+
+# ध्यान दें: Production में DEBUG=False होने पर आपको nginx या whitenoise का उपयोग करना होगा।
