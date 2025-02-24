@@ -68,6 +68,9 @@ class Department(models.Model):
         db_index=True,
     )
 
+    def __str__(self):
+        return f"{self.name}"
+
 
 # Function to create default departments for each LogYearSection
 def create_departments_for_log_year_section(log_year, year_section, department_names):
@@ -151,9 +154,6 @@ def creating_group_for_log_year_section(sender, instance, created, **kwargs):
                 Group.objects.create(
                     group_name=group_name, log_year=log_year, log_year_section=instance
                 )
-
-
-
 
 
 # Training Site Model
