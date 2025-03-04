@@ -15,5 +15,10 @@ urlpatterns = [
     # edit profile
     path("update-contact-info/", views.update_contact_info, name="update_contact_info"),
     path('update-profile-photo/', views.update_profile_photo, name='update_profile_photo'),
-
+    
+  
 ]
+
+
+
+

@@ -5,11 +5,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 import time  # Brute-force attack रोकने के लिए (optional)
 from django.core.exceptions import ValidationError
-from accounts.models import CustomUser
-
-
-
-
+from accounts.models import CustomUser , Student
+from django.shortcuts import render, redirect
 
 
 # Create your views here.
@@ -31,13 +28,6 @@ def update(request):
     return render(request, "update.html")
 
 
-
-
-from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login as auth_login
-from django.contrib import messages
-import time
-from accounts.models import CustomUser
 
 def login(request):
     # Agar user pehle se login hai to redirect karen
@@ -81,14 +71,33 @@ def login(request):
         request.session["bio"] = user.bio  # Bio ko session mein save karen
         request.session["speciality"] = user.speciality  # Speciality ko session mein save karen
         request.session["email"] = user.email  # Email ko session mein save karen
-        request.session.save()  # Session ko explicitly save karen
+        
+        # Add student group data if user is a student
+        if user.role == "student":
+            try:
+                student = Student.objects.get(user=user)
+                if student.group:
+                    request.session["group_name"] = student.group.group_name
+                    request.session["log_year"] = student.group.log_year.year_name if student.group.log_year else None
+                    request.session["log_year_section"] = student.group.log_year_section.year_section_name if student.group.log_year_section else None
+                    # Add debug prints
+                    print("Group Name:", student.group.group_name)
+                    print("Log Year:", student.group.log_year.year_name if student.group.log_year else None)
+                    print("Section:", student.group.log_year_section.year_section_name if student.group.log_year_section else None)
+            except Student.DoesNotExist:
+                print(f"No student profile found for user: {user.email}")
+                request.session["group_name"] = None
+                request.session["log_year"] = None
+                request.session["log_year_section"] = None
+
+        request.session.save() # Session ko explicitly save karen
 
         # User ke role ke hisaab se redirection
         role_redirects = {
             "admin": "admin_section:admin_dash",  # Admin role ke liye dashboard redirect
             "doctor": "doctor_section:doctor_dash",  # Doctor role ke liye dashboard redirect
-            "student": "student_dashboard",  # Student role ke liye dashboard redirect
-            "staff": "staff_dashboard",  # Staff role ke liye dashboard redirect
+            "student": "student_section:student_dash",  # Student role ke liye dashboard redirect
+            "staff": "staff_section:staff_dashboard",  # Staff role ke liye dashboard redirect
         }
 
         # Agar role valid hai to uss role ke dashboard par redirect karen, warna default "dashboard" par

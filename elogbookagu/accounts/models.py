@@ -68,10 +68,10 @@ class Student(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE , related_name="student")
     student_id = models.CharField(max_length=30, unique=True)  # अधिकतम लंबाई बढ़ाई गई
     group = models.ForeignKey("publicpage.Group", on_delete=models.SET_NULL, null=True, blank=True, related_name="students")
-
+    
 
     def __str__(self):
-        return self.user.username
+        return f"{self.user.email} - {self.student_id} ({self.group if self.group else 'No Group'})"
 
 
 # Doctor Model

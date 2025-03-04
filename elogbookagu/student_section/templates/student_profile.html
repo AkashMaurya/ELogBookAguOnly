@@ -8,11 +8,231 @@
   {% include './components/student_auth_navbar.html' %}
 {% endblock %}
 
-<!-- Main Content -->
-
 {% block content %}
-  <div class="container mx-auto ">
-    <h2 class="text-3xl font-bold">Welcome to Your Profle Section</h2>
-    <p>This is the main content area. Add your page content here.</p>
+  <div class="container mx-auto px-4 py-8">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 transition-colors duration-200">
+      <!-- Profile Header -->
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Student Profile</h1>
+      </div>
+
+      <!-- Profile Content -->
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- Left Column -->
+        <div class="space-y-4">
+          <!-- Profile Picture -->
+          <div class="flex items-center justify-center">
+            <div class="relative group">
+              <img src="{{ profile_photo }}" alt="Profile Photo" onerror="this.src='/media/profiles/default.jpg';" class="w-50 h-50 rounded-full object-cover border-1 border-blue-500 dark:border-blue-400" />
+
+              <!-- Upload Button -->
+              <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <label for="profile-photo-upload" class="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-full shadow-lg"><i class="fas fa-camera"></i> Change Photo</label>
+              </div>
+
+              <!-- Hidden File Input -->
+              <form id="profile-photo-form" hx-post="{% url 'doctor_section:update_profile_photo' %}" hx-encoding="multipart/form-data" class="hidden">
+                {% csrf_token %}
+                <input type="file" id="profile-photo-upload" name="profile_photo" accept="image/*" class="hidden" />
+              </form>
+            </div>
+          </div>
+
+          <!-- Personal Information -->
+          <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg transition-colors duration-200">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">Personal Information</h2>
+            <div class="space-y-3">
+              <p class="flex items-center">
+                <span class="font-medium w-32 text-gray-700 dark:text-gray-300">Full Name:</span><span class="dark:text-white">{{ full_name }}</span>
+              </p>
+              <p class="flex items-center">
+                <span class="font-medium w-32 text-gray-700 dark:text-gray-300">Email:</span><span class="dark:text-white">{{ user_email }}</span>
+              </p>
+              <p class="flex items-center">
+                <span class="font-medium w-32 text-gray-700 dark:text-gray-300">Group:</span>
+                <span class="dark:text-white">{{ group_name }}</span>
+              </p>
+              <p class="flex items-center">
+                <span class="font-medium w-32 text-gray-700 dark:text-gray-300">Year of Study:</span><span class="dark:text-white">{{ log_year }}</span>
+              </p>
+
+              <p class="flex items-center">
+                <span class="font-medium w-32 text-gray-700 dark:text-gray-300">Log Year-Period:</span><span class="dark:text-white">{{ log_year_section }}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="space-y-4">
+          <!-- Contact Information -->
+          <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg transition-colors duration-200">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">Contact Information</h2>
+            <div class="space-y-3">
+              <p class="flex items-center">
+                <span class="font-medium w-32 text-gray-700 dark:text-gray-300">Phone:</span>
+                <span id="phone-text" class="dark:text-white">{{ user_phone }}</span>
+              </p>
+              <p class="flex items-center">
+                <span class="font-medium w-32 text-gray-700 dark:text-gray-300">City:</span>
+                <span id="city-text" class="dark:text-white">{{ user_city }}</span>
+              </p>
+              <p class="flex items-center">
+                <span class="font-medium w-32 text-gray-700 dark:text-gray-300">Country:</span>
+                <span id="country-text" class="dark:text-white">{{ user_country }}</span>
+              </p>
+            </div>
+            <!-- Button to open the modal -->
+            <button id="openModal" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700 cursor-pointer">Edit</button>
+          </div>
+
+          <!-- Professional Details -->
+          <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg transition-colors duration-200">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">Biography</h2>
+            <div class="space-y-3">
+              <p class="flex items-center">
+                <span class="italic dark:text-white">{{ user_bio }}</span>
+              </p>
+              <button id="openModalBio" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700 cursor-pointer">Edit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- Edit Profile Modal (Model opne ho dikhega) for contact informations -->
+  <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+    <div class="flex items-center justify-center min-h-screen px-4">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold dark:text-white">Edit Contact Information</h2>
+            <button class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300" id="closeModal"><i class="fas fa-times"></i></button>
+          </div>
+
+          <!-- Edit Form -->
+          <form hx-post="{% url 'student_section:update_contact_info' %}" hx-trigger="submit">
+            {% csrf_token %}
+            <div class="mb-4">
+              <label for="phone" class="block text-gray-700 dark:text-gray-300">Phone:</label>
+              <input type="text" id="phone" name="phone" value="{{ user_phone }}" class="w-full p-2 border rounded-md" />
+            </div>
+            <div>
+              <label for="city" class="block text-gray-700 dark:text-gray-300">City:</label>
+              <input type="text" id="city" name="city" value="{{ user_city }}" class="w-full p-2 border rounded-md" />
+            </div>
+            <div>
+              <label for="country" class="block text-gray-700 dark:text-gray-300">Country:</label>
+              <input type="text" id="country" name="country" value="{{ user_country }}" class="w-full p-2 border rounded-md" />
+            </div>
+            <button type="submit" class="w-full mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-700 cursor-pointer text-white rounded-lg">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Profile for Biography (Model opne ho dikhega) -->
+
+  <div id="editModalbio" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+    <div class="flex items-center justify-center min-h-screen px-4">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold dark:text-white">Edit Your Bio</h2>
+            <button class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300" id="closeModalBio"><i class="fas fa-times"></i></button>
+          </div>
+
+          <!-- Edit Form -->
+          <form hx-post="{% url 'student_section:update_biography' %}" hx-trigger="submit">
+            {% csrf_token %}
+            <div class="mb-4">
+              <label for="biography" class="block text-gray-700 dark:text-gray-300">Biography:</label>
+              <textarea id="biography" name="biography" class="w-full p-2 border rounded-md" rows="5">{{ user_bio }}</textarea>
+            </div>
+            <button type="submit" class="w-full mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-700 cursor-pointer text-white rounded-lg">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Contact information Modal
+    document.getElementById('openModal').addEventListener('click', function () {
+      document.getElementById('editModal').classList.remove('hidden')
+    })
+    
+    document.getElementById('closeModal').addEventListener('click', function () {
+      document.getElementById('editModal').classList.add('hidden')
+    })
+    
+    document.getElementById('editModal').addEventListener('click', function (event) {
+      if (event.target === this) {
+        this.classList.add('hidden')
+      }
+    })
+    
+    // Biography Modal
+    document.getElementById('openModalBio').addEventListener('click', function () {
+      document.getElementById('editModalbio').classList.remove('hidden')
+    })
+    
+    document.getElementById('closeModalBio').addEventListener('click', function () {
+      document.getElementById('editModalbio').classList.add('hidden')
+    })
+    
+    document.getElementById('editModalbio').addEventListener('click', function (event) {
+      if (event.target === this) {
+        this.classList.add('hidden')
+      }
+    })
+    
+    // Profile photo upload handler
+    document.getElementById('profile-photo-upload').addEventListener('change', function () {
+      if (this.files && this.files[0]) {
+        const form = document.getElementById('profile-photo-form')
+        htmx.trigger('#profile-photo-form', 'submit')
+      }
+    })
+    
+    // Single HTMX afterRequest handler for all form submissions
+    document.body.addEventListener('htmx:afterRequest', function (event) {
+      if (event.detail.successful) {
+        try {
+          const jsonData = JSON.parse(event.detail.xhr.responseText)
+          console.log('Response:', jsonData)
+    
+          if (jsonData.success) {
+            // Handle profile photo update
+            if (jsonData.profile_photo) {
+              const profileImg = document.querySelector('[alt="Profile Photo"]')
+              profileImg.src = jsonData.profile_photo
+              alert('Profile photo updated successfully!')
+            }
+            // Handle contact info update
+            else if (event.target.closest('#editModal')) {
+              document.getElementById('editModal').classList.add('hidden')
+              alert('Contact information updated successfully!')
+              window.location.reload()
+            }
+            // Handle bio update
+            else if (event.target.closest('#editModalbio')) {
+              document.getElementById('editModalbio').classList.add('hidden')
+              alert('Biography updated successfully!')
+              window.location.reload()
+            }
+          } else {
+            alert(jsonData.error || 'Failed to update information')
+          }
+        } catch (error) {
+          console.error('Error parsing response:', error)
+          alert('An error occurred while updating information')
+        }
+      } else {
+        alert('Failed to update information. Please try again.')
+      }
+    })
+  </script>
 {% endblock %}

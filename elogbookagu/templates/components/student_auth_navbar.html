@@ -1,13 +1,11 @@
 <!-- Fixed Header -->
 <div class="flex flex-row dark:bg-gray-800 bg-gray-100 py-3 top-0 left-0 right-0 z-20 shadow-md">
-  <button id="sidebar-toggle" class="bg-gray-200 dark:bg-gray-800 py-2 px-4 ml-4 rounded-lg text-center cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95">
-    <i class="fas fa-bars"></i>
-  </button>
-  <h1 class="text-2xl font-bold text-center flex-grow">Student Dashboard</h1>
+  <button id="sidebar-toggle" class="bg-gray-200 dark:bg-gray-800 py-2 px-4 ml-4 rounded-lg text-center cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95"><i class="fas fa-bars"></i></button>
+  <h1 class="text-2xl font-bold text-center flex-grow">Welcome : {{ request.session.first_name }} {{ request.session.last_name }}</h1>
 </div>
 
 <!-- Fixed Sidebar -->
-<aside id="sidebar" class="w-64 bg-gray-100 dark:bg-gray-800 p-4 flex flex-col fixed top-16 bottom-0 left-0 transition-transform transform translate-x-0 z-30 md:translate-x-0">
+<aside id="sidebar" class="w-64 bg-gray-100 dark:bg-gray-800 p-4 flex flex-col fixed top-16 bottom-0 left-0 transition-transform transform -translate-x-full z-30 md:translate-x-0">
   <nav class="flex-grow">
     <ul>
       <li class="flex items-center space-x-2">
@@ -28,7 +26,7 @@
       </li>
       <li class="flex items-center space-x-2">
         <i class="fas fa-book-reader"></i>
-        <a href="{% url 'student_section:student_elog' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Elog</a>
+        <a href="{% url 'student_section:student_elog' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Fill Elog</a>
       </li>
       <li class="flex items-center space-x-2">
         <i class="fas fa-book-reader"></i>
@@ -58,6 +56,7 @@
 <div id="main-content" class="ml-64">
   <!-- Add the content of your page here -->
 </div>
+
 
 <!-- Scripts -->
 <script>
