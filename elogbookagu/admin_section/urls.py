@@ -1,18 +1,49 @@
 # admin_section/urls.py
 from django.urls import path
-from . import views
+from . import views  # For admin_dash, admin_blogs, etc.
 from django.contrib.auth import views as auth_views
+from .views_file.add_activity_views import (
+    add_activity_type,
+    edit_activity_type,
+    delete_activity_type,
+)
+from .views_file.CoreDiaProSession_views import (
+    core_dia_pro_session_list,
+    core_dia_pro_session_create,
+    core_dia_pro_session_update,
+    core_dia_pro_session_delete,
+)
 
-
-app_name = "admin_section"  # This is crucial for namespacing URLs
+app_name = "admin_section"
 
 urlpatterns = [
+    # others Urls
     path("", views.admin_dash, name="admin_dash"),
     path("admin_blogs/", views.admin_blogs, name="admin_blogs"),
     path("admin_support/", views.admin_support, name="admin_support"),
     path("admin_reviews/", views.admin_reviews, name="admin_reviews"),
     path("admin_profile/", views.admin_profile, name="admin_profile"),
     path("admin_final_records/", views.final_records, name="admin_final_records"),
-    # ye django ka logout class based view jo apne aap logout karwa dega if user want to log out
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+
+
+
+    # Activity Type urls
+    path("add_activity_type/", add_activity_type, name="add_activity_type"),
+    path(
+        "edit_activity_type/<int:activity_type_id>/",
+        edit_activity_type,
+        name="edit_activity_type",
+    ),
+    path(
+        "delete_activity_type/<int:activity_type_id>/",
+        delete_activity_type,
+        name="delete_activity_type",
+    ),
+
+
+    # Core Diagnosis Procedure Sessions urls
+   path('sessions/', core_dia_pro_session_create, name='core_dia_pro_session_list'),
+    path('sessions/edit/<int:pk>/', core_dia_pro_session_update, name='core_dia_pro_session_update'),
+    path('sessions/delete/<int:pk>/', core_dia_pro_session_delete, name='core_dia_pro_session_delete'),
 ]
