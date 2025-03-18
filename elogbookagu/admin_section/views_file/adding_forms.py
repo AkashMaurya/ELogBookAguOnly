@@ -1,6 +1,6 @@
 from django import forms
-from admin_section.models import ActivityType, CoreDiaProSession
-from publicpage.models import Department
+from admin_section.models import ActivityType, CoreDiaProSession, Department
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -51,39 +51,53 @@ class ActivityTypeForm(forms.ModelForm):
 class CoreDiaProSessionForm(forms.ModelForm):
     class Meta:
         model = CoreDiaProSession
-        fields = ["name", "activity_type", "department"]
+        fields = ['name', 'department', 'activity_type']
         widgets = {
-            "name": forms.TextInput(
-                attrs={
-                    "class": "w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:text-white",
-                    "placeholder": "Enter session name",
-                }
-            ),
-            "activity_type": forms.Select(
-                attrs={
-                    "class": "w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:text-white"
-                }
-            ),
-            "department": forms.Select(
-                attrs={
-                    "class": "w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:text-white"
-                }
-            ),
+            'department': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'department-select'
+            }),
+            'activity_type': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'activity-type-select',
+                'disabled': 'disabled'
+            })
         }
-        labels = {
-            "name": "Session Name",
-            "activity_type": "Activity Type",
-            "department": "Department",
-        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # If we have an instance, initialize activity_type queryset
+        if self.instance.pk:
+            self.fields['activity_type'].queryset = ActivityType.objects.filter(
+                department=self.instance.department
+            )
+        
+        # If we have initial data with department
+        if 'department' in self.data:
+            try:
+                department_id = int(self.data.get('department'))
+                self.fields['activity_type'].queryset = ActivityType.objects.filter(
+                    department_id=department_id
+                )
+            except (ValueError, TypeError):
+                pass
 
     def clean(self):
         cleaned_data = super().clean()
         name = cleaned_data.get("name")
         department = cleaned_data.get("department")
         activity_type = cleaned_data.get("activity_type")
-        logger.debug(f"Data provided for a new session:{name},{department},{activity_type}")
         
-        # Check for uniqueness
+        if department and activity_type and activity_type.department != department:
+            raise forms.ValidationError(
+                "Selected activity type does not belong to the selected department."
+            )
+
+        logger.debug(
+            f"Data provided for a new session:{name},{department},{activity_type}"
+        )
+
         try:
             if self.instance.pk:
                 existing_sessions = CoreDiaProSession.objects.exclude(

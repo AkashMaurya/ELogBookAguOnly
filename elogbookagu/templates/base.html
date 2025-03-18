@@ -1,113 +1,67 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en" class="{% if request.session.theme == 'dark' %}dark{% endif %} transition-colors duration-300">
+<html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>
-      {% block title %}
-        My Website
-      {% endblock %}
-    </title>
+    <meta charset="UTF-8" />  <!-- Theme Setup -->
+    <script>
+      // Check for saved theme preference, otherwise use system preference
+      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    </script>
 
     <!-- Styles -->
     <link rel="stylesheet" href="{% static 'css/main.css' %}" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-
-    <!-- Scripts -->
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://unpkg.com/htmx.org@1.9.4"></script>
-
-    <!-- Theme Setup -->
-    <script>
-      function setTheme() {
-        const theme = localStorage.getItem('theme') || '{% if request.session.theme %}{{ request.session.theme }}{% else %}light{% endif %}'
-        document.documentElement.classList.toggle('dark', theme === 'dark')
-      }
-      document.addEventListener('DOMContentLoaded', setTheme)
-    </script>
-
-    <!-- Inline CSS for basic layout -->
-    <style>
-      html,
-      body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-      }
-      body {
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-      }
-      main {
-        flex: 1 0 auto;
-        max-width: 1200px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 1rem;
-      }
-      footer {
-        flex-shrink: 0;
-        width: 100%;
-      }
-      @media (max-width: 768px) {
-        main {
-          padding: 0.5rem;
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
   </head>
 
-  <body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+  <body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
     {% block navbar %}
 
     {% endblock %}
 
-    <main>
-      {% load widget_tweaks %}
+    <main class="flex-grow">
       {% block content %}
 
       {% endblock %}
     </main>
- 
-      {% include './components/footer.html' %}
-  
+
+    {% include './components/footer.html' %}
+
     <!-- Theme Toggle Script -->
     <script>
+      function updateTheme(isDark) {
+        document.documentElement.classList.toggle('dark', isDark)
+        localStorage.setItem('theme', isDark ? 'dark' : 'light')
+      
+        const darkIcons = document.querySelectorAll('[id^="theme-toggle-dark-icon"]')
+        const lightIcons = document.querySelectorAll('[id^="theme-toggle-light-icon"]')
+      
+        darkIcons.forEach((icon) => icon.classList.toggle('hidden', !isDark))
+        lightIcons.forEach((icon) => icon.classList.toggle('hidden', isDark))
+      
+        fetch('/set-theme/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: JSON.stringify({ theme: isDark ? 'dark' : 'light' })
+        }).catch((error) => console.error('Theme update failed:', error))
+      }
+      
       document.addEventListener('DOMContentLoaded', () => {
-        const themeToggleBtn = document.getElementById('theme-toggle')
-        if (themeToggleBtn) {
-          const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon')
-          const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon')
-      
-          // Set initial icon state
-          const isDark = document.documentElement.classList.contains('dark')
-          themeToggleDarkIcon?.classList.toggle('hidden', !isDark)
-          themeToggleLightIcon?.classList.toggle('hidden', isDark)
-      
-          themeToggleBtn.addEventListener('click', () => {
-            const isDarkMode = document.documentElement.classList.toggle('dark')
-            themeToggleDarkIcon?.classList.toggle('hidden')
-            themeToggleLightIcon?.classList.toggle('hidden')
-            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light')
-      
-            fetch('/set-theme/', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-              },
-              body: JSON.stringify({ theme: isDarkMode ? 'dark' : 'light' })
-            }).catch((error) => console.error('Theme update failed:', error))
-          })
-        }
+        const isDark = localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        updateTheme(isDark)
       })
+      
+      window.toggleTheme = function () {
+        const isDark = !document.documentElement.classList.contains('dark')
+        updateTheme(isDark)
+      }
     </script>
-
-    <!-- Additional Scripts -->
-    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
-    <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
   </body>
 </html>

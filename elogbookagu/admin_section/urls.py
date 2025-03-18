@@ -12,6 +12,7 @@ from .views_file.CoreDiaProSession_views import (
     core_dia_pro_session_create,
     core_dia_pro_session_update,
     core_dia_pro_session_delete,
+    get_activity_types_by_department,
 )
 
 app_name = "admin_section"
@@ -40,10 +41,16 @@ urlpatterns = [
         delete_activity_type,
         name="delete_activity_type",
     ),
+    path(
+        'api/activity-types/<int:department_id>/',
+        get_activity_types_by_department,
+        name='get_activity_types_by_department'
+    ),
 
 
     # Core Diagnosis Procedure Sessions urls
-   path('sessions/', core_dia_pro_session_create, name='core_dia_pro_session_list'),
+    path('sessions/', core_dia_pro_session_list, name='core_dia_pro_session_list'),
+    path('sessions/create/', core_dia_pro_session_create, name='core_dia_pro_session_create'),
     path('sessions/edit/<int:pk>/', core_dia_pro_session_update, name='core_dia_pro_session_update'),
     path('sessions/delete/<int:pk>/', core_dia_pro_session_delete, name='core_dia_pro_session_delete'),
 ]

@@ -10,3 +10,5 @@ from .CoreDiaProSession_views import (
     core_dia_pro_session_update,
     core_dia_pro_session_delete,
 )
+
+from .resources import CoreDiaProSessionResource
