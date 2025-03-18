@@ -1,103 +1,95 @@
-{% comment %} Add this in your base template or navigation template {% endcomment %}
-<nav class="bg-white dark:bg-gray-800 shadow-md  w-full top-0 z-50 transition-colors duration-300">
+{% comment %}Add this in your base template or navigation template{% endcomment %}
+<nav class="bg-white dark:bg-gray-800 shadow-md w-full top-0 z-50 transition-colors duration-300">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6">
     <div class="flex justify-between items-center h-16">
       <!-- Logo -->
       <div class="flex-shrink-0 flex items-center">
-        <a href="{% url 'home_page' %}" class="text-xl font-bold text-gray-900 dark:text-white hover:scale-105 transition transform duration-300">
-          ElogBook
-        </a>
+        <a href="{% url 'home_page' %}" class="text-xl font-bold text-gray-900 dark:text-white hover:scale-105 transition transform duration-300">ElogBook</a>
       </div>
 
       <!-- Desktop Menu -->
       <div class="hidden md:flex items-center space-x-6">
         <div class="flex space-x-8">
-          {% with request.resolver_match.url_name as url_name %}
-          <a href="{% url 'home_page' %}" 
-   class="px-4 py-2 rounded-lg transition-all duration-300 transform 
+          {% with url_name=request.resolver_match.url_name %}
+            <a href="{% url 'home_page' %}"
+              class="px-4 py-2 rounded-lg transition-all duration-300 transform 
           hover:scale-110
           {% if url_name == 'home_page' %}
+                
             bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300
-          {% else %}
+
+              {% else %}
+                
             text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700
-          {% endif %}">
-  Home
-</a>
 
+              {% endif %}">
+              Home
+            </a>
 
-
-          <a href="{% url 'about_page' %}"
-             class="px-4 py-2 rounded-lg transition-all duration-300 transform 
+            <a href="{% url 'about_page' %}"
+              class="px-4 py-2 rounded-lg transition-all duration-300 transform 
            hover:scale-110
              {% if url_name == 'about_page' %}
+                
                bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300
-             {% else %}
+
+              {% else %}
+                
                text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700
-             {% endif %}">
-            About
-          </a>
-          <a href="{% url 'resources_page' %}"
-             class="px-4 py-2 rounded-lg transition-all duration-300 transform 
+
+              {% endif %}">
+              About
+            </a>
+            <a href="{% url 'resources_page' %}"
+              class="px-4 py-2 rounded-lg transition-all duration-300 transform 
           hover:scale-110
              {% if url_name == 'resources_page' %}
+                
                bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300
-             {% else %}
+
+              {% else %}
+                
                text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700
-             {% endif %}">
-            Resource
-          </a>
-          <a href="{% url 'update_page' %}"
-             class="px-4 py-2 rounded-lg transition-all duration-300 transform 
+
+              {% endif %}">
+              Resource
+            </a>
+            <a href="{% url 'update_page' %}"
+              class="px-4 py-2 rounded-lg transition-all duration-300 transform 
          hover:scale-110
              {% if url_name == 'update_page' %}
+                
                bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300
-             {% else %}
+
+              {% else %}
+                
                text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700
-             {% endif %}">
-            Updates
-          </a>
-         
+
+              {% endif %}">
+              Updates
+            </a>
           {% endwith %}
         </div>
 
         <!-- Login Button -->
-        <a href="{% url 'login' %}" 
-           class="px-4 py-2 bg-blue-600 text-white font-medium rounded-xl shadow-md hover:bg-blue-700 hover:shadow-lg transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5">
-          Login
-        </a>
+        <a href="{% url 'login' %}" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-xl shadow-md hover:bg-blue-700 hover:shadow-lg transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5">Login</a>
 
-        <!-- Theme Toggle -->
-        <button id="theme-toggle" 
-                class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300">
-          <svg id="theme-toggle-dark-icon" 
-               class="w-6 h-6 text-gray-900 dark:text-white hidden" 
-               fill="currentColor" 
-               viewBox="0 0 20 20">
-            <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"></path>
-          </svg>
-          <svg id="theme-toggle-light-icon" 
-               class="w-6 h-6 text-gray-900 dark:text-white" 
-               fill="currentColor" 
-               viewBox="0 0 20 20">
+        <!-- Theme Toggle Button -->
+        <button onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300" aria-label="Toggle theme">
+          <svg id="theme-toggle-dark-icon" class="w-6 h-6 text-gray-900 dark:text-white hidden" fill="currentColor" viewBox="0 0 20 20">
             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+          </svg>
+          <svg id="theme-toggle-light-icon" class="w-6 h-6 text-gray-900 dark:text-white" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"></path>
           </svg>
         </button>
       </div>
 
       <!-- Mobile Menu Button -->
       <div class="md:hidden">
-        <button id="mobile-menu-button" 
-                class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300">
-          <svg class="w-6 h-6 text-gray-900 dark:text-white" 
-               fill="none" 
-               stroke="currentColor" 
-               viewBox="0 0 24 24">
-            <path id="mobile-menu-icon" 
-                  stroke-linecap="round" 
-                  stroke-linejoin="round" 
-                  stroke-width="2" 
-                  d="M4 6h16M4 12h16M4 18h16">
-            </path>
+        <button id="mobile-menu-button" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300">
+          <svg class="w-6 h-6 text-gray-900 dark:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path id="mobile-menu-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
           </svg>
         </button>
       </div>
@@ -105,116 +97,156 @@
   </div>
 
   <!-- Mobile Menu -->
-  <div id="mobile-menu" 
-       class="md:hidden hidden transform transition-all duration-300 ease-in-out opacity-0 -translate-x-full">
+  <div id="mobile-menu" class="md:hidden hidden transform transition-all duration-300 ease-in-out opacity-0 -translate-x-full">
     <div class="px-4 py-3 space-y-2">
-      {% with request.resolver_match.url_name as url_name %}
-      <a href="{% url 'home_page' %}" 
-         class="block text-center p-3 rounded-lg transition-all duration-300 transform hover:scale-105
+      {% with url_name=request.resolver_match.url_name %}
+        <a href="{% url 'home_page' %}"
+          class="block text-center p-3 rounded-lg transition-all duration-300 transform hover:scale-105
          {% if url_name == 'home_page' %}
+            
            bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300
-         {% else %}
+
+          {% else %}
+            
            text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700
-         {% endif %}">
-        Home
-      </a>
-      <a href="{% url 'about_page' %}" 
-         class="block text-center p-3 rounded-lg transition-all duration-300 transform hover:scale-105
+
+          {% endif %}">
+          Home
+        </a>
+        <a href="{% url 'about_page' %}"
+          class="block text-center p-3 rounded-lg transition-all duration-300 transform hover:scale-105
          {% if url_name == 'about_page' %}
+            
            bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300
-         {% else %}
+
+          {% else %}
+            
            text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700
-         {% endif %}">
-        About
-      </a>
-      <a href="{% url 'resources_page' %}" 
-         class="block text-center p-3 rounded-lg transition-all duration-300 transform hover:scale-105
+
+          {% endif %}">
+          About
+        </a>
+        <a href="{% url 'resources_page' %}"
+          class="block text-center p-3 rounded-lg transition-all duration-300 transform hover:scale-105
          {% if url_name == 'resources_page' %}
+            
            bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300
-         {% else %}
+
+          {% else %}
+            
            text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700
-         {% endif %}">
-        Resource
-      </a>
-      <a href="{% url 'update_page' %}" 
-         class="block text-center p-3 rounded-lg transition-all duration-300 transform hover:scale-105
+
+          {% endif %}">
+          Resource
+        </a>
+        <a href="{% url 'update_page' %}"
+          class="block text-center p-3 rounded-lg transition-all duration-300 transform hover:scale-105
          {% if url_name == 'update_page' %}
+            
            bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300
-         {% else %}
+
+          {% else %}
+            
            text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700
-         {% endif %}">
-        Updates
-      </a>
-      
+
+          {% endif %}">
+          Updates
+        </a>
       {% endwith %}
 
       <div class="pt-2 flex justify-center">
-        <a href="{% url 'login' %}" 
-           class="px-4 py-2 bg-blue-600 text-white font-medium rounded-xl shadow-md hover:bg-blue-700 hover:shadow-lg transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5">
-          Login
-        </a>
+        <a href="{% url 'login' %}" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-xl shadow-md hover:bg-blue-700 hover:shadow-lg transition-all duration-300 transform hover:scale-105 hover:-translate-y-0.5">Login</a>
       </div>
     </div>
   </div>
 </nav>
 
-
-
 <script>
-  // Theme Toggle Functionality
-  const themeToggleBtn = document.getElementById('theme-toggle');
-  const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
-  const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
-  const html = document.documentElement;
-
-  // Function to set theme
-  function setTheme(isDark) {
-    if (isDark) {
-      html.classList.add('dark');
-      themeToggleDarkIcon.classList.remove('hidden');
-      themeToggleLightIcon.classList.add('hidden');
-    } else {
-      html.classList.remove('dark');
-      themeToggleDarkIcon.classList.add('hidden');
-      themeToggleLightIcon.classList.remove('hidden');
-    }
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-  }
-
-  // Initialize theme
   document.addEventListener('DOMContentLoaded', () => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    setTheme(savedTheme === 'dark');
-  });
-
-  // Theme toggle click handler
-  themeToggleBtn.addEventListener('click', () => {
-    const isDark = html.classList.contains('dark');
-    setTheme(!isDark);
-  });
-
-  // Mobile Menu Functionality
-  const mobileMenuBtn = document.getElementById('mobile-menu-button');
-  const mobileMenu = document.getElementById('mobile-menu');
-  const mobileMenuIcon = document.getElementById('mobile-menu-icon');
-
-  let isMenuOpen = false;
-
-  mobileMenuBtn.addEventListener('click', () => {
-    isMenuOpen = !isMenuOpen;
-    
-    // Update menu visibility with animation
-    if (isMenuOpen) {
-      mobileMenu.classList.remove('hidden', '-translate-x-full', 'opacity-0');
-      mobileMenu.classList.add('translate-x-0', 'opacity-100');
-      mobileMenuIcon.setAttribute('d', 'M6 18L18 6M6 6l12 12'); // X icon
-    } else {
-      mobileMenu.classList.remove('translate-x-0', 'opacity-100');
-      mobileMenu.classList.add('-translate-x-full', 'opacity-0');
-      setTimeout(() => {
-        mobileMenu.classList.add('hidden');
-      }, 300); // Match transition duration
-      mobileMenuIcon.setAttribute('d', 'M4 6h16M4 12h16M4 18h16'); // Hamburger icon
+    const sidebarToggleBtn = document.getElementById('sidebar-toggle')
+    const sidebar = document.getElementById('sidebar')
+  
+    if (!sidebarToggleBtn || !sidebar) {
+      console.error('Required elements not found:', { sidebarToggleBtn, sidebar })
+      return
     }
-  });
+  
+    function toggleSidebar() {
+      sidebar.classList.toggle('-translate-x-full')
+      sidebar.classList.toggle('translate-x-0')
+    }
+  
+    function closeSidebar() {
+      sidebar.classList.add('-translate-x-full')
+      sidebar.classList.remove('translate-x-0')
+    }
+  
+    sidebarToggleBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      toggleSidebar()
+    })
+  
+    document.addEventListener('click', (e) => {
+      if (!sidebar.contains(e.target) && !sidebarToggleBtn.contains(e.target)) {
+        closeSidebar()
+      }
+    })
+  
+    const addDataDropdown = document.getElementById('addDataDropdown')
+    const addDataMenu = document.getElementById('addDataMenu')
+  
+    if (addDataDropdown && addDataMenu) {
+      function toggleDropdown() {
+        addDataMenu.classList.toggle('hidden')
+        addDataDropdown.setAttribute('aria-expanded', !addDataMenu.classList.contains('hidden'))
+      }
+  
+      function closeDropdown() {
+        addDataMenu.classList.add('hidden')
+        addDataDropdown.setAttribute('aria-expanded', 'false')
+      }
+  
+      addDataDropdown.addEventListener('click', (e) => {
+        e.preventDefault()
+        toggleDropdown()
+      })
+  
+      document.addEventListener('click', (e) => {
+        if (!addDataDropdown.contains(e.target) && !addDataMenu.contains(e.target)) {
+          closeDropdown()
+        }
+      })
+    }
+  })
 </script>
+
+<!-- Styles -->
+<style>
+  #sidebar {
+    transition: transform 0.3s ease-in-out;
+  }
+  #sidebar.-translate-x-full {
+    transform: translateX(-100%);
+  }
+  #sidebar.translate-x-0 {
+    transform: translateX(0);
+  }
+  .container {
+    padding-top: 64px; /* Height of fixed header */
+    margin-left: 0 !important; /* Ensure content stays in place */
+  }
+  input,
+  select {
+    color: #000 !important;
+    background-color: #fff !important;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db !important;
+    border-radius: 0.375rem !important;
+  }
+  .dark input,
+  .dark select {
+    color: #fff !important;
+    background-color: #4a5568 !important;
+    border: 1px solid #6b7280 !important;
+  }
+</style>

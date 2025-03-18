@@ -1,7 +1,7 @@
 from django.db import models
 from accounts.models import Student, CustomUser
-from publicpage.models import Group, LogYear, LogYearSection
-from admin_section.models import ActivityType ,CoreDiaProSession
+# from admin_section.models import Group, LogYear, LogYearSection
+# from admin_section.models import ActivityType ,CoreDiaProSession
 # Create your models here.
 
 

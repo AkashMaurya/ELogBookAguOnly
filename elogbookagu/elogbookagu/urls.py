@@ -19,29 +19,27 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.contrib.auth import views as auth_views
-from django.views import defaults  # Import default error handlers
+from django.views.generic import TemplateView
+from .views import set_theme, custom_400, custom_403, custom_404, custom_500
 
-# Define custom error handlers (optional)
-handler400 = defaults.bad_request
-handler403 = defaults.permission_denied
-handler404 = defaults.page_not_found
-handler500 = defaults.server_error
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("", include("publicpage.urls")),
+    path("accounts/", include("accounts.urls")),
+    path("doctors/", include("doctor_section.urls")),
+    path("admin_section/", include("admin_section.urls")),
+    path("staff_section/", include("staff_section.urls")),
+    path("student_section/", include("student_section.urls")),
+    path("accounts/", include("allauth.urls")),
+    path('set-theme/', set_theme, name='set_theme'),
+]
 
-urlpatterns = (
-    [
-        path("admin/", admin.site.urls),
-        path("", include("publicpage.urls")),
-        path("accounts/", include("accounts.urls")),
-        path("doctors/", include("doctor_section.urls")),
-        path("admin_section/", include("admin_section.urls")),
-        path("staff_section/", include("staff_section.urls")),
-        path("student_section/", include("student_section.urls")),
-        path("accounts/", include("allauth.urls")),
-    ]
-    + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-)
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
-
-# ध्यान दें: Production में DEBUG=False होने पर आपको nginx या whitenoise का उपयोग करना होगा।
+# Error handlers
+handler400 = custom_400
+handler403 = custom_403
+handler404 = custom_404
+handler500 = custom_500

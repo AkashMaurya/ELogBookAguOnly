@@ -48,57 +48,92 @@
   </nav>
 </aside>
 
-<!-- Scripts -->
 <script>
-  // Theme toggle functionality
-  const themeToggleBtn = document.getElementById('theme-toggle')
-  const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon')
-  const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon')
-  themeToggleBtn.addEventListener('click', () => {
-    themeToggleDarkIcon.classList.toggle('hidden')
-    themeToggleLightIcon.classList.toggle('hidden')
-    document.documentElement.classList.toggle('dark')
-    localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light')
-  })
+  document.addEventListener('DOMContentLoaded', () => {
+    const sidebarToggleBtn = document.getElementById('sidebar-toggle')
+    const sidebar = document.getElementById('sidebar')
   
-  // Sidebar toggle functionality
-  const sidebarToggleBtn = document.getElementById('sidebar-toggle')
-  const sidebar = document.getElementById('sidebar')
-  const mainContent = document.getElementById('main-content')
-  
-  sidebarToggleBtn.addEventListener('click', () => {
-    // Toggle sidebar sliding in/out
-    sidebar.classList.toggle('-translate-x-full')
-  
-    // For larger screens, adjust the main content margin
-    if (window.innerWidth >= 768) {
-      // md breakpoint in Tailwind
-      if (sidebar.classList.contains('-translate-x-full')) {
-        mainContent.classList.remove('ml-64')
-      } else {
-        mainContent.classList.add('ml-64')
-      }
+    if (!sidebarToggleBtn || !sidebar) {
+      console.error('Required elements not found:', { sidebarToggleBtn, sidebar })
+      return
     }
-  })
   
-  // Optional: Close sidebar on small screens when clicking outside
-  document.addEventListener('click', (e) => {
-    if (window.innerWidth < 768) {
+    function toggleSidebar() {
+      sidebar.classList.toggle('-translate-x-full')
+      sidebar.classList.toggle('translate-x-0')
+    }
+  
+    function closeSidebar() {
+      sidebar.classList.add('-translate-x-full')
+      sidebar.classList.remove('translate-x-0')
+    }
+  
+    sidebarToggleBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      toggleSidebar()
+    })
+  
+    document.addEventListener('click', (e) => {
       if (!sidebar.contains(e.target) && !sidebarToggleBtn.contains(e.target)) {
-        sidebar.classList.add('-translate-x-full')
+        closeSidebar()
       }
+    })
+  
+    const addDataDropdown = document.getElementById('addDataDropdown')
+    const addDataMenu = document.getElementById('addDataMenu')
+  
+    if (addDataDropdown && addDataMenu) {
+      function toggleDropdown() {
+        addDataMenu.classList.toggle('hidden')
+        addDataDropdown.setAttribute('aria-expanded', !addDataMenu.classList.contains('hidden'))
+      }
+  
+      function closeDropdown() {
+        addDataMenu.classList.add('hidden')
+        addDataDropdown.setAttribute('aria-expanded', 'false')
+      }
+  
+      addDataDropdown.addEventListener('click', (e) => {
+        e.preventDefault()
+        toggleDropdown()
+      })
+  
+      document.addEventListener('click', (e) => {
+        if (!addDataDropdown.contains(e.target) && !addDataMenu.contains(e.target)) {
+          closeDropdown()
+        }
+      })
     }
   })
 </script>
 
 <!-- Styles -->
 <style>
-  /* Smooth transition for sidebar sliding */
   #sidebar {
     transition: transform 0.3s ease-in-out;
   }
-  /* When sidebar is hidden */
   #sidebar.-translate-x-full {
     transform: translateX(-100%);
+  }
+  #sidebar.translate-x-0 {
+    transform: translateX(0);
+  }
+  .container {
+    padding-top: 64px; /* Height of fixed header */
+    margin-left: 0 !important; /* Ensure content stays in place */
+  }
+  input,
+  select {
+    color: #000 !important;
+    background-color: #fff !important;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db !important;
+    border-radius: 0.375rem !important;
+  }
+  .dark input,
+  .dark select {
+    color: #fff !important;
+    background-color: #4a5568 !important;
+    border: 1px solid #6b7280 !important;
   }
 </style>

@@ -1,11 +1,11 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import *
+from admin_section.models import Department  # Updated import
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 import time  # Brute-force attack रोकने के लिए (optional)
 from django.core.exceptions import ValidationError
-from accounts.models import CustomUser , Student
+from accounts.models import CustomUser, Student
 from django.shortcuts import render, redirect
 
 

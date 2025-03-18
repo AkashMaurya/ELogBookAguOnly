@@ -35,7 +35,7 @@
   }
   
   .animate-bounce {
-    animation: bounce 1s infinite;
+    animation: bounce 1s ease-in-out;
   }
 
   <style>
@@ -63,16 +63,18 @@
 {% block content %}
   <!-- Hero Section -->
   <section class="bg-gradient-to-r from-blue-600 to-purple-700 dark:from-gray-800 dark:to-gray-900 py-20">
-    <div class="container mx-auto text-center">
+    <div class="text-center my-20">
       <h1 class="text-5xl font-bold text-white animate-fade-in">Welcome to ElogBook</h1>
-      <p class="mt-4 text-xl text-white animate-fade-in delay-100">Revolutionizing Medical Education at Arabian Gulf University</p>
-      <a href="#" class="mt-8 inline-block bg-white text-blue-600 dark:bg-gray-900 dark:text-white px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-bounce delay-200">Get Started</a>
+      <p class="mt-4 text-xl text-white">Revolutionizing Medical Education at Arabian Gulf University</p>
+      <a href="#" class="mt-8 inline-block bg-white text-blue-600 dark:bg-gray-900 dark:text-white px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition duration-300">Get Started</a>
     </div>
   </section>
+  
+  
 
   <!-- Featured Content (Modern Cards) -->
   <section class="py-16">
-    <div class="container mx-auto px-4">
+    <div class="text center p-15">
       <h2 class="text-3xl font-bold text-center mb-12 animate-fade-in">Our Services</h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <!-- Card 1 -->
@@ -105,9 +107,9 @@
 
 <!-- Gallery Section -->
 <section class="py-16 bg-gray-100 dark:bg-gray-800">
-  <div class="container mx-auto px-4">
+  <div class="text-center">
     <h2 class="text-3xl font-bold text-center mb-12">Our Gallery</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 p-3">
       <!-- Gallery Item 1 -->
       <div class="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-200">
         <img src="https://th.bing.com/th/id/OIP.SJfvSb5ewD3S-CPfuMOZowHaEL?rs=1&pid=ImgDetMain" alt="Gallery Image 1" class="w-full h-80 object-cover transition-transform duration-500 transform hover:scale-110" />
@@ -134,9 +136,9 @@
 
   <!-- Testimonials Section -->
   <section class="py-16">
-    <div class="container mx-auto px-4">
+    <div class="text-center">
       <h2 class="text-3xl font-bold text-center mb-12 animate-fade-in">What Our Users Say</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 p-4">
         <!-- Testimonial 1 -->
         <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-fade-in-left">
           <div class="flex items-center mb-4">
