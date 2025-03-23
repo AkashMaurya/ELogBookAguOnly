@@ -1,178 +1,168 @@
-<!-- Fixed Header -->
-<div class="flex flex-row items-center dark:bg-gray-900 bg-gray-100 py-3 shadow-md fixed top-0 left-0 right-0 z-40">
-  <button id="sidebar-toggle" class="bg-gray-200 dark:bg-gray-700 py-2 px-4 ml-4 rounded-lg text-center cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95 focus:outline-none" aria-label="Toggle Sidebar"><i class="fas fa-bars text-lg"></i></button>
-  <h1 class="text-2xl font-bold text-center flex-grow text-gray-800 dark:text-gray-100">Admin Dashboard</h1>
-</div>
+<div class="bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
+  <div class="flex overflow-hidden bg-green-300 dark:bg-gray-800">
+    <!-- Sidebar -->
+    
+    
+    <div class="fixed inset-y-0 left-0 bg-gradient-to-b from-gray-900 to-gray-800 text-white w-64 min-h-screen overflow-y-auto transform transition-all duration-300 ease-in-out -translate-x-full shadow-2xl mt-15" id="sidebar">
+      <div class="p-6">
+        <!-- Header with Logo/Title -->
+        <div class="flex items-center space-x-3 mb-8">
+          <span class="text-2xl font-bold bg-indigo-500 p-2 rounded-full w-10 h-10 flex items-center justify-center"></span>
+          <h1 class="text-2xl font-semibold tracking-wide">Admin Menu</h1>
+        </div>
 
-<!-- Sidebar -->
-<aside id="sidebar" class="w-64 bg-gray-100 dark:bg-gray-900 p-4 flex flex-col absolute top-16 bottom-0 left-0 transition-transform duration-300 ease-in-out transform -translate-x-full z-30">
-  <nav class="flex-grow">
-    <ul class="space-y-3">
-      <li>
-        <a href="{% url 'admin_section:admin_dash' %}" class="flex items-center space-x-3 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-          <i class="fas fa-chart-line text-lg"></i>
-          <span class="text-base font-medium">Dashboard</span>
-        </a>
-      </li>
-      <li>
-        <a href="{% url 'admin_section:admin_profile' %}" class="flex items-center space-x-3 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-          <i class="fas fa-user-md text-lg"></i>
-          <span class="text-base font-medium">Profile</span>
-        </a>
-      </li>
-      <li class="relative">
-        <div class="relative">
-          <button id="addDataDropdown" class="flex items-center w-full py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none transition-colors" aria-expanded="false" aria-controls="addDataMenu">
-            <i class="fas fa-plus-circle mr-3 text-lg"></i>
-            <span class="text-base font-medium">Add Data</span>
-          </button>
-          <div id="addDataMenu" class="absolute hidden mt-2 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
-            <a href="#" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Add Users</a>
-            <a href="#" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Add Year</a>
-            <a href="#" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Add ELog Year</a>
-            <a href="#" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Add Department</a>
-            <a href="{% url 'admin_section:add_activity_type' %}" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Add Activity Type</a>
-            <a href="{% url 'admin_section:core_dia_pro_session_list' %}" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Add Based Session Activity</a>
-            <a href="#" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Add Group</a>
-            <a href="#" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Add Student</a>
-            <a href="#" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Add Doctor</a>
-            <a href="#" class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">View Log Data</a>
+        <!-- Navigation -->
+        <ul class="space-y-2">
+          <li>
+            <a href="{% url 'admin_section:admin_dash' %}" class="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors duration-200">
+              <i class="fas fa-chart-line w-6 text-indigo-400"></i>
+              <span class="ml-3">Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'admin_section:admin_profile' %}" class="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors duration-200">
+              <i class="fas fa-user-md w-6 text-indigo-400"></i>
+              <span class="ml-3">Profile</span>
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'admin_section:admin_blogs' %}" class="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors duration-200">
+              <i class="far fa-edit w-6 text-indigo-400"></i>
+              <span class="ml-3">Posts</span>
+            </a>
+          </li>
+
+          <!-- Add Data Dropdown -->
+          <li class="relative" id="addDataDropdown">
+            <button class="flex items-center w-full p-3 rounded-lg hover:bg-gray-700 transition-colors duration-200 cursor-pointer" id="addDataButton">
+              <i class="fas fa-plus-circle w-6 text-indigo-400"></i>
+              <span class="ml-3">Add Data</span>
+            </button>
+            <div id="addDataMenu" class="hidden mt-1 w-full bg-gray-700 rounded-lg shadow-lg overflow-hidden">
+              <a href="#" class="block px-4 py-2 mt-2 text-sm text-gray-200 hover:bg-indigo-600 hover:text-white transition-colors duration-150">Add Users</a>
+              <a href="#" class="block px-4 py-2 text-sm text-gray-200 hover:bg-indigo-600 hover:text-white transition-colors duration-150">Add Year</a>
+              <a href="#" class="block px-4 py-2 text-sm text-gray-200 hover:bg-indigo-600 hover:text-white transition-colors duration-150">Add ELog Year</a>
+              <a href="#" class="block px-4 py-2 text-sm text-gray-200 hover:bg-indigo-600 hover:text-white transition-colors duration-150">Add Department</a>
+              <a href="{% url 'admin_section:add_activity_type' %}" class="block px-4 py-2 text-sm text-gray-200 hover:bg-indigo-600 hover:text-white transition-colors duration-150">Add Activity Type</a>
+              <a href="{% url 'admin_section:core_dia_pro_session_list' %}" class="block px-4 py-2 text-sm text-gray-200 hover:bg-indigo-600 hover:text-white transition-colors duration-150">Add Based Session Activity</a>
+              <a href="#" class="block px-4 py-2 text-sm text-gray-200 hover:bg-indigo-600 hover:text-white transition-colors duration-150">Add Group</a>
+              <a href="#" class="block px-4 py-2 text-sm text-gray-200 hover:bg-indigo-600 hover:text-white transition-colors duration-150">Add Student</a>
+              <a href="#" class="block px-4 py-2 text-sm text-gray-200 hover:bg-indigo-600 hover:text-white transition-colors duration-150">Add Doctor</a>
+              <a href="#" class="block px-4 py-2 text-sm text-gray-200 hover:bg-indigo-600 hover:text-white transition-colors duration-150">View Log Data</a>
+            </div>
+          </li>
+
+          <li>
+            <a href="{% url 'admin_section:admin_support' %}" class="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors duration-200">
+              <i class="fab fa-hire-a-helper w-6 text-indigo-400"></i>
+              <span class="ml-3">Support</span>
+            </a>
+          </li>
+          <li>
+            <a href="{% url 'admin_section:admin_reviews' %}" class="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors duration-200">
+              <i class="fas fa-book-reader w-6 text-indigo-400"></i>
+              <span class="ml-3">Review</span>
+            </a>
+          </li>
+         
+          <li>
+            <a href="{% url 'admin_section:admin_final_records' %}" class="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors duration-200">
+              <i class="fas fa-book-reader w-6 text-indigo-400"></i>
+              <span class="ml-3">All Records</span>
+            </a>
+          </li>
+          <li>
+            <form method="POST" action="{% url 'admin_section:logout' %}" class="w-full">
+              {% csrf_token %}
+              <button type="submit" class="flex items-center w-full p-3 rounded-lg hover:bg-red-600 transition-colors duration-200 text-left">
+                <i class="fas fa-sign-out-alt w-6 text-indigo-400"></i>
+                <span class="ml-3">Logout</span>
+              </button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Navbar -->
+      <div class="bg-white dark:bg-gray-800 shadow fixed top-0 left-0 right-0 z-20">
+        <div class="container mx-auto">
+          <div class="flex justify-between items-center py-4 px-2">
+            <h1 class="text-xl font-semibold text-gray-800 dark:text-white">Admin Dashboard</h1>
+            <div class="flex items-center space-x-4">
+              <!-- Theme Toggle Button -->
+              <button id="theme-toggle" class="text-gray-500 hover:text-gray-600 dark:text-gray-300 dark:hover:text-white focus:outline-none">
+                <img id="theme-toggle-light-icon" src="https://cdn-icons-png.flaticon.com/512/3073/3073231.png" alt="Sun Icon" class="w-6 h-6 hidden dark:block" />
+                <img id="theme-toggle-dark-icon" src="https://cdn-icons-png.flaticon.com/512/5261/5261988.png" alt="Moon Icon" class="w-6 h-6 block dark:hidden" />
+              </button>
+              <!-- Sidebar Toggle Button -->
+              <button class="text-gray-500 hover:text-gray-600 dark:text-gray-300 dark:hover:text-white cursor-pointer" id="open-sidebar">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
-      </li>
-      <li>
-        <a href="{% url 'admin_section:admin_blogs' %}" class="flex items-center space-x-3 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-          <i class="far fa-edit text-lg"></i>
-          <span class="text-base font-medium">Posts</span>
-        </a>
-      </li>
-      <li>
-        <a href="{% url 'admin_section:admin_support' %}" class="flex items-center space-x-3 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-          <i class="fab fa-hire-a-helper text-lg"></i>
-          <span class="text-base font-medium">Support</span>
-        </a>
-      </li>
-      <li>
-        <a href="{% url 'admin_section:admin_reviews' %}" class="flex items-center space-x-3 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-          <i class="fas fa-book-reader text-lg"></i>
-          <span class="text-base font-medium">Review</span>
-        </a>
-      </li>
-      <li>
-        <a href="{% url 'admin_section:admin_final_records' %}" class="flex items-center space-x-3 py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-          <i class="fas fa-book-reader text-lg"></i>
-          <span class="text-base font-medium">All Records</span>
-        </a>
-      </li>
-      <li>
-        <form method="POST" action="{% url 'admin_section:logout' %}">
-          {% csrf_token %}
-          <button type="submit" class="flex items-center space-x-3 w-full py-3 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none transition-colors">
-            <i class="fas fa-sign-out-alt text-lg"></i>
-            <span class="text-base font-medium">Logout</span>
-          </button>
-        </form>
-      </li>
-      <li class="mt-4">
-        <button id="theme-toggle" class="flex items-center text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300 transition duration-300 ease-in-out focus:outline-none" aria-label="Toggle Theme">
-          <svg id="theme-toggle-dark-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
-          </svg>
-          <svg id="theme-toggle-light-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path>
-          </svg>
-        </button>
-      </li>
-    </ul>
-  </nav>
-</aside>
+      </div>
+      <!-- Content Body -->
+      <div class="flex-1 mt-16 p-4">
+        <!-- Placeholder for content -->
+      </div>
+    </div>
+  </div>
 
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const sidebarToggleBtn = document.getElementById('sidebar-toggle')
-    const sidebar = document.getElementById('sidebar')
-  
-    if (!sidebarToggleBtn || !sidebar) {
-      console.error('Required elements not found:', { sidebarToggleBtn, sidebar })
-      return
+  <script>
+    // Theme handling
+    (function () {
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+      document.documentElement.classList.toggle('dark', isDark);
+      updateThemeIcons(isDark);
+    })();
+
+    function updateThemeIcons(isDark) {
+      document.getElementById('theme-toggle-light-icon').classList.toggle('hidden', !isDark);
+      document.getElementById('theme-toggle-dark-icon').classList.toggle('hidden', isDark);
     }
-  
-    function toggleSidebar() {
-      sidebar.classList.toggle('-translate-x-full')
-      sidebar.classList.toggle('translate-x-0')
-    }
-  
-    function closeSidebar() {
-      sidebar.classList.add('-translate-x-full')
-      sidebar.classList.remove('translate-x-0')
-    }
-  
-    sidebarToggleBtn.addEventListener('click', (e) => {
-      e.preventDefault()
-      toggleSidebar()
-    })
-  
+
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    themeToggleBtn.addEventListener('click', () => {
+      const isDark = !document.documentElement.classList.contains('dark');
+      document.documentElement.classList.toggle('dark', isDark);
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      updateThemeIcons(isDark);
+    });
+
+    // Sidebar and dropdown handling
+    const sidebar = document.getElementById('sidebar');
+    const openSidebarButton = document.getElementById('open-sidebar');
+    const addDataButton = document.getElementById('addDataButton');
+    const addDataMenu = document.getElementById('addDataMenu');
+
+    // Toggle sidebar
+    openSidebarButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sidebar.classList.toggle('-translate-x-full');
+    });
+
+    // Toggle dropdown
+    addDataButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      addDataMenu.classList.toggle('hidden');
+    });
+
+    // Close sidebar and dropdown when clicking outside
     document.addEventListener('click', (e) => {
-      if (!sidebar.contains(e.target) && !sidebarToggleBtn.contains(e.target)) {
-        closeSidebar()
+      if (!sidebar.contains(e.target) && !openSidebarButton.contains(e.target)) {
+        sidebar.classList.add('-translate-x-full');
       }
-    })
-  
-    const addDataDropdown = document.getElementById('addDataDropdown')
-    const addDataMenu = document.getElementById('addDataMenu')
-  
-    if (addDataDropdown && addDataMenu) {
-      function toggleDropdown() {
-        addDataMenu.classList.toggle('hidden')
-        addDataDropdown.setAttribute('aria-expanded', !addDataMenu.classList.contains('hidden'))
+      if (!addDataButton.contains(e.target) && !addDataMenu.contains(e.target)) {
+        addDataMenu.classList.add('hidden');
       }
-  
-      function closeDropdown() {
-        addDataMenu.classList.add('hidden')
-        addDataDropdown.setAttribute('aria-expanded', 'false')
-      }
-  
-      addDataDropdown.addEventListener('click', (e) => {
-        e.preventDefault()
-        toggleDropdown()
-      })
-  
-      document.addEventListener('click', (e) => {
-        if (!addDataDropdown.contains(e.target) && !addDataMenu.contains(e.target)) {
-          closeDropdown()
-        }
-      })
-    }
-  })
-</script>
-
-<!-- Styles -->
-<style>
-  #sidebar {
-    transition: transform 0.3s ease-in-out;
-  }
-  #sidebar.-translate-x-full {
-    transform: translateX(-100%);
-  }
-  #sidebar.translate-x-0 {
-    transform: translateX(0);
-  }
-  .container {
-    padding-top: 64px; /* Height of fixed header */
-    margin-left: 0 !important; /* Ensure content stays in place */
-  }
-  input,
-  select {
-    color: #000 !important;
-    background-color: #fff !important;
-    padding: 0.5rem;
-    border: 1px solid #d1d5db !important;
-    border-radius: 0.375rem !important;
-  }
-  .dark input,
-  .dark select {
-    color: #fff !important;
-    background-color: #4a5568 !important;
-    border: 1px solid #6b7280 !important;
-  }
-</style>
+    });
+  </script>
+</div>

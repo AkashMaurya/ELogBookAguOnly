@@ -53,9 +53,8 @@
 </aside>
 
 <!-- Main Content -->
-<div id="main-content" >
-  <!-- Add the content of your page here -->
-</div>
+
+<div class="container pt-16 px-4 ml-0 transition-all duration-300" id="main-content"></div>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -87,32 +86,6 @@
         closeSidebar()
       }
     })
-  
-    const addDataDropdown = document.getElementById('addDataDropdown')
-    const addDataMenu = document.getElementById('addDataMenu')
-  
-    if (addDataDropdown && addDataMenu) {
-      function toggleDropdown() {
-        addDataMenu.classList.toggle('hidden')
-        addDataDropdown.setAttribute('aria-expanded', !addDataMenu.classList.contains('hidden'))
-      }
-  
-      function closeDropdown() {
-        addDataMenu.classList.add('hidden')
-        addDataDropdown.setAttribute('aria-expanded', 'false')
-      }
-  
-      addDataDropdown.addEventListener('click', (e) => {
-        e.preventDefault()
-        toggleDropdown()
-      })
-  
-      document.addEventListener('click', (e) => {
-        if (!addDataDropdown.contains(e.target) && !addDataMenu.contains(e.target)) {
-          closeDropdown()
-        }
-      })
-    }
   })
 </script>
 

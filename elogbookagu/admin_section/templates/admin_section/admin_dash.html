@@ -1,18 +1,98 @@
 {% extends 'base.html' %}
 
 {% block title %}
-  Admin DashBoards
+  Admin Dashboard
 {% endblock %}
 
 {% block navbar %}
-{% include 'components/admin_auth_navbar.html' %}
+
 {% endblock %}
 
-<!-- Main Content -->
-
 {% block content %}
-  <div class="container mx-auto">
-    <h2 class="text-3xl font-bold">Welcome to Your Dashboards Section</h2>
-    <p>This is the main content area. Add your page content here.</p>
+  {% include 'components/admin_auth_navbar.html' %}
+  <div class="text-center my-1 px-4 sm:px-6 lg:px-8 py-8 transition-all duration-300">
+    <!-- Welcome Section -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8 mt-10">
+      <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Welcome to Your Dashboard</h2>
+      <p class="text-gray-600 dark:text-gray-300">Manage your e-logbook system efficiently from this central hub.</p>
+    </div>
+
+    <!-- Quick Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <!-- Students Card -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <div class="flex items-center">
+          <div class="p-3 rounded-full bg-blue-500 bg-opacity-20">
+            <i class="fas fa-user-graduate text-blue-500 text-2xl"></i>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Total Students</p>
+            <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Doctors Card -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <div class="flex items-center">
+          <div class="p-3 rounded-full bg-green-500 bg-opacity-20">
+            <i class="fas fa-user-md text-green-500 text-2xl"></i>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Total Doctors</p>
+            <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activities Card -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <div class="flex items-center">
+          <div class="p-3 rounded-full bg-purple-500 bg-opacity-20">
+            <i class="fas fa-tasks text-purple-500 text-2xl"></i>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Total Activities</p>
+            <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Records Card -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <div class="flex items-center">
+          <div class="p-3 rounded-full bg-yellow-500 bg-opacity-20">
+            <i class="fas fa-book text-yellow-500 text-2xl"></i>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Total Records</p>
+            <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <a href="{% url 'admin_section:add_activity_type' %}" class="flex items-center p-4 bg-blue-50 dark:bg-blue-900 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors">
+          <i class="fas fa-plus-circle text-blue-500 mr-3"></i>
+          <span class="text-blue-700 dark:text-blue-200">Add Activity Type</span>
+        </a>
+        <a href="{% url 'admin_section:core_dia_pro_session_list' %}" class="flex items-center p-4 bg-green-50 dark:bg-green-900 rounded-lg hover:bg-green-100 dark:hover:bg-green-800 transition-colors">
+          <i class="fas fa-calendar-plus text-green-500 mr-3"></i>
+          <span class="text-green-700 dark:text-green-200">Add Session Activity</span>
+        </a>
+        <a href="{% url 'admin_section:admin_reviews' %}" class="flex items-center p-4 bg-purple-50 dark:bg-purple-900 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-800 transition-colors">
+          <i class="fas fa-star text-purple-500 mr-3"></i>
+          <span class="text-purple-700 dark:text-purple-200">Review Activities</span>
+        </a>
+        <a href="{% url 'admin_section:admin_final_records' %}" class="flex items-center p-4 bg-yellow-50 dark:bg-yellow-900 rounded-lg hover:bg-yellow-100 dark:hover:bg-yellow-800 transition-colors">
+          <i class="fas fa-book-reader text-yellow-500 mr-3"></i>
+          <span class="text-yellow-700 dark:text-yellow-200">View Records</span>
+        </a>
+      </div>
+    </div>
   </div>
 {% endblock %}

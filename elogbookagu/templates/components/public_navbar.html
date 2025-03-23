@@ -97,7 +97,7 @@
   </div>
 
   <!-- Mobile Menu -->
-  <div id="mobile-menu" class="md:hidden hidden transform transition-all duration-300 ease-in-out opacity-0 -translate-x-full">
+  <div id="mobile-menu" class="md:hidden hidden">
     <div class="px-4 py-3 space-y-2">
       {% with url_name=request.resolver_match.url_name %}
         <a href="{% url 'home_page' %}"
@@ -163,74 +163,29 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    const sidebarToggleBtn = document.getElementById('sidebar-toggle')
-    const sidebar = document.getElementById('sidebar')
-  
-    if (!sidebarToggleBtn || !sidebar) {
-      console.error('Required elements not found:', { sidebarToggleBtn, sidebar })
-      return
-    }
-  
-    function toggleSidebar() {
-      sidebar.classList.toggle('-translate-x-full')
-      sidebar.classList.toggle('translate-x-0')
-    }
-  
-    function closeSidebar() {
-      sidebar.classList.add('-translate-x-full')
-      sidebar.classList.remove('translate-x-0')
-    }
-  
-    sidebarToggleBtn.addEventListener('click', (e) => {
-      e.preventDefault()
-      toggleSidebar()
-    })
-  
-    document.addEventListener('click', (e) => {
-      if (!sidebar.contains(e.target) && !sidebarToggleBtn.contains(e.target)) {
-        closeSidebar()
-      }
-    })
-  
-    const addDataDropdown = document.getElementById('addDataDropdown')
-    const addDataMenu = document.getElementById('addDataMenu')
-  
-    if (addDataDropdown && addDataMenu) {
-      function toggleDropdown() {
-        addDataMenu.classList.toggle('hidden')
-        addDataDropdown.setAttribute('aria-expanded', !addDataMenu.classList.contains('hidden'))
-      }
-  
-      function closeDropdown() {
-        addDataMenu.classList.add('hidden')
-        addDataDropdown.setAttribute('aria-expanded', 'false')
-      }
-  
-      addDataDropdown.addEventListener('click', (e) => {
-        e.preventDefault()
-        toggleDropdown()
-      })
-  
-      document.addEventListener('click', (e) => {
-        if (!addDataDropdown.contains(e.target) && !addDataMenu.contains(e.target)) {
-          closeDropdown()
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const mobileMenuIcon = document.getElementById('mobile-menu-icon');
+
+    if (mobileMenuButton && mobileMenu && mobileMenuIcon) {
+      mobileMenuButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+        // Change the icon
+        if (mobileMenu.classList.contains('hidden')) {
+          mobileMenuIcon.setAttribute('d', 'M4 6h16M4 12h16M4 18h16'); // Hamburger
+        } else {
+          mobileMenuIcon.setAttribute('d', 'M6 18L18 6M6 6l12 12'); // Close (X)
         }
-      })
+      });
+    } else {
+      console.error('One or more mobile menu elements not found.');
     }
-  })
+  });
 </script>
 
 <!-- Styles -->
 <style>
-  #sidebar {
-    transition: transform 0.3s ease-in-out;
-  }
-  #sidebar.-translate-x-full {
-    transform: translateX(-100%);
-  }
-  #sidebar.translate-x-0 {
-    transform: translateX(0);
-  }
+  /* Remove the sidebar style */
   .container {
     padding-top: 64px; /* Height of fixed header */
     margin-left: 0 !important; /* Ensure content stays in place */

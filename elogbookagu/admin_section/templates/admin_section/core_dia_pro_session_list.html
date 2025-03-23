@@ -1,6 +1,10 @@
 <!-- admin_section/core_dia_pro_session_list.html -->
 {% extends 'base.html' %}
 
+{% block navbar %}
+  {% include 'components/admin_auth_navbar.html' %}
+{% endblock %}
+
 {% block content %}
 <div class="container mx-auto px-4 py-8">
     <h1 class="text-2xl font-bold mb-6">Core Diagnosis Procedure Sessions</h1>
