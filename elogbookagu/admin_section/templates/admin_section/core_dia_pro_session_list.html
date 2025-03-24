@@ -150,7 +150,7 @@
       const departmentSelect = document.getElementById('id_department')
       const activityTypeSelect = document.getElementById('id_activity_type')
       const sessionNameInput = document.getElementById('id_name')
-    
+      
       if (!departmentSelect || !activityTypeSelect || !sessionNameInput) {
         console.error('One or more form elements not found:', {
           departmentSelect: !!departmentSelect,
@@ -159,44 +159,47 @@
         })
         return
       }
-    
+      
+      // Only disable activity type select in create mode
+      if (!document.querySelector('[name="editing"]')) {
+        activityTypeSelect.disabled = true
+      }
+      
       departmentSelect.addEventListener('change', function () {
         const departmentId = this.value
-        activityTypeSelect.innerHTML = '<option value="">Select Activity Type</option>'
-        activityTypeSelect.disabled = true
-        sessionNameInput.value = ''
-    
-        if (departmentId) {
-          fetch(`/admin_section/api/activity-types/${departmentId}/`, {
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          })
-            .then((response) => {
-              if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
-              }
-              return response.json()
-            })
-            .then((data) => {
-              if (data && Array.isArray(data)) {
-                data.forEach((activity) => {
-                  const option = document.createElement('option')
-                  option.value = activity.id
-                  option.text = activity.name
-                  activityTypeSelect.appendChild(option)
-                })
-                activityTypeSelect.disabled = false
-              } else {
-                console.error('Invalid data format:', data)
-                activityTypeSelect.innerHTML = '<option value="">No activity types available</option>'
-              }
-            })
-            .catch((error) => {
-              console.error('Error fetching activity types:', error)
-              activityTypeSelect.innerHTML = '<option value="">Error loading activity types</option>'
-            })
+        if (!departmentId) {
+          activityTypeSelect.innerHTML = '<option value="">Select Activity Type</option>'
+          activityTypeSelect.disabled = true
+          sessionNameInput.value = ''
+          return
         }
+        
+        fetch(`/admin_section/api/activity-types/${departmentId}/`, {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+          return response.json()
+        })
+        .then(data => {
+          activityTypeSelect.innerHTML = '<option value="">Select Activity Type</option>'
+          if (data && Array.isArray(data)) {
+            data.forEach(activity => {
+              const option = document.createElement('option')
+              option.value = activity.id
+              option.text = activity.name
+              activityTypeSelect.appendChild(option)
+            })
+            activityTypeSelect.disabled = false
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching activity types:', error)
+          activityTypeSelect.innerHTML = '<option value="">Error loading activity types</option>'
+          activityTypeSelect.disabled = true
+        })
       })
     })
   </script>

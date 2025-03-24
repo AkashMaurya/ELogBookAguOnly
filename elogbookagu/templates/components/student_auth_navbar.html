@@ -1,7 +1,9 @@
 <!-- Fixed Header -->
-<div class="flex flex-row dark:bg-gray-800 bg-gray-100 py-3 top-0 left-0 right-0 z-20 shadow-md">
-  <button id="sidebar-toggle" class="bg-gray-200 dark:bg-gray-800 py-2 px-4 ml-4 rounded-lg text-center cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95"><i class="fas fa-bars"></i></button>
-  <h1 class="text-2xl font-bold text-center flex-grow">Welcome : {{ request.session.first_name }} {{ request.session.last_name }}</h1>
+<div class="flex flex-row dark:bg-gray-800 bg-gray-100 py-3 fixed top-0 left-0 right-0 z-20 shadow-md">
+  <button id="sidebar-toggle" class="bg-gray-200 dark:bg-gray-800 py-2 px-4 ml-4 rounded-lg text-center cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95">
+    <i class="fas fa-bars"></i>
+  </button>
+  <h1 class="text-2xl font-bold text-center flex-grow dark:text-white">Welcome: {{ request.session.first_name }} {{ request.session.last_name }}</h1>
 </div>
 
 <!-- Fixed Sidebar -->
@@ -32,19 +34,21 @@
         <i class="fas fa-book-reader"></i>
         <a href="{% url 'student_section:student_final_records' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Your Records</a>
       </li>
-      <form method="POST" action="{% url 'student_section:logout' %}">
-        <li class="flex items-center space-x-2">
+      <li class="flex items-center space-x-2">
+        <form method="POST" action="{% url 'student_section:logout' %}" class="w-full">
           {% csrf_token %}
-          <button type="submit" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"><i class="fas fa-sign-out-alt"></i> Logout</button>
-        </li>
-      </form>
+          <button type="submit" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 w-full text-left">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
+        </form>
+      </li>
       <li class="flex items-center space-x-2 mt-4">
-        <button id="theme-toggle" class="text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300 transition duration-300 ease-in-out">
+        <button id="theme-toggle" onclick="toggleTheme()" class="text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300 transition duration-300 ease-in-out">
           <svg id="theme-toggle-dark-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
           </svg>
           <svg id="theme-toggle-light-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path>
+            <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path>
           </svg>
         </button>
       </li>
@@ -52,44 +56,43 @@
   </nav>
 </aside>
 
-<!-- Main Content -->
 
-<div class="container pt-16 px-4 ml-0 transition-all duration-300" id="main-content"></div>
 
+<!-- JavaScript for Sidebar and Theme -->
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    const sidebarToggleBtn = document.getElementById('sidebar-toggle')
-    const sidebar = document.getElementById('sidebar')
-  
+    const sidebarToggleBtn = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+
     if (!sidebarToggleBtn || !sidebar) {
-      console.error('Required elements not found:', { sidebarToggleBtn, sidebar })
-      return
+      console.error('Required elements not found:', { sidebarToggleBtn, sidebar });
+      return;
     }
-  
+
     function toggleSidebar() {
-      sidebar.classList.toggle('-translate-x-full')
-      sidebar.classList.toggle('translate-x-0')
+      sidebar.classList.toggle('-translate-x-full');
+      sidebar.classList.toggle('translate-x-0');
     }
-  
+
     function closeSidebar() {
-      sidebar.classList.add('-translate-x-full')
-      sidebar.classList.remove('translate-x-0')
+      sidebar.classList.add('-translate-x-full');
+      sidebar.classList.remove('translate-x-0');
     }
-  
+
     sidebarToggleBtn.addEventListener('click', (e) => {
-      e.preventDefault()
-      toggleSidebar()
-    })
-  
+      e.preventDefault();
+      toggleSidebar();
+    });
+
     document.addEventListener('click', (e) => {
       if (!sidebar.contains(e.target) && !sidebarToggleBtn.contains(e.target)) {
-        closeSidebar()
+        closeSidebar();
       }
-    })
-  })
+    });
+  });
 </script>
 
-<!-- Styles -->
+<!-- Inline Styles -->
 <style>
   #sidebar {
     transition: transform 0.3s ease-in-out;
@@ -104,16 +107,14 @@
     padding-top: 64px; /* Height of fixed header */
     margin-left: 0 !important; /* Ensure content stays in place */
   }
-  input,
-  select {
+  input, select {
     color: #000 !important;
     background-color: #fff !important;
     padding: 0.5rem;
     border: 1px solid #d1d5db !important;
     border-radius: 0.375rem !important;
   }
-  .dark input,
-  .dark select {
+  .dark input, .dark select {
     color: #fff !important;
     background-color: #4a5568 !important;
     border: 1px solid #6b7280 !important;

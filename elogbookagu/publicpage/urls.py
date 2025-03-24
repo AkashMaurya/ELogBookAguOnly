@@ -7,12 +7,16 @@ urlpatterns = [
     path("about/", views.about, name="about_page"),
     path("resources/", views.resources, name="resources_page"),
     path("update/", views.update, name="update_page"),
- 
-    path("login/", views.login, name="login"),
-
+    path("ebookjournals/", views.ebookjournals, name="ebookjournals_page"),
+    path(
+        "ebookjournals/<str:pdf_name>/",
+        views.ebookjournals,
+        name="ebookjournals_download",
+    ),
 
 
     
+    path("login/", views.login, name="login"),
     # Password reset URLs
     path(
         "password_reset/", auth_views.PasswordResetView.as_view(), name="password_reset"

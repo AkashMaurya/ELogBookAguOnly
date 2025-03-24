@@ -86,69 +86,46 @@ def core_dia_pro_session_create(request):
 
 @login_required
 def core_dia_pro_session_update(request, pk):
-    session = get_object_or_404(CoreDiaProSession, pk=pk)
-
-    if request.method == "POST":
-        form = CoreDiaProSessionForm(request.POST, instance=session)
-        if form.is_valid():
-            try:
+    try:
+        session = get_object_or_404(CoreDiaProSession, pk=pk)
+        
+        if request.method == "POST":
+            form = CoreDiaProSessionForm(request.POST, instance=session)
+            if form.is_valid():
                 updated_session = form.save()
                 messages.success(request, f'Session "{updated_session.name}" updated successfully!')
                 return redirect("admin_section:core_dia_pro_session_list")
-            except Exception as e:
-                logger.error(f"Error updating session: {e}")
-                messages.error(request, "An error occurred while updating the session.")
+            else:
+                messages.error(request, "Please correct the errors below.")
         else:
-            messages.error(request, "Please correct the errors below.")
-            # Fall through to render the form with errors
-    else:
-        form = CoreDiaProSessionForm(instance=session)
+            form = CoreDiaProSessionForm(instance=session)
 
-    # Get all sessions for the list
-    sessions = CoreDiaProSession.objects.all().order_by("name")
-    search_query = request.GET.get('q', '').strip()
-    if search_query:
-        sessions = sessions.filter(
-            Q(name__icontains=search_query) |
-            Q(activity_type__name__icontains=search_query) |
-            Q(department__name__icontains=search_query)
-        )
-    
-    paginator = Paginator(sessions, 10)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+        # Get all sessions for the list
+        sessions = CoreDiaProSession.objects.all().order_by("name")
+        search_query = request.GET.get('q', '').strip()
+        if search_query:
+            sessions = sessions.filter(
+                Q(name__icontains=search_query) |
+                Q(activity_type__name__icontains=search_query) |
+                Q(department__name__icontains=search_query)
+            )
+        
+        paginator = Paginator(sessions, 10)
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
 
-    context = {
-        "core_sessions": page_obj,
-        "form": form,
-        "editing": True,
-        "editing_session": session,
-        "search_query": search_query,
-    }
-    return render(request, "admin_section/core_dia_pro_session_list.html", context)
-# You'll also need the list view if not already present
-@login_required
-def core_dia_pro_session_list(request):
-    sessions = CoreDiaProSession.objects.all().order_by("name")
-    search_query = request.GET.get('q', '').strip()
-    if search_query:
-        sessions = sessions.filter(
-            Q(name__icontains=search_query) |
-            Q(activity_type__name__icontains=search_query) |
-            Q(department__name__icontains=search_query)
-        )
-    
-    paginator = Paginator(sessions, 10)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
-
-    context = {
-        "core_sessions": page_obj,
-        "form": CoreDiaProSessionForm(),
-        "editing": False,
-        "search_query": search_query,
-    }
-    return render(request, "admin_section/core_dia_pro_session_list.html", context)
+        context = {
+            "core_sessions": page_obj,
+            "form": form,
+            "editing": True,
+            "editing_session": session,
+            "search_query": search_query,
+        }
+        return render(request, "admin_section/core_dia_pro_session_list.html", context)
+    except Exception as e:
+        logger.error(f"Error updating session with pk {pk}: {e}")
+        messages.error(request, "An error occurred while updating the session.")
+        return redirect("admin_section:core_dia_pro_session_list")
 
 
 
