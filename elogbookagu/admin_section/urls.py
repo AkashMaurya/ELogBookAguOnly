@@ -1,4 +1,3 @@
-# admin_section/urls.py
 from django.urls import path
 from . import views  # For admin_dash, admin_blogs, etc.
 from django.contrib.auth import views as auth_views
@@ -18,7 +17,7 @@ from .views_file.CoreDiaProSession_views import (
 app_name = "admin_section"
 
 urlpatterns = [
-    # others Urls
+    # Other URLs
     path("", views.admin_dash, name="admin_dash"),
     path("admin_blogs/", views.admin_blogs, name="admin_blogs"),
     path("admin_support/", views.admin_support, name="admin_support"),
@@ -27,9 +26,7 @@ urlpatterns = [
     path("admin_final_records/", views.final_records, name="admin_final_records"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
 
-
-
-    # Activity Type urls
+    # Activity Type URLs
     path("add_activity_type/", add_activity_type, name="add_activity_type"),
     path(
         "edit_activity_type/<int:activity_type_id>/",
@@ -47,8 +44,7 @@ urlpatterns = [
         name='get_activity_types_by_department'
     ),
 
-
-    # Core Diagnosis Procedure Sessions urls
+    # Core Diagnosis Procedure Sessions URLs
     path('sessions/', core_dia_pro_session_list, name='core_dia_pro_session_list'),
     path('sessions/create/', core_dia_pro_session_create, name='core_dia_pro_session_create'),
     path('sessions/edit/<int:pk>/', core_dia_pro_session_update, name='core_dia_pro_session_update'),
