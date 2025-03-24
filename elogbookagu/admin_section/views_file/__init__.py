@@ -9,6 +9,7 @@ from .CoreDiaProSession_views import (
     core_dia_pro_session_create,
     core_dia_pro_session_update,
     core_dia_pro_session_delete,
+    get_activity_types_by_department,  # Added this import
 )
 
 from .resources import CoreDiaProSessionResource

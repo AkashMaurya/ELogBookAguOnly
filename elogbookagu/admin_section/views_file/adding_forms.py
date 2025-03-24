@@ -59,19 +59,23 @@ class CoreDiaProSessionForm(forms.ModelForm):
             }),
             'activity_type': forms.Select(attrs={
                 'class': 'form-select',
-                'id': 'activity-type-select',
-                'disabled': 'disabled'
+                'id': 'activity-type-select'
             })
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # If we have an instance, initialize activity_type queryset
+        # If we have an instance (editing mode)
         if self.instance.pk:
             self.fields['activity_type'].queryset = ActivityType.objects.filter(
                 department=self.instance.department
             )
+            # Don't disable activity_type in edit mode
+            self.fields['activity_type'].widget.attrs.pop('disabled', None)
+        else:
+            # Only disable in create mode
+            self.fields['activity_type'].widget.attrs['disabled'] = 'disabled'
         
         # If we have initial data with department
         if 'department' in self.data:
@@ -95,7 +99,10 @@ class CoreDiaProSessionForm(forms.ModelForm):
             )
 
         logger.debug(
-            f"Data provided for a new session:{name},{department},{activity_type}"
+            "Data provided for a new session: name=%s, department=%s, activity_type=%s",
+            name,
+            department.name if department else None,
+            activity_type.name if activity_type else None
         )
 
         try:
@@ -113,7 +120,13 @@ class CoreDiaProSessionForm(forms.ModelForm):
                     "A session with this name already exists for this department and activity type."
                 )
         except Exception as e:
-            logger.error(f"Error validating unique fields:{e}")
+            logger.error(
+                "Error validating unique fields for session: name=%s, department=%s, activity_type=%s, error=%s",
+                name,
+                department.name if department else None,
+                activity_type.name if activity_type else None,
+                str(e)
+            )
             raise forms.ValidationError(
                 "An error was raised while validating uniqueness"
             )
