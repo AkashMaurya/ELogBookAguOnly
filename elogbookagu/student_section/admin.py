@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import StudentLogFormModel
+from .models import StudentLogFormModel, SupportTicket
 from import_export.admin import ImportExportModelAdmin
 
 
@@ -11,7 +11,7 @@ class StudentLogFormAdmin(ImportExportModelAdmin):
     search_fields = ('student__user__username', 'student__user__first_name', 'patient_id', 'description')
     readonly_fields = ('created_at', 'updated_at')
     date_hierarchy = 'date'
-    
+
     fieldsets = (
         ('Basic Information', {
             'fields': ('student', 'date', 'patient_id')
@@ -30,6 +30,28 @@ class StudentLogFormAdmin(ImportExportModelAdmin):
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(SupportTicket)
+class SupportTicketAdmin(ImportExportModelAdmin):
+    list_display = ('student', 'subject', 'date_created', 'status')
+    list_filter = ('status',)
+    search_fields = ('student__user__username', 'student__user__first_name', 'subject', 'description')
+    readonly_fields = ('date_created', 'resolved_date')
+    date_hierarchy = 'date_created'
+
+    fieldsets = (
+        ('Ticket Information', {
+            'fields': ('student', 'subject', 'description')
+        }),
+        ('Status', {
+            'fields': ('status', 'admin_comments', 'resolved_date')
+        }),
+        ('Timestamps', {
+            'fields': ('date_created',),
             'classes': ('collapse',)
         }),
     )

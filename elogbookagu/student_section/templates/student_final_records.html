@@ -1,18 +1,237 @@
 {% extends 'base.html' %}
 
 {% block title %}
-  Student Record
+  Student Records
 {% endblock %}
 
 {% block navbar %}
   {% include './components/student_auth_navbar.html' %}
 {% endblock %}
 
-<!-- Main Content -->
-
 {% block content %}
-  <div class="text-center p-10 mt-10 ">
-    <h2 class="text-3xl font-bold">Welcome to Your Record Section</h2>
-    <p>This is the main content area. Add your page content here.</p>
+  <div class="text-center p-10 mt-10">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 dark:text-white">
+        {% if selected_status == 'pending' %}
+          Your Pending Review Records
+        {% elif selected_status == 'reviewed' %}
+          Your Reviewed Records
+        {% else %}
+          All Your Records
+        {% endif %}
+      </h2>
+
+      <!-- PDF Download Button -->
+      <a href="{% url 'student_section:generate_records_pdf' %}?status={{ selected_status }}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_activity_type %}&activity_type={{ selected_activity_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+         class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        Download PDF
+      </a>
+    </div>
+
+    <!-- Student Info -->
+    <div class="mb-6 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <strong>Student:</strong> {{ student_info.student_name }}
+        </div>
+        <div>
+          <strong>ID:</strong> {{ student_info.student_id }}
+        </div>
+        <div>
+          <strong>Year:</strong> {{ student_info.year_name }}
+        </div>
+        <div>
+          <strong>Section:</strong> {{ student_info.section_name }}
+        </div>
+        <div>
+          <strong>Group:</strong> {{ student_info.group_name }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-4 mb-6">
+      <form method="get" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <!-- Status Filter -->
+          <div>
+            <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+            <select name="status" id="status" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" onchange="this.form.submit()">
+              <option value="all"{% if selected_status == 'all' %}selected{% endif %}>All Records</option>
+              <option value="pending"{% if selected_status == 'pending' %} selected{% endif %}>Pending Review</option>
+              <option value="reviewed"{% if selected_status == 'reviewed' %} selected{% endif %}>Reviewed</option>
+            </select>
+          </div>
+
+          <!-- Department Filter -->
+          <div>
+            <label for="department" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Department</label>
+            <select name="department" id="department" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" onchange="this.form.submit()">
+              <option value="">All Departments</option>
+              {% for dept in departments %}
+                <option value="{{ dept.id }}" {% if selected_department == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Activity Type Filter -->
+          <div>
+            <label for="activity_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Activity Type</label>
+            <select name="activity_type" id="activity_type" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" onchange="this.form.submit()">
+              <option value="">All Activity Types</option>
+              {% for activity in activity_types %}
+                <option value="{{ activity.id }}" {% if selected_activity_type == activity.id|stringformat:'s' %}selected{% endif %}>{{ activity.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Search Box -->
+          <div class="md:col-span-2">
+            <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+            <div class="mt-1 relative rounded-md shadow-sm">
+              <input type="text" name="q" id="search" class="focus:ring-blue-500 focus:border-blue-500 block w-full pl-3 pr-12 sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Search by patient ID, description, or diagnosis" value="{{ search_query }}">
+              <div class="absolute inset-y-0 right-0 flex items-center">
+                <button type="submit" class="h-full px-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Records Table -->
+    <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
+      {% if logs %}
+        <!-- Table Container for Scroll -->
+        <div class="table-container" style="overflow-x: auto; width: 100%;">
+          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-center">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Department</th>
+                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Activity Type</th>
+                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Core Diagnosis</th>
+                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tutor</th>
+                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700 text-center">
+              {% for log in logs %}
+                <tr class="{% cycle 'bg-white' 'bg-gray-50' %} dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ log.date }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ log.department.name }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ log.activity_type.name }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ log.core_diagnosis.name }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ log.tutor.user.get_full_name }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                    {% if log.is_reviewed %}
+                      {% if log.reviewer_comments and 'reject' in log.reviewer_comments|lower %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100">
+                          <i class="fa-solid fa-xmark mr-1"></i> &nbsp; Rejected
+                        </span>
+                      {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium  " >
+                          <i class="fa-solid fa-check mr-1"></i> &nbsp; Approved
+                        </span>
+                      {% endif %}
+                    {% else %}
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> &nbsp; Pending
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div class="flex space-x-2">
+                      <a href="#" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" title="View">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      </a>
+                      <a href="#" class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300" title="Edit">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </a>
+                      <a href="#" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="Delete">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if logs.has_other_pages %}
+          <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <div class="text-sm text-gray-700 dark:text-gray-300">
+              Showing {{ logs.start_index }} to {{ logs.end_index }} of {{ logs.paginator.count }} entries
+            </div>
+            <div class="flex space-x-2">
+              {% if logs.has_previous %}
+                <a href="?page={{ logs.previous_page_number }}&status={{ selected_status }}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_activity_type %}&activity_type={{ selected_activity_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+                   class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                  Previous
+                </a>
+              {% endif %}
+
+              {% for num in logs.paginator.page_range %}
+                {% if logs.number == num %}
+                  <span class="px-3 py-1 rounded-md bg-blue-600 text-white">
+                    {{ num }}
+                  </span>
+                {% elif num > logs.number|add:'-3' and num < logs.number|add:'3' %}
+                  <a href="?page={{ num }}&status={{ selected_status }}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_activity_type %}&activity_type={{ selected_activity_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+                     class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                    {{ num }}
+                  </a>
+                {% endif %}
+              {% endfor %}
+
+              {% if logs.has_next %}
+                <a href="?page={{ logs.next_page_number }}&status={{ selected_status }}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_activity_type %}&activity_type={{ selected_activity_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+                   class="px-3 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600">
+                  Next
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <p class="text-lg font-medium">No records found</p>
+          <p class="mt-1">No pending review records match your criteria.</p>
+        </div>
+      {% endif %}
+    </div>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Department change handler to update activity types
+      const departmentSelect = document.getElementById('department');
+      const activityTypeSelect = document.getElementById('activity_type');
+
+      departmentSelect.addEventListener('change', function() {
+        // Clear activity type selection when department changes
+        activityTypeSelect.value = '';
+      });
+    });
+  </script>
 {% endblock %}
