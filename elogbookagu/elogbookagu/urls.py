@@ -31,7 +31,7 @@ urlpatterns = [
     path("staff_section/", include("staff_section.urls")),
     path("student_section/", include("student_section.urls")),
     path("accounts/", include("allauth.urls")),
-    path('set-theme/', set_theme, name='set_theme'),
+    path("set-theme/", set_theme, name="set_theme"),
 ]
 
 if settings.DEBUG:

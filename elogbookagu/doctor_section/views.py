@@ -7,7 +7,39 @@ from django.http import JsonResponse
 
 @login_required
 def doctor_dash(request):
-    return render(request, "doctor_dash.html")
+    doctor = request.user
+
+    try:
+        # Fetch dashboard data
+        total_records = StudentRecord.objects.filter(assigned_doctor=doctor).count()
+        reviewed = StudentRecord.objects.filter(
+            assigned_doctor=doctor, is_reviewed=True
+        ).count()
+        left_to_review = total_records - reviewed if total_records > 0 else 0
+
+        # Priority records
+        priority_threshold = datetime.now() + timedelta(days=3)
+        priority_records = StudentRecord.objects.filter(
+            assigned_doctor=doctor, is_reviewed=False, due_date__lte=priority_threshold
+        ).order_by("due_date")[:5]
+
+    except Exception as e:
+        # Handle potential errors (e.g., database issues)
+        total_records = 0
+        reviewed = 0
+        left_to_review = 0
+        priority_records = []
+        print(f"Error fetching dashboard data: {e}")
+
+    context = {
+        "total_records": total_records,
+        "left_to_review": left_to_review,
+        "reviewed": reviewed,
+        "priority_records": priority_records,
+        "request": request,
+    }
+
+    return render(request, "doctor_dash.html", context)
 
 
 @login_required
@@ -107,17 +139,19 @@ def update_contact_info(request):
             user.save()
 
             # Update session data
-            request.session['phone_no'] = phone
-            request.session['city'] = city
-            request.session['country'] = country
+            request.session["phone_no"] = phone
+            request.session["city"] = city
+            request.session["country"] = country
             request.session.modified = True
 
-            return JsonResponse({
-                "success": True,
-                "user_phone": phone,
-                "user_city": city,
-                "user_country": country,
-            })
+            return JsonResponse(
+                {
+                    "success": True,
+                    "user_phone": phone,
+                    "user_city": city,
+                    "user_country": country,
+                }
+            )
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
 
@@ -126,10 +160,10 @@ def update_contact_info(request):
 
 @login_required
 def update_profile_photo(request):
-    if request.method == 'POST' and request.FILES.get('profile_photo'):
+    if request.method == "POST" and request.FILES.get("profile_photo"):
         user = request.user
         # Delete old profile photo if it exists
-        if user.profile_photo and hasattr(user.profile_photo, 'path'):
+        if user.profile_photo and hasattr(user.profile_photo, "path"):
             try:
                 if os.path.exists(user.profile_photo.path):
                     os.remove(user.profile_photo.path)
@@ -137,19 +171,12 @@ def update_profile_photo(request):
                 print(f"Error deleting old profile photo: {e}")
 
         # Save new profile photo
-        user.profile_photo = request.FILES['profile_photo']
+        user.profile_photo = request.FILES["profile_photo"]
         user.save()
 
-        return JsonResponse({
-            'success': True,
-            'profile_photo': user.profile_photo.url
-        })
+        return JsonResponse({"success": True, "profile_photo": user.profile_photo.url})
 
-    return JsonResponse({
-        'success': False,
-        'error': 'No photo provided'
-    })
-
+    return JsonResponse({"success": False, "error": "No photo provided"})
 
 
 @login_required
