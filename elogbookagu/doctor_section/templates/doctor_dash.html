@@ -1,16 +1,202 @@
 {% extends 'base.html' %}
 
 {% block title %}
-  Doctor Dashborad
+  Doctor Dashboard
 {% endblock %}
+
 {% block navbar %}
   {% include './components/doc_auth_navbar.html' %}
 {% endblock %}
 
 {% block content %}
-  <!-- Main Content -->
-  <main class="flex-wrap p-6 bg-white dark:bg-gray-900">
-    <h2 class="text-3xl font-bold text-center">Welcome to Your Dashboard Section</h2>
-    <p class="mt-4">This is the main content area. Add your page content here.</p>
-  </main>
+  <div class="text-center p-10 mt-2">
+    <!-- Dashboard Header -->
+    <div class="text-center my-6 animate-slide-in">
+      <h2 class="text-4xl font-bold dark:text-white bg-gradient-to-r from-purple-500 to-indigo-500 dark:from-purple-400 dark:to-indigo-400 text-transparent bg-clip-text">Welcome, Dr. {{ request.session.first_name }}</h2>
+      <p class="text-gray-600 dark:text-gray-300 mt-2">Review student records and manage your tasks efficiently.</p>
+    </div>
+
+    <!-- Dashboard Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <!-- Total Records to Review -->
+      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg flex items-center space-x-4 transform transition-all duration-300 hover:scale-105 animate-pulse-card">
+        <img src="https://cdn-icons-png.flaticon.com/512/1160/1160758.png" class="w-14 h-14" alt="Records Icon" />
+        <div>
+          <h3 class="text-xl font-semibold dark:text-white">Total Records</h3>
+          <p class="text-3xl font-bold text-purple-600 dark:text-purple-400">{{ total_records|default:100 }}</p>
+        </div>
+      </div>
+
+      <!-- Records Left to Review -->
+      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg flex items-center space-x-4 transform transition-all duration-300 hover:scale-105 animate-pulse-card">
+        <img src="https://cdn-icons-png.flaticon.com/512/1008/1008928.png" alt="Pending Icon" class="w-14 h-14" />
+        <div>
+          <h3 class="text-xl font-semibold dark:text-white">Left to Review</h3>
+          <p class="text-3xl font-bold text-red-600 dark:text-red-400">{{ left_to_review|default:30 }}</p>
+        </div>
+      </div>
+
+      <!-- Reviewed Records -->
+      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg flex items-center space-x-4 transform transition-all duration-300 hover:scale-105 animate-pulse-card">
+        <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" alt="Reviewed Icon" class="w-14 h-14" />
+        <div>
+          <h3 class="text-xl font-semibold dark:text-white">Reviewed</h3>
+          <p class="text-3xl font-bold text-green-600 dark:text-green-400">{{ reviewed|default:70 }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Doctor Info and Quick Links -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+      <!-- Doctor Info with Progress Circle -->
+      <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg flex flex-col items-center justify-center min-h-[250px] transform transition-all duration-300 hover:shadow-xl">
+        <h3 class="text-2xl font-semibold dark:text-white mb-4 text-center">Your Progress</h3>
+        <div class="relative w-32 h-32 flex items-center justify-center">
+          <svg class="w-full h-full" viewBox="0 0 100 100">
+            <circle class="text-gray-200 dark:text-gray-600 stroke-current" stroke-width="10" cx="50" cy="50" r="40" fill="transparent"></circle>
+            <circle class="text-indigo-500 progress-ring stroke-current" stroke-width="10" stroke-linecap="round" cx="50" cy="50" r="40" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="calc(251.2 - (251.2 * {{ reviewed|default:70 }}) / {{ total_records|default:100 }})"></circle>
+          </svg>
+          <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-2xl font-bold dark:text-white">{{ reviewed|default:70 }}%</div>
+        </div>
+        <p class="text-gray-800 dark:text-gray-200 mt-4 text-center">Reviewed out of {{ total_records|default:100 }} records</p>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg transform transition-all duration-300 hover:shadow-xl">
+        <h3 class="text-2xl font-semibold dark:text-white mb-4">Quick Actions</h3>
+        <div class="space-y-3">
+          <a href="{% url 'doctor_section:doctor_reviews' %}" class="block py-3 px-6 bg-gradient-to-r from-purple-500 to-indigo-700 dark:from-purple-600 dark:to-indigo-800 text-white rounded-lg hover:from-purple-600 hover:to-indigo-800 dark:hover:from-purple-700 dark:hover:to-indigo-900 transition duration-300 transform hover:-translate-y-1"><i class="fas fa-clipboard-check mr-2"></i> Review Records</a>
+          <a href="{% url 'doctor_section:doctor_blogs' %}" class="block py-3 px-6 bg-gradient-to-r from-green-500 to-green-700 dark:from-green-600 dark:to-green-800 text-white rounded-lg hover:from-green-600 hover:to-green-800 dark:hover:from-green-700 dark:hover:to-green-900 transition duration-300 transform hover:-translate-y-1"><i class="fas fa-users mr-2"></i>Posts</a>
+          <a href="{% url 'doctor_section:doctor_help' %}" class="block py-3 px-6 bg-gradient-to-r from-blue-500 to-blue-700 dark:from-blue-600 dark:to-blue-800 text-white rounded-lg hover:from-blue-600 hover:to-blue-800 dark:hover:from-blue-700 dark:hover:to-blue-900 transition duration-300 transform hover:-translate-y-1"><i class="fas fa-chart-bar mr-2"></i> Reports</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Priority Review Section (Unique Feature) -->
+    <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg mb-10 animate-fade-in">
+      <h3 class="text-2xl font-semibold dark:text-white mb-6">Priority Reviews</h3>
+      <div class="space-y-4">
+        {% if priority_records %}
+          {% for record in priority_records %}
+            <div class="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-lg transform transition-all duration-300 hover:scale-102">
+              <div>
+                <p class="text-lg font-semibold dark:text-white">{{ record.student_name }}</p>
+                <p class="text-gray-600 dark:text-gray-300">Due: {{ record.due_date }}</p>
+              </div>
+              <a href="{% url 'doctor_section:review_record' record.id %}" class="py-2 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300">Review Now</a>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-gray-600 dark:text-gray-300">No priority reviews at the moment.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Chart.js Visualization -->
+    <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg animate-fade-in">
+      <h3 class="text-2xl font-semibold dark:text-white mb-6">Record Review Overview</h3>
+      <canvas id="reviewChart" height="120"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart.js Script -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const totalRecords = '{{ total_records|default:100 }}'
+      const leftToReview = '{{ left_to_review|default:30 }}'
+      const reviewed = '{{ reviewed|default:70 }}'
+      console.log('Chart Data:', [totalRecords, leftToReview, reviewed])
+    
+      const ctx = document.getElementById('reviewChart').getContext('2d')
+      const isDarkMode = () => document.documentElement.classList.contains('dark')
+      const textColor = () => (isDarkMode() ? '#ffffff' : '#000000')
+    
+      const reviewChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Total Records', 'Left to Review', 'Reviewed'],
+          datasets: [
+            {
+              label: 'Review Status',
+              data: [totalRecords, leftToReview, reviewed],
+              backgroundColor: ['rgba(139, 92, 246, 0.7)', 'rgba(239, 68, 68, 0.7)', 'rgba(16, 185, 129, 0.7)'],
+              borderColor: ['rgba(139, 92, 246, 1)', 'rgba(239, 68, 68, 1)', 'rgba(16, 185, 129, 1)'],
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true, ticks: { color: textColor(), font: { weight: 'bold' } }, grid: { color: isDarkMode() ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' } },
+            x: { ticks: { color: textColor(), font: { weight: 'bold' } }, grid: { color: isDarkMode() ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' } }
+          },
+          plugins: { legend: { labels: { color: textColor(), font: { weight: 'bold' } } } }
+        }
+      })
+    
+      window.addEventListener('themeChanged', () => {
+        const newColor = textColor()
+        const newGridColor = isDarkMode() ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+        reviewChart.options.scales.y.ticks.color = newColor
+        reviewChart.options.scales.x.ticks.color = newColor
+        reviewChart.options.plugins.legend.labels.color = newColor
+        reviewChart.options.scales.y.grid.color = newGridColor
+        reviewChart.options.scales.x.grid.color = newGridColor
+        reviewChart.update()
+      })
+    })
+  </script>
+
+  <!-- Custom Animations -->
+  <style>
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    .animate-slide-in {
+      animation: slideIn 1s ease-out forwards;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .animate-fade-in {
+      animation: fadeIn 1s ease-out forwards;
+    }
+    
+    @keyframes pulseCard {
+      0%,
+      100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.02);
+      }
+    }
+    .animate-pulse-card {
+      animation: pulseCard 2s infinite ease-in-out;
+    }
+    
+    .progress-ring {
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+    .hover\:scale-102:hover {
+      transform: scale(1.02);
+    }
+  </style>
 {% endblock %}

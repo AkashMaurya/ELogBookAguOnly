@@ -1,56 +1,66 @@
 from django.db import models
-from accounts.models import Student, CustomUser
-# from admin_section.models import Group, LogYear, LogYearSection
-# from admin_section.models import ActivityType ,CoreDiaProSession
+from accounts.models import Student, CustomUser, Doctor
+from admin_section.models import LogYear, LogYearSection, Group, Department, TrainingSite, ActivityType, CoreDiaProSession
+
 # Create your models here.
 
 
 # Elog Form Model
 
-"""
+
 class StudentLogFormModel(models.Model):
-
-    # calander selction
+    # Basic info
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='log_forms')
     date = models.DateField()
-
-    # from publicpage.models me log_year_section ka model
-    log_year = models.models.ForeignKey("LogYear.Model", verbose_name=_(""), on_delete=models.CASCADE)(max_length=10, choices=[('Year 5', 'Year 5'), ('Year 6', 'Year 6')])
-
-    # from publicpage.models me group ka model
-    group = models.CharField(max_length=5)
-
-    # from accounts.models me CustomUser ka model
-    name = models.CharField(max_length=100)
-
-    # from accounts.models me Doctor ka model
-    department = models.CharField(max_length=100)
-
-    # from accounts.models me Doctor ka model
-    tutor = models.CharField(max_length=100)
-
-    # predifeined values
-    training_site = models.CharField(max_length=100)
-
-    # optional
-    patient_id = models.CharField(max_length=4)
-
-    # from publicpage.models me activity ka model ! banana hai abhi
-    activity_type = models.CharField(max_length=100)
-
-    # from publicpage.models me activity ka model ! banana hai abhi
-    core_diagnosis = models.TextField()
-
-    # optional
-    description = models.TextField()
-
-    # form field
-    participation_type = models.CharField(max_length=50, choices=[('Observed', 'Observed'), ('Assisted', 'Assisted')])
-
-
-
-
+    
+    # Academic info
+    log_year = models.ForeignKey(LogYear, on_delete=models.CASCADE)
+    log_year_section = models.ForeignKey(LogYearSection, on_delete=models.CASCADE)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE)
+    
+    # Department and supervision
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)  # Changed from department to departments
+    tutor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='supervised_logs')
+    training_site = models.ForeignKey(TrainingSite, on_delete=models.CASCADE)
+    
+    # Activity details
+    activity_type = models.ForeignKey(ActivityType, on_delete=models.CASCADE)
+    core_diagnosis = models.ForeignKey(
+        CoreDiaProSession, 
+        on_delete=models.CASCADE,
+        related_name='log_forms'
+    )
+    
+    # Optional fields
+    patient_id = models.CharField(max_length=4, blank=True)
+    description = models.TextField(blank=True)
+    
+    # Participation type
+    PARTICIPATION_CHOICES = [
+        ("Observed", "Observed"),
+        ("Assisted", "Assisted")
+    ]
+    participation_type = models.CharField(
+        max_length=50,
+        choices=PARTICIPATION_CHOICES
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Review status
+    is_reviewed = models.BooleanField(default=False)
+    review_date = models.DateTimeField(null=True, blank=True)
+    reviewer_comments = models.TextField(blank=True)
+    
+    class Meta:
+        ordering = ['-date', '-created_at']
+        verbose_name = "Student Log Form"
+        verbose_name_plural = "Student Log Forms"
+    
     def __str__(self):
-        return f"{self.name} - {self.date}"
-
-
-        """
+        return f"{self.student.user.get_full_name()} - {self.date}"
+    
+    def get_status(self):
+        return "Reviewed" if self.is_reviewed else "Pending Review"
