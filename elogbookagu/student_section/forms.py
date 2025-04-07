@@ -1,5 +1,5 @@
 from django import forms
-from .models import StudentLogFormModel
+from .models import StudentLogFormModel, SupportTicket
 from admin_section.models import Department, ActivityType, CoreDiaProSession
 from accounts.models import Doctor, Student
 
@@ -173,6 +173,45 @@ class StudentLogFormModelForm(forms.ModelForm):
             "training_site": forms.Select(
                 attrs={
                     "class": "w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                }
+            ),
+        }
+
+
+class SupportTicketForm(forms.ModelForm):
+    class Meta:
+        model = SupportTicket
+        fields = ['subject', 'description']
+        widgets = {
+            'subject': forms.TextInput(
+                attrs={
+                    'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                    'placeholder': 'Enter subject of your issue',
+                }
+            ),
+            'description': forms.Textarea(
+                attrs={
+                    'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white h-32',
+                    'placeholder': 'Describe your issue in detail',
+                }
+            ),
+        }
+
+
+class AdminResponseForm(forms.ModelForm):
+    class Meta:
+        model = SupportTicket
+        fields = ['status', 'admin_comments']
+        widgets = {
+            'status': forms.Select(
+                attrs={
+                    'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                }
+            ),
+            'admin_comments': forms.Textarea(
+                attrs={
+                    'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white h-32',
+                    'placeholder': 'Enter your response to the student',
                 }
             ),
         }

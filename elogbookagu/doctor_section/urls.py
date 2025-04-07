@@ -15,8 +15,9 @@ urlpatterns = [
     # edit profile
     path("update-contact-info/", views.update_contact_info, name="update_contact_info"),
     path('update-profile-photo/', views.update_profile_photo, name='update_profile_photo'),
-    
-  
+    path("delete-support-ticket/<int:ticket_id>/", views.delete_support_ticket, name="delete_support_ticket"),
+    path("review-log/<int:log_id>/", views.review_log, name="review_log"),
+    path("batch-review/", views.batch_review, name="batch_review"),
 ]
 
 

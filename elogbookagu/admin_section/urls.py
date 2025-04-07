@@ -49,4 +49,7 @@ urlpatterns = [
     path('sessions/create/', core_dia_pro_session_create, name='core_dia_pro_session_create'),
     path('sessions/edit/<int:pk>/', core_dia_pro_session_update, name='core_dia_pro_session_update'),
     path('sessions/delete/<int:pk>/', core_dia_pro_session_delete, name='core_dia_pro_session_delete'),
+
+    # Support Ticket URLs
+    path('resolve_ticket/<int:ticket_id>/', views.resolve_ticket, name='resolve_ticket'),
 ]

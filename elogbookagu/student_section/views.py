@@ -1,9 +1,14 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
-from .forms import StudentLogFormModelForm
-from .models import StudentLogFormModel
-from admin_section.models import ActivityType, CoreDiaProSession, LogYear
+from django.core.paginator import Paginator
+from django.db import models
+from django.template.loader import render_to_string
+from datetime import datetime
+from xhtml2pdf import pisa
+from .forms import StudentLogFormModelForm, SupportTicketForm
+from .models import StudentLogFormModel, SupportTicket
+from admin_section.models import ActivityType, CoreDiaProSession, LogYear, Department
 from accounts.models import Doctor, Student
 from django.contrib import messages
 
@@ -54,7 +59,25 @@ def student_blogs(request):
 
 @login_required
 def student_support(request):
-    return render(request, "student_support.html")
+    if request.method == "POST":
+        form = SupportTicketForm(request.POST)
+        if form.is_valid():
+            ticket = form.save(commit=False)
+            ticket.student = request.user.student
+            ticket.save()
+            messages.success(request, "Support ticket submitted successfully. We will respond to your issue soon.")
+            return redirect("student_section:student_support")
+    else:
+        form = SupportTicketForm()
+
+    # Get all tickets for the current student
+    tickets = SupportTicket.objects.filter(student=request.user.student).order_by('-date_created')
+
+    context = {
+        "form": form,
+        "tickets": tickets,
+    }
+    return render(request, "student_support.html", context)
 
 
 @login_required
@@ -223,7 +246,80 @@ def update_biography(request):
 
 @login_required
 def student_final_records(request):
-    return render(request, "student_final_records.html")
+    # Get the current student
+    student = request.user.student
+
+    # Get filter parameters
+    department_id = request.GET.get('department')
+    activity_type_id = request.GET.get('activity_type')
+    review_status = request.GET.get('status', 'pending')
+    search_query = request.GET.get('q', '').strip()
+
+    # Base queryset - filter by student
+    logs = StudentLogFormModel.objects.filter(student=student)
+
+    # Filter by review status if specified
+    if review_status == 'pending':
+        logs = logs.filter(is_reviewed=False)
+    elif review_status == 'reviewed':
+        logs = logs.filter(is_reviewed=True)
+    # If 'all' is selected, don't apply any filter
+
+    # Apply filters if provided
+    if department_id:
+        logs = logs.filter(department_id=department_id)
+
+    if activity_type_id:
+        logs = logs.filter(activity_type_id=activity_type_id)
+
+    if search_query:
+        logs = logs.filter(
+            models.Q(description__icontains=search_query) |
+            models.Q(patient_id__icontains=search_query) |
+            models.Q(core_diagnosis__name__icontains=search_query)
+        )
+
+    # Order by most recent first
+    logs = logs.order_by('-date', '-created_at')
+
+    # Pagination
+    paginator = Paginator(logs, 10)  # 10 items per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Get departments and activity types for filters
+    departments = Department.objects.filter(
+        log_year_section=student.group.log_year_section
+    ).distinct().order_by('name')
+
+    activity_types = ActivityType.objects.all().order_by('name')
+    if department_id:
+        activity_types = activity_types.filter(department_id=department_id)
+
+    # Student info for PDF
+    student_info = {
+        "student_name": student.user.get_full_name(),
+        "student_id": student.student_id,
+        "year_name": student.group.log_year.year_name if student.group else "",
+        "section_name": student.group.log_year_section.year_section_name if student.group else "",
+        "group_name": student.group.group_name if student.group else "",
+    }
+
+    context = {
+        'logs': page_obj,
+        'departments': departments,
+        'activity_types': activity_types,
+        'selected_department': department_id,
+        'selected_activity_type': activity_type_id,
+        'selected_status': review_status,
+        'search_query': search_query,
+        'student_info': student_info,
+    }
+
+    return render(request, "student_final_records.html", context)
+
+
+
 
 
 @login_required
@@ -341,3 +437,95 @@ def get_tutors(request):
         {"id": tutor.id, "name": f"{tutor.user.get_full_name()}"} for tutor in tutors
     ]
     return JsonResponse(tutor_data, safe=False)
+
+
+@login_required
+def generate_records_pdf(request):
+    # Get the current student
+    student = request.user.student
+
+    # Get filter parameters (same as in student_final_records)
+    department_id = request.GET.get('department')
+    activity_type_id = request.GET.get('activity_type')
+    review_status = request.GET.get('status', 'pending')
+    search_query = request.GET.get('q', '').strip()
+
+    # Base queryset - filter by student
+    logs = StudentLogFormModel.objects.filter(student=student)
+
+    # Filter by review status if specified
+    if review_status == 'pending':
+        logs = logs.filter(is_reviewed=False)
+    elif review_status == 'reviewed':
+        logs = logs.filter(is_reviewed=True)
+    # If 'all' is selected, don't apply any filter
+
+    # Apply filters if provided
+    if department_id:
+        logs = logs.filter(department_id=department_id)
+
+    if activity_type_id:
+        logs = logs.filter(activity_type_id=activity_type_id)
+
+    if search_query:
+        logs = logs.filter(
+            models.Q(description__icontains=search_query) |
+            models.Q(patient_id__icontains=search_query) |
+            models.Q(core_diagnosis__name__icontains=search_query)
+        )
+
+    # Order by most recent first
+    logs = logs.order_by('-date', '-created_at')
+
+    # Student info for PDF
+    student_info = {
+        "student_name": student.user.get_full_name(),
+        "student_id": student.student_id,
+        "year_name": student.group.log_year.year_name if student.group else "",
+        "section_name": student.group.log_year_section.year_section_name if student.group else "",
+        "group_name": student.group.group_name if student.group else "",
+    }
+
+    # Create context for PDF template
+    context = {
+        'logs': logs,
+        'student_info': student_info,
+        'generated_date': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        'status_type': review_status,
+    }
+
+    # Render HTML content
+    html_string = render_to_string('student_records_pdf.html', context)
+
+    # Create HTTP response with PDF
+    response = HttpResponse(content_type='application/pdf')
+
+    # Create a filename that reflects the status
+    if review_status == 'pending':
+        status_text = 'pending'
+    elif review_status == 'reviewed':
+        status_text = 'reviewed'
+    else:
+        status_text = 'all'
+
+    response['Content-Disposition'] = f'attachment; filename="student_records_{student.student_id}_{status_text}.pdf"'
+
+    # Generate PDF
+    pisa_status = pisa.CreatePDF(html_string, dest=response)
+
+    # Return PDF response if successful
+    if pisa_status.err:
+        return HttpResponse('Error generating PDF', status=500)
+
+    return response
+
+
+@login_required
+def delete_support_ticket(request, ticket_id):
+    ticket = get_object_or_404(SupportTicket, id=ticket_id, student=request.user.student)
+    if ticket.status == 'pending':  # Only allow deletion of pending tickets
+        ticket.delete()
+        messages.success(request, "Support ticket deleted successfully.")
+    else:
+        messages.error(request, "Cannot delete a ticket that has been resolved.")
+    return redirect('student_section:student_support')
