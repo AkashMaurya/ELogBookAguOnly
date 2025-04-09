@@ -12,4 +12,13 @@ from .CoreDiaProSession_views import (
     get_activity_types_by_department,  # Added this import
 )
 
+
 from .resources import CoreDiaProSessionResource
+
+from .add_user import add_user
+from .add_year import add_year
+from .add_elogyear import add_elogyear
+from .add_department import add_department
+from .add_group import add_group
+from .add_student import add_student
+from .add_doctor import add_doctor

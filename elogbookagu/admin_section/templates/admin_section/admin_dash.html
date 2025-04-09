@@ -66,7 +66,7 @@
           </div>
           <div class="ml-4">
             <p class="text-sm text-gray-500 dark:text-gray-400">Total Records</p>
-            <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">0</p>
+            <p class="text-lg font-semibold text-gray-700 dark:text-gray-200">{{ total_logs }}</p>
           </div>
         </div>
       </div>
@@ -84,8 +84,193 @@
     </div>
 
 
+    <!-- Filter Section -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Dashboard Filters</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Department Filter -->
+        <div>
+          <h4 class="text-lg font-medium text-gray-800 dark:text-white mb-3">Filter by Department</h4>
+          <form method="get" action="{% url 'admin_section:admin_dash' %}" class="flex flex-col md:flex-row gap-4 items-end">
+            <div class="flex-grow">
+              <label for="department" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department</label>
+              <select id="department" name="department" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <option value="">All Departments</option>
+                {% for dept in departments %}
+                  <option value="{{ dept.id }}" {% if selected_department == dept.id|stringformat:'s' %}selected{% endif %}>{{ dept.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+              Apply
+            </button>
+          </form>
+        </div>
+
+        <!-- User Dropdown -->
+        <div>
+          <h4 class="text-lg font-medium text-gray-800 dark:text-white mb-3">User Information</h4>
+          <div class="flex flex-col md:flex-row gap-4 items-end">
+            <div class="flex-grow">
+              <label for="user_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">User Type</label>
+              <select id="user_type" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <option value="">Select User Type</option>
+                <option value="student">Students</option>
+                <option value="doctor">Doctors</option>
+                <option value="staff">Staff</option>
+                <option value="admin">Admins</option>
+              </select>
+            </div>
+            <button id="loadUserData" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+              Load Data
+            </button>
+          </div>
+          <div id="userDataContainer" class="mt-4 hidden">
+            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+              <div id="userDataContent" class="text-sm text-gray-700 dark:text-gray-300">
+                <!-- User data will be loaded here -->
+                <p class="text-center">Select a user type to view data</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Doctor Performance Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Pie Chart: Review Status -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Review Status</h3>
+        <div class="h-64">
+          <canvas id="reviewStatusChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Bar Chart: Department Performance -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Department Performance</h3>
+        <div class="h-64">
+          <canvas id="departmentChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Student Performance Search -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+      <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Student Performance Search</h3>
+      <form method="get" action="{% url 'admin_section:admin_dash' %}" class="flex flex-col md:flex-row gap-4 items-end">
+        <div class="flex-grow">
+          <label for="student_search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search by Name, ID or Email</label>
+          <input type="text" id="student_search" name="student_search" value="{{ student_search }}" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Enter student name, ID or email">
+        </div>
+        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+          Search
+        </button>
+      </form>
+
+      {% if student_data %}
+        <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+          <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">{{ student_data.name }}</h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Student ID</p>
+              <p class="font-medium text-gray-800 dark:text-white">{{ student_data.id }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Email</p>
+              <p class="font-medium text-gray-800 dark:text-white">{{ student_data.email }}</p>
+            </div>
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Total Logs</p>
+              <p class="font-medium text-gray-800 dark:text-white">{{ student_data.total_logs }}</p>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-3 bg-green-100 dark:bg-green-800 rounded-lg">
+              <p class="text-sm text-green-800 dark:text-green-200">Approved</p>
+              <p class="text-xl font-bold text-green-800 dark:text-green-200">{{ student_data.approved_logs }}</p>
+            </div>
+            <div class="p-3 bg-yellow-100 dark:bg-yellow-800 rounded-lg">
+              <p class="text-sm text-yellow-800 dark:text-yellow-200">Pending</p>
+              <p class="text-xl font-bold text-yellow-800 dark:text-yellow-200">{{ student_data.pending_logs }}</p>
+            </div>
+            <div class="p-3 bg-red-100 dark:bg-red-800 rounded-lg">
+              <p class="text-sm text-red-800 dark:text-red-200">Rejected</p>
+              <p class="text-xl font-bold text-red-800 dark:text-red-200">{{ student_data.rejected_logs }}</p>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- User Table -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Recent Logs</h3>
+        <a href="{% url 'admin_section:admin_reviews' %}" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">View All</a>
+      </div>
+
+      {% if recent_logs %}
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Student</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Department</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Activity</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {% for log in recent_logs %}
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ log.student.user.get_full_name }}</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ log.student.student_id }}</div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ log.date }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ log.department.name }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900 dark:text-white">{{ log.activity_type.name }}</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ log.core_diagnosis.name }}</div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    {% if log.is_reviewed %}
+                      {% if log.reviewer_comments and 'REJECTED:' in log.reviewer_comments %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100">
+                          Rejected
+                        </span>
+                      {% else %}
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                          Approved
+                        </span>
+                      {% endif %}
+                    {% else %}
+                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100">
+                        Pending
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <a href="{% url 'admin_section:review_log' log.id %}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                      {% if log.is_reviewed %}View{% else %}Review{% endif %}
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-center py-4 text-gray-500 dark:text-gray-400">No logs found.</p>
+      {% endif %}
+    </div>
+
     <!-- Quick Actions -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
       <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <a href="{% url 'admin_section:add_activity_type' %}" class="flex items-center p-4 bg-blue-50 dark:bg-blue-900 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors">
@@ -107,4 +292,291 @@
       </div>
     </div>
   </div>
+
+  <!-- Chart.js Script -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Function to determine text color based on dark mode
+      const isDarkMode = () => document.documentElement.classList.contains('dark');
+      const textColor = () => (isDarkMode() ? '#ffffff' : '#000000');
+
+      // Review Status Pie Chart
+      const reviewStatusCtx = document.getElementById('reviewStatusChart').getContext('2d');
+      const reviewStatusChart = new Chart(reviewStatusCtx, {
+        type: 'pie',
+        data: {
+          labels: ['Approved', 'Pending', 'Rejected'],
+          datasets: [{
+            data: [{{ approved_logs }}, {{ pending_logs }}, {{ rejected_logs }}],
+            backgroundColor: [
+              'rgba(72, 187, 120, 0.7)',  // Green for approved
+              'rgba(237, 137, 54, 0.7)',  // Orange for pending
+              'rgba(229, 62, 62, 0.7)'     // Red for rejected
+            ],
+            borderColor: [
+              'rgba(72, 187, 120, 1)',
+              'rgba(237, 137, 54, 1)',
+              'rgba(229, 62, 62, 1)'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: textColor(),
+                font: {
+                  size: 12
+                }
+              }
+            },
+            title: {
+              display: true,
+              text: 'Log Review Status',
+              color: textColor(),
+              font: {
+                size: 16
+              }
+            }
+          }
+        }
+      });
+
+      // Department Performance Bar Chart
+      const departmentCtx = document.getElementById('departmentChart').getContext('2d');
+      const departmentChart = new Chart(departmentCtx, {
+        type: 'bar',
+        data: {
+          labels: [
+            {% for dept in chart_data.department_stats %}
+              '{{ dept.name }}',
+            {% endfor %}
+          ],
+          datasets: [{
+            label: 'Total Logs',
+            data: [
+              {% for dept in chart_data.department_stats %}
+                {{ dept.total }},
+              {% endfor %}
+            ],
+            backgroundColor: 'rgba(66, 153, 225, 0.7)',
+            borderColor: 'rgba(66, 153, 225, 1)',
+            borderWidth: 1
+          }, {
+            label: 'Reviewed',
+            data: [
+              {% for dept in chart_data.department_stats %}
+                {{ dept.reviewed }},
+              {% endfor %}
+            ],
+            backgroundColor: 'rgba(72, 187, 120, 0.7)',
+            borderColor: 'rgba(72, 187, 120, 1)',
+            borderWidth: 1
+          }, {
+            label: 'Pending',
+            data: [
+              {% for dept in chart_data.department_stats %}
+                {{ dept.pending }},
+              {% endfor %}
+            ],
+            backgroundColor: 'rgba(237, 137, 54, 0.7)',
+            borderColor: 'rgba(237, 137, 54, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              ticks: {
+                color: textColor()
+              },
+              grid: {
+                color: isDarkMode() ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+              }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: textColor()
+              },
+              grid: {
+                color: isDarkMode() ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: textColor(),
+                font: {
+                  size: 12
+                }
+              }
+            },
+            title: {
+              display: true,
+              text: 'Department Performance',
+              color: textColor(),
+              font: {
+                size: 16
+              }
+            }
+          }
+        }
+      });
+
+      // Update chart colors when theme changes
+      const updateChartColors = () => {
+        const newTextColor = textColor();
+        const newGridColor = isDarkMode() ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+
+        // Update review status chart
+        reviewStatusChart.options.plugins.legend.labels.color = newTextColor;
+        reviewStatusChart.options.plugins.title.color = newTextColor;
+        reviewStatusChart.update();
+
+        // Update department chart
+        departmentChart.options.scales.x.ticks.color = newTextColor;
+        departmentChart.options.scales.y.ticks.color = newTextColor;
+        departmentChart.options.scales.x.grid.color = newGridColor;
+        departmentChart.options.scales.y.grid.color = newGridColor;
+        departmentChart.options.plugins.legend.labels.color = newTextColor;
+        departmentChart.options.plugins.title.color = newTextColor;
+        departmentChart.update();
+      };
+
+      // Listen for theme changes
+      const darkModeToggle = document.getElementById('darkModeToggle');
+      if (darkModeToggle) {
+        darkModeToggle.addEventListener('click', () => {
+          setTimeout(updateChartColors, 100); // Small delay to ensure DOM updates
+        });
+      }
+
+      // User Data Dropdown Functionality
+      const userTypeSelect = document.getElementById('user_type');
+      const loadUserDataBtn = document.getElementById('loadUserData');
+      const userDataContainer = document.getElementById('userDataContainer');
+      const userDataContent = document.getElementById('userDataContent');
+
+      loadUserDataBtn.addEventListener('click', function() {
+        const userType = userTypeSelect.value;
+        if (!userType) {
+          alert('Please select a user type');
+          return;
+        }
+
+        // Show loading state
+        userDataContainer.classList.remove('hidden');
+        userDataContent.innerHTML = '<p class="text-center">Loading data...</p>';
+
+        // In a real implementation, this would be an AJAX call to fetch user data
+        // For this example, we'll simulate the data
+        setTimeout(() => {
+          let userData = '';
+
+          switch(userType) {
+            case 'student':
+              userData = `
+                <h5 class="font-medium mb-2">Student Information</h5>
+                <p>Total Students: {{ total_student }}</p>
+                <div class="mt-2">
+                  <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead>
+                      <tr>
+                        <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300">ID</th>
+                        <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Name</th>
+                        <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Group</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="px-2 py-1">Sample data - connect to real API for actual data</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              `;
+              break;
+            case 'doctor':
+              userData = `
+                <h5 class="font-medium mb-2">Doctor Information</h5>
+                <p>Total Doctors: {{ total_doctors }}</p>
+                <div class="mt-2">
+                  <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead>
+                      <tr>
+                        <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Name</th>
+                        <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Department</th>
+                        <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Speciality</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="px-2 py-1">Sample data - connect to real API for actual data</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              `;
+              break;
+            case 'staff':
+              userData = `
+                <h5 class="font-medium mb-2">Staff Information</h5>
+                <p>Connect to API for staff count</p>
+                <div class="mt-2">
+                  <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead>
+                      <tr>
+                        <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Name</th>
+                        <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Role</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="px-2 py-1">Sample data - connect to real API for actual data</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              `;
+              break;
+            case 'admin':
+              userData = `
+                <h5 class="font-medium mb-2">Admin Information</h5>
+                <p>Connect to API for admin count</p>
+                <div class="mt-2">
+                  <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead>
+                      <tr>
+                        <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Name</th>
+                        <th class="px-2 py-1 text-left text-xs font-medium text-gray-500 dark:text-gray-300">Email</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td class="px-2 py-1">Sample data - connect to real API for actual data</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              `;
+              break;
+            default:
+              userData = '<p class="text-center">No data available</p>';
+          }
+
+          userDataContent.innerHTML = userData;
+        }, 500); // Simulate network delay
+      });
+    });
+  </script>
 {% endblock %}

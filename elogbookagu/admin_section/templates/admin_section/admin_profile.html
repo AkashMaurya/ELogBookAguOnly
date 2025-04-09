@@ -19,12 +19,12 @@
         <div class="space-y-4">
           <!-- Profile Photo -->
           <div class="flex justify-center">
-            <div class="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 group">
+            <div class="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 group relative">
               <img src="{{ profile_photo }}" alt="Profile Photo" onerror="this.src='/media/profiles/default.jpg';" class="w-full h-full rounded-full object-cover border-2 border-blue-500 dark:border-blue-400 transition-all duration-200" />
-              <div class="relative inset-0 hidden group-hover:flex items-center justify-center bg-black bg-opacity-50 rounded-full transition-opacity duration-200">
-                <label for="profile-photo-upload" class="cursor-pointer text-white text-sm md:text-base font-medium">Change Photo</label>
+              <div class="absolute inset-0 hidden group-hover:flex items-center justify-center bg-black bg-opacity-50 rounded-full transition-opacity duration-200">
+                <label for="profile-photo-upload" class="cursor-pointer text-white text-sm md:text-base font-medium px-2 py-1 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200">Change Photo</label>
               </div>
-              <form id="profile-photo-form" hx-post="{% url 'doctor_section:update_profile_photo' %}" hx-encoding="multipart/form-data" class="hidden">
+              <form id="profile-photo-form" hx-post="{% url 'admin_section:update_profile_photo' %}" hx-encoding="multipart/form-data" class="hidden">
                 {% csrf_token %}
                 <input type="file" id="profile-photo-upload" name="profile_photo" accept="image/*" class="hidden" />
               </form>
@@ -83,13 +83,7 @@
               </div>
               <div class="flex flex-col sm:flex-row sm:items-center">
                 <dt class="font-medium w-32 text-gray-700 dark:text-gray-300">Department:</dt>
-                <div class="dark:text-white">
-                  {% if doctor_departments %}
-                    {{ doctor_departments }}
-                  {% else %}
-                    <span class="text-gray-500 dark:text-gray-400">No Departments</span>
-                  {% endif %}
-                </div>
+                <dd class="dark:text-white">Administration</dd>
               </div>
             </dl>
           </div>
@@ -99,16 +93,16 @@
   </div>
 
   <!-- Edit Profile Modal -->
-  <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto">
-    <div class="flex items-center justify-center min-h-screen px-4 py-6">
+  <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+    <div class="flex items-center justify-center min-h-screen px-4">
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
         <div class="p-6">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-bold dark:text-white">Edit Contact Information</h2>
-            <button id="closeModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"><i class="fas fa-times"></i></button>
+            <button id="closeModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 text-xl p-1"><i class="fas fa-times"></i></button>
           </div>
 
-          <form hx-post="{% url 'doctor_section:update_contact_info' %}" hx-trigger="submit">
+          <form hx-post="{% url 'admin_section:update_contact_info' %}" hx-trigger="submit">
             {% csrf_token %}
             <div class="space-y-4">
               <div>
@@ -135,34 +129,44 @@
 {% block extra_scripts %}
   <script>
     // Modal controls
-    const editModal = document.getElementById('editModal')
-    document.getElementById('openModal').addEventListener('click', () => editModal.classList.remove('hidden'))
-    document.getElementById('closeModal').addEventListener('click', () => editModal.classList.add('hidden'))
-    editModal.addEventListener('click', (event) => {
-      if (event.target === editModal) editModal.classList.add('hidden')
+    document.getElementById('openModal').addEventListener('click', function () {
+      document.getElementById('editModal').classList.remove('hidden')
     })
-    
+
+    document.getElementById('closeModal').addEventListener('click', function () {
+      document.getElementById('editModal').classList.add('hidden')
+    })
+
+    document.getElementById('editModal').addEventListener('click', function (event) {
+      if (event.target === this) {
+        this.classList.add('hidden')
+      }
+    })
+
     // Profile photo upload
     document.getElementById('profile-photo-upload').addEventListener('change', function () {
       if (this.files && this.files[0]) {
         htmx.trigger('#profile-photo-form', 'submit')
       }
     })
-    
+
     // HTMX response handling
-    document.body.addEventListener('htmx:afterRequest', (event) => {
+    document.body.addEventListener('htmx:afterRequest', function (event) {
       if (event.detail.successful) {
         try {
           const jsonData = JSON.parse(event.detail.xhr.responseText)
           if (jsonData.success) {
+            // Handle profile photo update
             if (jsonData.profile_photo) {
               document.querySelector('[alt="Profile Photo"]').src = jsonData.profile_photo
               alert('Profile photo updated successfully!')
-            } else {
-              editModal.classList.add('hidden')
-              document.getElementById('phone-text').textContent = jsonData.phone || document.getElementById('phone').value
-              document.getElementById('city-text').textContent = jsonData.city || document.getElementById('city').value
-              document.getElementById('country-text').textContent = jsonData.country || document.getElementById('country').value
+            }
+            // Handle contact info update
+            else if (jsonData.phone || jsonData.city || jsonData.country) {
+              document.getElementById('editModal').classList.add('hidden')
+              document.getElementById('phone-text').textContent = jsonData.phone
+              document.getElementById('city-text').textContent = jsonData.city
+              document.getElementById('country-text').textContent = jsonData.country
               alert('Contact information updated successfully!')
             }
           } else {

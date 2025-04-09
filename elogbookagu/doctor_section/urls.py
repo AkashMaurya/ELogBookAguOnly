@@ -6,6 +6,7 @@ from django.contrib.auth import views as auth_views
 app_name = "doctor_section"  # This is crucial for namespacing URLs
 
 urlpatterns = [
+   
     path("", views.doctor_dash, name="doctor_dash"),
     path("doctor_blogs/", views.doctor_blogs, name="doctor_blogs"),
     path("doctor_help/", views.doctor_help, name="doctor_help"),

@@ -13,43 +13,110 @@ import json
 from .models import DoctorSupportTicket
 from .forms import DoctorSupportTicketForm, LogReviewForm, BatchReviewForm
 from student_section.models import StudentLogFormModel
+from django.db.models import Count
+from django.db.models.functions import TruncMonth
 
 
 @login_required
 def doctor_dash(request):
-    doctor = request.user
+    doctor = request.user.doctor_profile
+    selected_department = request.GET.get('department')
 
-    try:
-        # Fetch dashboard data
-        total_records = StudentRecord.objects.filter(assigned_doctor=doctor).count()
-        reviewed = StudentRecord.objects.filter(
-            assigned_doctor=doctor, is_reviewed=True
-        ).count()
-        left_to_review = total_records - reviewed if total_records > 0 else 0
+    # Get doctor's departments
+    departments = doctor.departments.all()
 
-        # Priority records
-        priority_threshold = datetime.now() + timedelta(days=3)
-        priority_records = StudentRecord.objects.filter(
-            assigned_doctor=doctor, is_reviewed=False, due_date__lte=priority_threshold
-        ).order_by("due_date")[:5]
+    # Base queryset for logs
+    logs = StudentLogFormModel.objects.filter(department__in=departments)
 
-    except Exception as e:
-        # Handle potential errors (e.g., database issues)
-        total_records = 0
-        reviewed = 0
-        left_to_review = 0
-        priority_records = []
-        print(f"Error fetching dashboard data: {e}")
+    if selected_department:
+        logs = logs.filter(department_id=selected_department)
+
+    # Get current date and start of month
+    today = timezone.now()
+    start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    # Performance metrics
+    performance_data = {
+        'total_reviews': logs.filter(is_reviewed=True).count(),
+        'pending_reviews': logs.filter(is_reviewed=False).count(),
+        'monthly_reviews': logs.filter(review_date__gte=start_of_month).count(),
+        'approval_rate': calculate_approval_rate(logs),
+    }
+
+    # Chart data
+    chart_data = {
+        'daily_reviews': get_daily_reviews_data(logs),
+        'department_stats': get_department_stats(logs, departments),
+        'review_status': get_review_status_data(logs),
+        'monthly_trend': get_monthly_trend_data(logs),
+    }
 
     context = {
-        "total_records": total_records,
-        "left_to_review": left_to_review,
-        "reviewed": reviewed,
-        "priority_records": priority_records,
-        "request": request,
+        'performance_data': performance_data,
+        'chart_data': chart_data,
+        'departments': departments,
+        'selected_department': selected_department,
     }
 
     return render(request, "doctor_dash.html", context)
+
+def calculate_approval_rate(logs):
+    reviewed_logs = logs.filter(is_reviewed=True)
+    total_reviewed = reviewed_logs.count()
+    if total_reviewed == 0:
+        return 0
+    approved = reviewed_logs.filter(reviewer_comments__startswith='REJECTED').count()
+    return round((1 - approved / total_reviewed) * 100)
+
+def get_daily_reviews_data(logs):
+    last_7_days = timezone.now() - timedelta(days=7)
+    daily_reviews = logs.filter(
+        review_date__gte=last_7_days
+    ).values('review_date__date').annotate(
+        count=Count('id')
+    ).order_by('review_date__date')
+    
+    return {
+        'labels': [d['review_date__date'].strftime('%Y-%m-%d') for d in daily_reviews],
+        'data': [d['count'] for d in daily_reviews]
+    }
+
+def get_department_stats(logs, departments):
+    dept_stats = []
+    for dept in departments:
+        dept_logs = logs.filter(department=dept)
+        total = dept_logs.count()
+        reviewed = dept_logs.filter(is_reviewed=True).count()
+        dept_stats.append({
+            'name': dept.name,
+            'total': total,
+            'reviewed': reviewed,
+            'pending': total - reviewed
+        })
+    return dept_stats
+
+def get_review_status_data(logs):
+    total = logs.count()
+    reviewed = logs.filter(is_reviewed=True).count()
+    return {
+        'labels': ['Reviewed', 'Pending'],
+        'data': [reviewed, total - reviewed]
+    }
+
+def get_monthly_trend_data(logs):
+    last_6_months = timezone.now() - timedelta(days=180)
+    monthly_data = logs.filter(
+        review_date__gte=last_6_months
+    ).annotate(
+        month=TruncMonth('review_date')
+    ).values('month').annotate(
+        count=Count('id')
+    ).order_by('month')
+    
+    return {
+        'labels': [d['month'].strftime('%B %Y') for d in monthly_data],
+        'data': [d['count'] for d in monthly_data]
+    }
 
 
 @login_required

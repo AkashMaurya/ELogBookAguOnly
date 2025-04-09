@@ -14,6 +14,15 @@ from .views_file.CoreDiaProSession_views import (
     get_activity_types_by_department,
 )
 
+from .views_file.add_user import add_user, edit_user, delete_user
+from .views_file.add_year import add_year, edit_year, delete_year
+from .views_file.add_elogyear import add_elogyear, edit_elogyear, delete_elogyear
+from .views_file.add_department import add_department, edit_department, delete_department, get_year_sections
+from .views_file.add_group import add_group
+from .views_file.add_student import add_student
+from .views_file.add_doctor import add_doctor
+
+
 app_name = "admin_section"
 
 urlpatterns = [
@@ -25,7 +34,6 @@ urlpatterns = [
     path("admin_profile/", views.admin_profile, name="admin_profile"),
     path("admin_final_records/", views.final_records, name="admin_final_records"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
-
     # Activity Type URLs
     path("add_activity_type/", add_activity_type, name="add_activity_type"),
     path(
@@ -39,17 +47,61 @@ urlpatterns = [
         name="delete_activity_type",
     ),
     path(
-        'api/activity-types/<int:department_id>/',
+        "api/activity-types/<int:department_id>/",
         get_activity_types_by_department,
-        name='get_activity_types_by_department'
+        name="get_activity_types_by_department",
     ),
-
+    path("add_user/", add_user, name="add_user"),
+    path("add_year/", add_year, name="add_year"),
+    path("add_elogyear/", add_elogyear, name="add_elogyear"),
+    path("add_department/", add_department, name="add_department"),
+    path("add_group/", add_group, name="add_group"),
+    path("add_student/", add_student, name="add_student"),
+    path("add_doctor/", add_doctor, name="add_doctor"),
     # Core Diagnosis Procedure Sessions URLs
-    path('sessions/', core_dia_pro_session_list, name='core_dia_pro_session_list'),
-    path('sessions/create/', core_dia_pro_session_create, name='core_dia_pro_session_create'),
-    path('sessions/edit/<int:pk>/', core_dia_pro_session_update, name='core_dia_pro_session_update'),
-    path('sessions/delete/<int:pk>/', core_dia_pro_session_delete, name='core_dia_pro_session_delete'),
-
+    path("sessions/", core_dia_pro_session_list, name="core_dia_pro_session_list"),
+    path(
+        "sessions/create/",
+        core_dia_pro_session_create,
+        name="core_dia_pro_session_create",
+    ),
+    path(
+        "sessions/edit/<int:pk>/",
+        core_dia_pro_session_update,
+        name="core_dia_pro_session_update",
+    ),
+    path(
+        "sessions/delete/<int:pk>/",
+        core_dia_pro_session_delete,
+        name="core_dia_pro_session_delete",
+    ),
     # Support Ticket URLs
-    path('resolve_ticket/<int:ticket_id>/', views.resolve_ticket, name='resolve_ticket'),
+    path(
+        "resolve_ticket/<int:ticket_id>/", views.resolve_ticket, name="resolve_ticket"
+    ),
+    # Profile URLs
+    path(
+        "update-profile-photo/", views.update_profile_photo, name="update_profile_photo"
+    ),
+    path("update-contact-info/", views.update_contact_info, name="update_contact_info"),
+    # Review URLs
+    path("review-log/<int:log_id>/", views.review_log, name="review_log"),
+    path("batch-review/", views.batch_review, name="batch_review"),
+
+    # Year Management URLs
+    path("edit-year/<int:year_id>/", edit_year, name="edit_year"),
+    path("delete-year/<int:year_id>/", delete_year, name="delete_year"),
+
+    # User Management URLs
+    path("edit-user/<int:user_id>/", edit_user, name="edit_user"),
+    path("delete-user/<int:user_id>/", delete_user, name="delete_user"),
+
+    # Year Section Management URLs
+    path("edit-elogyear/<int:section_id>/", edit_elogyear, name="edit_elogyear"),
+    path("delete-elogyear/<int:section_id>/", delete_elogyear, name="delete_elogyear"),
+
+    # Department Management URLs
+    path("edit-department/<int:department_id>/", edit_department, name="edit_department"),
+    path("delete-department/<int:department_id>/", delete_department, name="delete_department"),
+    path("api/year-sections/<int:year_id>/", get_year_sections, name="get_year_sections"),
 ]
