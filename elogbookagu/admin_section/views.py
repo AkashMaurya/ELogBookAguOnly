@@ -18,7 +18,7 @@ from student_section.models import SupportTicket, StudentLogFormModel
 from doctor_section.models import DoctorSupportTicket
 
 # Forms
-from .forms import BulkUserUploadForm
+from .forms import BulkUserUploadForm, CSVUploadForm
 from student_section.forms import AdminResponseForm
 from doctor_section.forms import AdminDoctorResponseForm, BatchReviewForm, LogReviewForm
 from django.core.paginator import Paginator
@@ -52,6 +52,7 @@ def bulk_add_users(request):
             io_string = io.StringIO(decoded_file)
             reader = csv.DictReader(io_string)
 
+            # Basic required fields for all user types
             required_fields = [
                 'username', 'first_name', 'last_name', 'email',
                 'password', 'role', 'city', 'country', 'phone_no'
@@ -101,6 +102,43 @@ def bulk_add_users(request):
                             bio=row.get('bio', '').strip(),
                             speciality=row.get('speciality', '').strip()
                         )
+
+                        # Create role-specific profile
+                        if role == 'student':
+                            # Additional validation for student-specific fields
+                            student_id = row.get('student_id', '').strip()
+                            group_id = row.get('group', '').strip()
+
+                            if not student_id:
+                                raise ValueError("Student ID is required for student users")
+
+                            if Student.objects.filter(student_id=student_id).exists():
+                                raise ValueError(f"Student ID '{student_id}' already exists")
+
+                            # Create student profile
+                            student = Student(user=user, student_id=student_id)
+
+                            # Assign group if provided and valid
+                            if group_id:
+                                try:
+                                    group = Group.objects.get(id=group_id)
+                                    student.group = group
+                                except Group.DoesNotExist:
+                                    # Try to match by group name (B1, B2, A1, etc.)
+                                    try:
+                                        group = Group.objects.filter(group_name=group_id).first()
+                                        if group:
+                                            student.group = group
+                                    except Exception:
+                                        pass
+
+                            student.save()
+
+                        elif role == 'doctor':
+                            Doctor.objects.create(user=user)
+
+                        elif role == 'staff':
+                            Staff.objects.create(user=user)
 
                         success_count += 1
                 except Exception as e:
@@ -238,23 +276,99 @@ def get_monthly_trend_data(logs):
 def download_user_template(request):
     """Download a sample CSV template for user import"""
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="user_import_template.csv"'
+    user_type = request.GET.get('type', 'general')
 
-    writer = csv.writer(response)
+    if user_type == 'student':
+        response['Content-Disposition'] = 'attachment; filename="student_import_template.csv"'
 
-    # Write headers
-    headers = [
-        'username', 'email', 'password', 'first_name', 'last_name',
-        'role', 'city', 'country', 'phone_no', 'bio', 'speciality'
-    ]
-    writer.writerow(headers)
+        # Write headers for student template
+        headers = [
+            'username', 'email', 'password', 'first_name', 'last_name',
+            'role', 'student_id', 'group', 'city', 'country', 'phone_no'
+        ]
+        writer = csv.writer(response)
+        writer.writerow(headers)
 
-    # Write sample data
-    sample_data = [
-        'john.doe', 'john@example.com', 'SecurePass123', 'John', 'Doe',
-        'doctor', 'New York', 'USA', '1234567890', 'Experienced doctor', 'Cardiology'
-    ]
-    writer.writerow(sample_data)
+        # Write sample data for student with different group names
+        sample_data = [
+            'student1', 'student1@example.com', 'SecurePass123', 'John', 'Student',
+            'student', 'STU12345', 'B1', 'New York', 'USA', '1234567890'
+        ]
+        writer.writerow(sample_data)
+
+        # Add more examples with different groups
+        sample_data2 = [
+            'student2', 'student2@example.com', 'SecurePass456', 'Jane', 'Student',
+            'student', 'STU67890', 'A2', 'London', 'UK', '9876543210'
+        ]
+        writer.writerow(sample_data2)
+
+        sample_data3 = [
+            'student3', 'student3@example.com', 'SecurePass789', 'Alex', 'Student',
+            'student', 'STU24680', 'B2', 'Paris', 'France', '5555555555'
+        ]
+        writer.writerow(sample_data3)
+
+        sample_data4 = [
+            'student4', 'student4@example.com', 'SecurePass101', 'Maria', 'Student',
+            'student', 'STU13579', 'A1', 'Berlin', 'Germany', '6666666666'
+        ]
+        writer.writerow(sample_data4)
+
+    elif user_type == 'doctor':
+        response['Content-Disposition'] = 'attachment; filename="doctor_import_template.csv"'
+
+        # Write headers for doctor template
+        headers = [
+            'username', 'email', 'password', 'first_name', 'last_name',
+            'role', 'speciality', 'city', 'country', 'phone_no', 'bio'
+        ]
+        writer = csv.writer(response)
+        writer.writerow(headers)
+
+        # Write sample data for doctor
+        sample_data = [
+            'doctor1', 'doctor1@example.com', 'SecurePass123', 'John', 'Doctor',
+            'doctor', 'Cardiology', 'New York', 'USA', '1234567890', 'Experienced cardiologist'
+        ]
+        writer.writerow(sample_data)
+
+    elif user_type == 'staff':
+        response['Content-Disposition'] = 'attachment; filename="staff_import_template.csv"'
+
+        # Write headers for staff template
+        headers = [
+            'username', 'email', 'password', 'first_name', 'last_name',
+            'role', 'city', 'country', 'phone_no'
+        ]
+        writer = csv.writer(response)
+        writer.writerow(headers)
+
+        # Write sample data for staff
+        sample_data = [
+            'staff1', 'staff1@example.com', 'SecurePass123', 'John', 'Staff',
+            'staff', 'New York', 'USA', '1234567890'
+        ]
+        writer.writerow(sample_data)
+
+    else:
+        # Default general template
+        response['Content-Disposition'] = 'attachment; filename="user_import_template.csv"'
+
+        # Write headers for general template
+        headers = [
+            'username', 'email', 'password', 'first_name', 'last_name',
+            'role', 'city', 'country', 'phone_no', 'bio', 'speciality'
+        ]
+        writer = csv.writer(response)
+        writer.writerow(headers)
+
+        # Write sample data
+        sample_data = [
+            'john.doe', 'john@example.com', 'SecurePass123', 'John', 'Doe',
+            'doctor', 'New York', 'USA', '1234567890', 'Experienced doctor', 'Cardiology'
+        ]
+        writer.writerow(sample_data)
 
     return response
 
@@ -562,28 +676,152 @@ def notifications(request):
 
 @login_required
 def bulk_import_users(request):
-    return render(request, 'admin_section/bulk_import_users.html')
+    if request.user.role != 'admin':
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('login')
+
+    if request.method == 'POST':
+        form = CSVUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            csv_file = request.FILES['csv_file']
+            user_type = form.cleaned_data['user_type']
+
+            # Validate file size (5MB limit)
+            if csv_file.size > 5 * 1024 * 1024:
+                messages.error(request, 'File size must be less than 5MB')
+                return redirect('admin_section:bulk_import_users')
+
+            try:
+                decoded_file = csv_file.read().decode('utf-8')
+            except UnicodeDecodeError:
+                messages.error(request, 'Please upload a valid CSV file')
+                return redirect('admin_section:bulk_import_users')
+
+            io_string = io.StringIO(decoded_file)
+            reader = csv.DictReader(io_string)
+
+            # Basic required fields for all user types
+            required_fields = [
+                'username', 'email', 'password', 'first_name', 'last_name',
+                'city', 'country', 'phone_no'
+            ]
+
+            # Add role-specific required fields
+            if user_type == 'student':
+                required_fields.append('student_id')
+
+            # Validate headers
+            headers = reader.fieldnames
+            if not headers or not all(field in headers for field in required_fields):
+                missing_fields = [field for field in required_fields if field not in headers]
+                messages.error(request, f'CSV file is missing required fields: {", ".join(missing_fields)}')
+                return redirect('admin_section:bulk_import_users')
+
+            success_count = 0
+            error_count = 0
+            error_messages = []
+
+            for row in reader:
+                try:
+                    with transaction.atomic():
+                        # Basic validation
+                        username = row.get('username', '').strip()
+                        email = row.get('email', '').strip()
+
+                        if not username or not email:
+                            raise ValueError("Username and email are required")
+
+                        if CustomUser.objects.filter(username=username).exists():
+                            raise ValueError(f"Username '{username}' already exists")
+
+                        if CustomUser.objects.filter(email=email).exists():
+                            raise ValueError(f"Email '{email}' already exists")
+
+                        # Create user with role based on form selection
+                        user = CustomUser.objects.create(
+                            username=username,
+                            email=email,
+                            password=make_password(row['password'].strip()),
+                            first_name=row.get('first_name', '').strip(),
+                            last_name=row.get('last_name', '').strip(),
+                            role=user_type,  # Use the selected role from the form
+                            phone_no=row.get('phone_no', '').strip(),
+                            city=row.get('city', '').strip(),
+                            country=row.get('country', '').strip(),
+                            bio=row.get('bio', '').strip(),
+                            speciality=row.get('speciality', '').strip()
+                        )
+
+                        # Create role-specific profile
+                        if user_type == 'student':
+                            # Additional validation for student-specific fields
+                            student_id = row.get('student_id', '').strip()
+                            group_id = row.get('group', '').strip()
+
+                            if not student_id:
+                                raise ValueError("Student ID is required for student users")
+
+                            if Student.objects.filter(student_id=student_id).exists():
+                                raise ValueError(f"Student ID '{student_id}' already exists")
+
+                            # Create student profile
+                            student = Student(user=user, student_id=student_id)
+
+                            # Assign group if provided and valid
+                            if group_id:
+                                # First try to match by group name (B1, B2, A1, etc.)
+                                group = Group.objects.filter(group_name=group_id).first()
+
+                                # If not found by name, try by ID (if it's a number)
+                                if not group and group_id.isdigit():
+                                    try:
+                                        group = Group.objects.get(id=int(group_id))
+                                    except Group.DoesNotExist:
+                                        pass
+
+                                # If group was found, assign it
+                                if group:
+                                    student.group = group
+                                else:
+                                    # Log a warning but don't fail the import
+                                    print(f"Warning: Group '{group_id}' not found for student {student_id}")
+
+                            student.save()
+
+                        elif user_type == 'doctor':
+                            Doctor.objects.create(user=user)
+
+                        elif user_type == 'staff':
+                            Staff.objects.create(user=user)
+
+                        success_count += 1
+                except Exception as e:
+                    error_count += 1
+                    error_messages.append(f"Row {reader.line_num}: {str(e)}")
+
+            if success_count > 0:
+                messages.success(request, f"Successfully added {success_count} {user_type}s.")
+            if error_count > 0:
+                messages.warning(request, f"Failed to add {error_count} {user_type}s. See details below.")
+
+            return render(request, 'admin_section/bulk_import_users.html', {
+                'form': form,
+                'results': {
+                    'success_count': success_count,
+                    'error_count': error_count,
+                    'error_messages': error_messages[:10],
+                    'total_errors': len(error_messages),
+                    'user_type': user_type
+                }
+            })
+    else:
+        form = CSVUploadForm()
+
+    return render(request, 'admin_section/bulk_import_users.html', {'form': form})
 
 @login_required
 def download_sample_csv(request):
     """Download a sample CSV template for student import"""
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="student_import_template.csv"'
-
-    writer = csv.writer(response)
-
-    # Write headers
-    headers = [
-        'username', 'email', 'password', 'first_name', 'last_name', 'student_id',
-        'phone_no', 'city', 'country', 'group'
-    ]
-    writer.writerow(headers)
-
-    # Write sample data
-    sample_data = [
-        'student1', 'student1@example.com', 'SecurePass123', 'John', 'Student',
-        'STU12345', '1234567890', 'New York', 'USA', '1'
-    ]
-    writer.writerow(sample_data)
-
-    return response
+    # This function is kept for backward compatibility
+    # Redirect to the download_user_template function with type=student
+    return download_user_template(request)

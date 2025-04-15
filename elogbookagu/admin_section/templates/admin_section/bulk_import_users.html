@@ -12,7 +12,7 @@
   <div class="container mx-auto px-4 py-8 mt-16">
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
       <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">Bulk Import Users</h2>
-      
+
       <!-- Messages section -->
       {% if messages %}
         <div class="mb-6">
@@ -23,7 +23,7 @@
           {% endfor %}
         </div>
       {% endif %}
-      
+
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Upload Form -->
         <div>
@@ -31,18 +31,19 @@
             <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Upload CSV File</h3>
             <form method="post" enctype="multipart/form-data" class="space-y-4">
               {% csrf_token %}
-              
+
               <div>
                 <label for="{{ form.user_type.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">User Type</label>
                 {{ form.user_type }}
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Select the type of users you want to import</p>
               </div>
-              
+
               <div>
                 <label for="{{ form.csv_file.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CSV File</label>
                 {{ form.csv_file }}
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ form.csv_file.help_text }}</p>
               </div>
-              
+
               <div class="pt-4">
                 <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out">
                   Upload and Import
@@ -50,33 +51,33 @@
               </div>
             </form>
           </div>
-          
+
           <!-- Download Sample Templates -->
           <div class="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Download Sample Templates</h3>
             <p class="text-gray-600 dark:text-gray-300 mb-4">Download a sample CSV template for the user type you want to import:</p>
-            
+
             <div class="space-y-3">
-              <a href="{% url 'admin_section:download_sample_csv' %}?type=student" class="block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out text-center">
+              <a href="{% url 'admin_section:download_user_template' %}?type=student" class="block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out text-center">
                 Download Student Template
               </a>
-              <a href="{% url 'admin_section:download_sample_csv' %}?type=doctor" class="block w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out text-center">
+              <a href="{% url 'admin_section:download_user_template' %}?type=doctor" class="block w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out text-center">
                 Download Doctor Template
               </a>
-              <a href="{% url 'admin_section:download_sample_csv' %}?type=staff" class="block w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out text-center">
+              <a href="{% url 'admin_section:download_user_template' %}?type=staff" class="block w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out text-center">
                 Download Staff Template
               </a>
             </div>
           </div>
         </div>
-        
+
         <!-- Instructions and Results -->
         <div>
           {% if results %}
             <!-- Import Results -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
               <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Import Results</h3>
-              
+
               <div class="grid grid-cols-2 gap-4 mb-4">
                 <div class="bg-green-100 dark:bg-green-800 p-4 rounded-lg text-center">
                   <p class="text-sm text-gray-600 dark:text-gray-300">Successfully Imported</p>
@@ -87,7 +88,7 @@
                   <p class="text-2xl font-bold text-red-600 dark:text-red-300">{{ results.error_count }}</p>
                 </div>
               </div>
-              
+
               {% if results.error_messages %}
                 <div class="mt-4">
                   <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">Error Details:</h4>
@@ -107,11 +108,11 @@
               {% endif %}
             </div>
           {% endif %}
-          
+
           <!-- Instructions -->
           <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Instructions</h3>
-            
+
             <div class="space-y-4">
               <div>
                 <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">Required Fields</h4>
@@ -131,22 +132,44 @@
               <div>
                 <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">Important Notes</h4>
                 <ul class="list-disc pl-5 space-y-1 text-gray-600 dark:text-gray-300">
-                  <li>Student ID must be unique in the system</li>
-                  <li>Username and email must be unique</li>
-                  <li>All students will be assigned to the selected group</li>
+                  <li>Select the appropriate user type before uploading</li>
+                  <li>Username and email must be unique in the system</li>
+                  <li>For students, Student ID must be unique</li>
+                  <li>For students, group can be specified as group name (B1, B2, A1, A2, etc.)</li>
                   <li>Maximum file size: 5MB</li>
                   <li>File must be in CSV format</li>
-                  <li>All fields are required</li>
+                  <li>Required fields vary by user type (see examples below)</li>
                 </ul>
               </div>
 
               <div>
-                <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">Example Format</h4>
+                <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">Example Formats</h4>
+
+                <h5 class="font-medium text-gray-700 dark:text-gray-300 mt-3 mb-1">Student Format:</h5>
+                <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg overflow-x-auto mb-3">
+                  <code class="text-sm">
+                    username,email,password,first_name,last_name,student_id,group,phone_no,city,country<br>
+                    john.doe,john.doe@example.com,SecurePass123,John,Doe,STU001,B1,1234567890,New York,USA<br>
+                    jane.smith,jane.smith@example.com,SecurePass456,Jane,Smith,STU002,A2,0987654321,London,UK
+                  </code>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Note: For the 'group' column, use the group name (A1, A2, B1, B2, etc.) rather than the group ID number.</p>
+
+                <h5 class="font-medium text-gray-700 dark:text-gray-300 mt-3 mb-1">Doctor Format:</h5>
+                <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg overflow-x-auto mb-3">
+                  <code class="text-sm">
+                    username,email,password,first_name,last_name,speciality,phone_no,city,country<br>
+                    john.doc,john.doc@example.com,SecurePass123,John,Doctor,Cardiology,1234567890,New York,USA<br>
+                    jane.doc,jane.doc@example.com,SecurePass456,Jane,Doctor,Neurology,0987654321,London,UK
+                  </code>
+                </div>
+
+                <h5 class="font-medium text-gray-700 dark:text-gray-300 mt-3 mb-1">Staff Format:</h5>
                 <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg overflow-x-auto">
                   <code class="text-sm">
-                    username,email,password,first_name,last_name,student_id,phone_no,city,country<br>
-                    john.doe,john.doe@example.com,SecurePass123,John,Doe,STU001,1234567890,New York,USA<br>
-                    jane.smith,jane.smith@example.com,SecurePass456,Jane,Smith,STU002,0987654321,London,UK
+                    username,email,password,first_name,last_name,phone_no,city,country<br>
+                    john.staff,john.staff@example.com,SecurePass123,John,Staff,1234567890,New York,USA<br>
+                    jane.staff,jane.staff@example.com,SecurePass456,Jane,Staff,0987654321,London,UK
                   </code>
                 </div>
               </div>
@@ -156,12 +179,12 @@
       </div>
     </div>
   </div>
-  
+
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       // Show different sample data based on selected user type
       const userTypeSelect = document.getElementById('{{ form.user_type.id_for_label }}');
-      
+
       if (userTypeSelect) {
         userTypeSelect.addEventListener('change', function() {
           // You can add additional JavaScript here if needed

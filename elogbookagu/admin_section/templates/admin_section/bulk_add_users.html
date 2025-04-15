@@ -35,10 +35,20 @@
                     </form>
                 </div>
 
-                <!-- Download Template -->
-                <div class="mt-6">
-                    <a href="{% url 'admin_section:download_user_template' %}" class="block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-center">
-                        Download CSV Template
+                <!-- Download Templates -->
+                <div class="mt-6 space-y-3">
+                    <h4 class="font-semibold text-gray-700 dark:text-gray-300">Download Templates:</h4>
+                    <a href="{% url 'admin_section:download_user_template' %}?type=general" class="block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded text-center">
+                        Download General Template
+                    </a>
+                    <a href="{% url 'admin_section:download_user_template' %}?type=student" class="block w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-center">
+                        Download Student Template
+                    </a>
+                    <a href="{% url 'admin_section:download_user_template' %}?type=doctor" class="block w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded text-center">
+                        Download Doctor Template
+                    </a>
+                    <a href="{% url 'admin_section:download_user_template' %}?type=staff" class="block w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded text-center">
+                        Download Staff Template
                     </a>
                 </div>
             </div>
@@ -79,8 +89,8 @@
                     <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Instructions</h3>
                     <div class="space-y-4">
                         <div>
-                            <h4 class="font-semibold text-gray-700 mb-2">Required Fields</h4>
-                            <ul class="list-disc pl-5 space-y-1 text-gray-600">
+                            <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">General Required Fields</h4>
+                            <ul class="list-disc pl-5 space-y-1 text-gray-600 dark:text-gray-400">
                                 <li>username (required)</li>
                                 <li>email (required)</li>
                                 <li>password (required)</li>
@@ -92,20 +102,40 @@
                                 <li>phone_no (required)</li>
                             </ul>
                         </div>
+
                         <div>
-                            <h4 class="font-semibold text-gray-700 mb-2">Optional Fields</h4>
-                            <ul class="list-disc pl-5 space-y-1 text-gray-600">
-                                <li>bio</li>
-                                <li>speciality</li>
+                            <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">Role-Specific Required Fields</h4>
+                            <ul class="list-disc pl-5 space-y-1 text-gray-600 dark:text-gray-400">
+                                <li><strong>For Students:</strong> student_id (required), group (optional - can be group ID or group name like 'B1', 'A2', etc.)</li>
+                                <li><strong>For Doctors:</strong> speciality (optional)</li>
                             </ul>
                         </div>
+
                         <div>
-                            <h4 class="font-semibold text-gray-700 mb-2">Example Format</h4>
-                            <div class="bg-gray-100 p-3 rounded-lg overflow-x-auto">
+                            <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">Optional Fields</h4>
+                            <ul class="list-disc pl-5 space-y-1 text-gray-600 dark:text-gray-400">
+                                <li>bio</li>
+                                <li>speciality (for non-doctor roles)</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">Example Formats</h4>
+
+                            <h5 class="font-medium text-gray-700 dark:text-gray-300 mt-3 mb-1">Student Example:</h5>
+                            <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg overflow-x-auto mb-3">
                                 <code class="text-sm">
-                                    username,email,password,first_name,last_name,role,city,country,phone_no,bio,speciality<br>
-                                    john.doe,john@example.com,Pass123!,John,Doe,doctor,New York,USA,1234567890,Experienced doctor,Cardiology<br>
-                                    jane.smith,jane@example.com,Pass456!,Jane,Smith,student,London,UK,0987654321,Medical student,
+                                    username,email,password,first_name,last_name,role,student_id,group,city,country,phone_no<br>
+                                    student1,student1@example.com,Pass123!,John,Student,student,STU12345,B1,New York,USA,1234567890<br>
+                                    student2,student2@example.com,Pass456!,Jane,Student,student,STU67890,A2,London,UK,9876543210
+                                </code>
+                            </div>
+
+                            <h5 class="font-medium text-gray-700 dark:text-gray-300 mt-3 mb-1">Doctor Example:</h5>
+                            <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg overflow-x-auto">
+                                <code class="text-sm">
+                                    username,email,password,first_name,last_name,role,speciality,city,country,phone_no,bio<br>
+                                    doctor1,doctor1@example.com,Pass123!,John,Doctor,doctor,Cardiology,New York,USA,1234567890,Experienced cardiologist
                                 </code>
                             </div>
                         </div>
