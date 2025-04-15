@@ -2,6 +2,8 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
+from accounts.models import CustomUser
 
 # LogYear Model
 class LogYear(models.Model):
@@ -67,7 +69,7 @@ class TrainingSite(models.Model):
 class ActivityType(models.Model):
     name = models.CharField(max_length=100)
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name="activity_types")
-    
+
     def __str__(self):
         return self.name
 
@@ -86,3 +88,30 @@ class CoreDiaProSession(models.Model):
     class Meta:
         verbose_name = "Core Diagnosis Procedure Session"
         verbose_name_plural = "Core Diagnosis Procedure Sessions"
+
+
+# Admin Notification Model
+class AdminNotification(models.Model):
+    recipient = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='admin_notifications', limit_choices_to={'role': 'admin'})
+    title = models.CharField(max_length=100)
+    message = models.TextField()
+    support_ticket_type = models.CharField(max_length=20, choices=[
+        ('student', 'Student Support'),
+        ('doctor', 'Doctor Support'),
+        ('staff', 'Staff Support')
+    ])
+    ticket_id = models.IntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Admin Notification"
+        verbose_name_plural = "Admin Notifications"
+
+    def __str__(self):
+        return f"{self.recipient.get_full_name()} - {self.title}"
+
+    def mark_as_read(self):
+        self.is_read = True
+        self.save()

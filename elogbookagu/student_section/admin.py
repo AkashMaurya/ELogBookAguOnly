@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import StudentLogFormModel, SupportTicket
+from .models import StudentLogFormModel, SupportTicket, StudentNotification
 from import_export.admin import ImportExportModelAdmin
 
 
@@ -52,6 +52,28 @@ class SupportTicketAdmin(ImportExportModelAdmin):
         }),
         ('Timestamps', {
             'fields': ('date_created',),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+@admin.register(StudentNotification)
+class StudentNotificationAdmin(admin.ModelAdmin):
+    list_display = ('recipient', 'title', 'created_at', 'is_read')
+    list_filter = ('is_read',)
+    search_fields = ('recipient__user__username', 'recipient__user__first_name', 'title', 'message')
+    readonly_fields = ('created_at',)
+    date_hierarchy = 'created_at'
+
+    fieldsets = (
+        ('Notification Information', {
+            'fields': ('recipient', 'log_entry', 'title', 'message')
+        }),
+        ('Status', {
+            'fields': ('is_read',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at',),
             'classes': ('collapse',)
         }),
     )

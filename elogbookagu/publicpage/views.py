@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 import time
 from django.core.exceptions import ValidationError
-from accounts.models import CustomUser, Student
+from accounts.models import CustomUser, Student, Staff, Doctor
 import os  # Moved os import here
 from django.http import FileResponse
 from django.conf import settings
@@ -140,6 +140,20 @@ def login(request):
                 request.session["log_year"] = None
                 request.session["log_year_section"] = None
 
+        # Staff data handling
+        if user.role == "staff":
+            try:
+                staff = Staff.objects.select_related('user').get(user=user)
+                departments = staff.get_departments()
+                request.session["departments"] = departments
+            except Staff.DoesNotExist:
+                print(f"No staff profile found for user: {user.email}")
+                request.session["departments"] = []
+                messages.warning(request, "Staff profile not found. Please contact administrator.")
+            except Exception as e:
+                print(f"Error fetching staff departments: {str(e)}")
+                request.session["departments"] = []
+
         request.session.save()  # Session ko explicitly save karen
 
         # User ke role ke hisaab se redirection
@@ -147,7 +161,7 @@ def login(request):
             "admin": "admin_section:admin_dash",  # Admin role ke liye dashboard redirect
             "doctor": "doctor_section:doctor_dash",  # Doctor role ke liye dashboard redirect
             "student": "student_section:student_dash",  # Student role ke liye dashboard redirect
-            "staff": "staff_section:staff_dashboard",  # Staff role ke liye dashboard redirect
+            "staff": "staff_section:staff_dash",  # Staff role ke liye dashboard redirect
         }
 
         # Agar role valid hai to uss role ke dashboard par redirect karen, warna default "dashboard" par

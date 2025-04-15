@@ -32,7 +32,7 @@
         <img src="https://cdn-icons-png.flaticon.com/512/1008/1008928.png" alt="Pending Icon" class="w-14 h-14" />
         <div>
           <h3 class="text-xl font-semibold dark:text-white">Left to Review</h3>
-          <p class="text-3xl font-bold text-red-600 dark:text-red-400">{{ left_to_review|default:30 }}</p>
+          <p class="text-3xl font-bold text-red-600 dark:text-red-400">{{ left_to_review }}</p>
         </div>
       </div>
 
@@ -54,9 +54,9 @@
         <div class="relative w-32 h-32 flex items-center justify-center">
           <svg class="w-full h-full" viewBox="0 0 100 100">
             <circle class="text-gray-200 dark:text-gray-600 stroke-current" stroke-width="10" cx="50" cy="50" r="40" fill="transparent"></circle>
-            <circle class="text-indigo-500 progress-ring stroke-current" stroke-width="10" stroke-linecap="round" cx="50" cy="50" r="40" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="calc(251.2 - (251.2 * {{ reviewed|default:70 }}) / {{ total_records|default:100 }})"></circle>
+            <circle class="text-indigo-500 progress-ring stroke-current" stroke-width="10" stroke-linecap="round" cx="50" cy="50" r="40" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="calc(251.2 - (251.2 * {{ review_percentage|default:70 }}) / 100)"></circle>
           </svg>
-          <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-2xl font-bold dark:text-white">{{ reviewed|default:70 }}%</div>
+          <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-2xl font-bold dark:text-white">{{ review_percentage|default:70 }}%</div>
         </div>
         <p class="text-gray-800 dark:text-gray-200 mt-4 text-center">Reviewed out of {{ total_records|default:100 }} records</p>
       </div>
@@ -103,15 +103,15 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const totalRecords = '{{ total_records|default:100 }}'
-      const leftToReview = '{{ left_to_review|default:30 }}'
-      const reviewed = '{{ reviewed|default:70 }}'
+      const totalRecords = {{ total_records }}
+      const leftToReview = {{ left_to_review }}
+      const reviewed = {{ reviewed }}
       console.log('Chart Data:', [totalRecords, leftToReview, reviewed])
-    
+
       const ctx = document.getElementById('reviewChart').getContext('2d')
       const isDarkMode = () => document.documentElement.classList.contains('dark')
       const textColor = () => (isDarkMode() ? '#ffffff' : '#000000')
-    
+
       const reviewChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -134,7 +134,7 @@
           plugins: { legend: { labels: { color: textColor(), font: { weight: 'bold' } } } }
         }
       })
-    
+
       window.addEventListener('themeChanged', () => {
         const newColor = textColor()
         const newGridColor = isDarkMode() ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
@@ -163,7 +163,7 @@
     .animate-slide-in {
       animation: slideIn 1s ease-out forwards;
     }
-    
+
     @keyframes fadeIn {
       from {
         opacity: 0;
@@ -177,7 +177,7 @@
     .animate-fade-in {
       animation: fadeIn 1s ease-out forwards;
     }
-    
+
     @keyframes pulseCard {
       0%,
       100% {
@@ -190,7 +190,7 @@
     .animate-pulse-card {
       animation: pulseCard 2s infinite ease-in-out;
     }
-    
+
     .progress-ring {
       transform: rotate(-90deg);
       transform-origin: 50% 50%;

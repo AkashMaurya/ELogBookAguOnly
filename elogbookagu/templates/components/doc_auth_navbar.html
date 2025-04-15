@@ -2,6 +2,16 @@
 <div class="flex flex-row dark:bg-gray-800 bg-gray-100 py-3 fixed top-0 left-0 right-0 z-20 shadow-md">
   <button id="sidebar-toggle" class="bg-gray-200 dark:bg-gray-800 py-2 px-4 ml-4 rounded-lg text-center cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95"><i class="fas fa-bars"></i></button>
   <h1 class="text-2xl font-bold text-center flex-grow dark:text-white">Welcome: {{ request.session.first_name }} {{ request.session.last_name }}</h1>
+
+  <!-- Notification Icon -->
+  <div class="relative mr-4">
+    <a href="{% url 'doctor_section:notifications' %}" class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+      <i class="fas fa-bell text-xl"></i>
+      {% if unread_notifications_count > 0 %}
+        <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ unread_notifications_count }}</span>
+      {% endif %}
+    </a>
+  </div>
 </div>
 
 <!-- Fixed Sidebar -->
@@ -56,41 +66,41 @@
     const themeToggleBtn = document.getElementById('theme-toggle')
     const darkIcon = document.getElementById('theme-toggle-dark-icon')
     const lightIcon = document.getElementById('theme-toggle-light-icon')
-  
+
     // Sidebar ka kaam
     if (!sidebarToggleBtn || !sidebar) {
       console.error('Required elements not found:', { sidebarToggleBtn, sidebar })
       return
     }
-  
+
     function toggleSidebar() {
       sidebar.classList.toggle('-translate-x-full')
       sidebar.classList.toggle('translate-x-0')
     }
-  
+
     function closeSidebar() {
       sidebar.classList.add('-translate-x-full')
       sidebar.classList.remove('translate-x-0')
     }
-  
+
     sidebarToggleBtn.addEventListener('click', (e) => {
       e.preventDefault()
       toggleSidebar()
     })
-  
+
     document.addEventListener('click', (e) => {
       if (!sidebar.contains(e.target) && !sidebarToggleBtn.contains(e.target)) {
         closeSidebar()
       }
     })
-  
+
     // Dark mode ka kaam
     function toggleTheme() {
       // HTML ya body pe dark class check karo
       const html = document.documentElement
       const darkIcon = document.getElementById('theme-toggle-dark-icon')
       const lightIcon = document.getElementById('theme-toggle-light-icon')
-  
+
       if (html.classList.contains('dark')) {
         // Dark mode off karo
         html.classList.remove('dark')
@@ -105,12 +115,12 @@
         localStorage.setItem('theme', 'dark') // Choice save karo
       }
     }
-  
+
     // Page load pe theme check karo
     document.addEventListener('DOMContentLoaded', () => {
       const darkIcon = document.getElementById('theme-toggle-dark-icon')
       const lightIcon = document.getElementById('theme-toggle-light-icon')
-  
+
       // Agar pehle se dark mode saved hai ya system dark mode use karta hai
       if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
         document.documentElement.classList.add('dark')

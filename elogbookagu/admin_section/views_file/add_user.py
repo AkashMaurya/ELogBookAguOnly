@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.db import transaction
+from django.db.models import Q
 from accounts.models import CustomUser, Student, Doctor, Staff
 from admin_section.forms import CustomUserForm
 
@@ -36,17 +37,41 @@ def add_user(request):
     else:
         form = CustomUserForm()
 
+    # Get search query and role filter if any
+    search_query = request.GET.get('q', '').strip()
+    role_filter = request.GET.get('role', '').strip()
+
     # Get all users for the table
     users = CustomUser.objects.all().order_by('-date_joined')
+
+    # Apply role filter if provided
+    if role_filter and role_filter in dict(CustomUser.ROLE_CHOICES):
+        users = users.filter(role=role_filter)
+
+    # Apply search filter if provided
+    if search_query:
+        users = users.filter(
+            Q(username__icontains=search_query) |
+            Q(email__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(student__student_id__icontains=search_query)  # Search by student ID if available
+        )
 
     # Pagination
     paginator = Paginator(users, 10)  # Show 10 users per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # Get all available roles for the filter dropdown
+    roles = CustomUser.ROLE_CHOICES
+
     context = {
         'form': form,
         'users': page_obj,
+        'search_query': search_query,
+        'role_filter': role_filter,
+        'roles': roles,
     }
 
     return render(request, "admin_section/add_user.html", context)

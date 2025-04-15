@@ -4,13 +4,14 @@ from import_export import resources, fields
 from import_export.widgets import ForeignKeyWidget
 # Change the import to use relative import
 from .models import (
-    LogYear, 
-    LogYearSection, 
-    Department, 
-    Group, 
-    TrainingSite, 
-    ActivityType, 
-    CoreDiaProSession
+    LogYear,
+    LogYearSection,
+    Department,
+    Group,
+    TrainingSite,
+    ActivityType,
+    CoreDiaProSession,
+    AdminNotification
 )
 
 
@@ -117,3 +118,26 @@ class CoreDiaProSessionAdmin(ImportExportModelAdmin):
     list_filter = ("activity_type", "department")  # Filters shown in the sidebar
     search_fields = ("name", "activity_type__name", "department__name")  # Fields searchable in the search bar
     ordering = ("name",)  # Default ordering of records
+
+
+# Admin configuration for AdminNotification
+@admin.register(AdminNotification)
+class AdminNotificationAdmin(admin.ModelAdmin):
+    list_display = ('recipient', 'title', 'support_ticket_type', 'created_at', 'is_read')
+    list_filter = ('is_read', 'support_ticket_type')
+    search_fields = ('recipient__username', 'recipient__first_name', 'title', 'message')
+    readonly_fields = ('created_at',)
+    date_hierarchy = 'created_at'
+
+    fieldsets = (
+        ('Notification Information', {
+            'fields': ('recipient', 'title', 'message', 'support_ticket_type', 'ticket_id')
+        }),
+        ('Status', {
+            'fields': ('is_read',)
+        }),
+        ('Timestamps', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )

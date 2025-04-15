@@ -105,6 +105,16 @@
               Apply
             </button>
           </form>
+
+          {% if selected_department and doctor_performance %}
+          <!-- Doctor Performance Chart for Selected Department -->
+          <div class="mt-6">
+            <h4 class="text-lg font-medium text-gray-800 dark:text-white mb-3">Doctor Performance in Selected Department</h4>
+            <div class="h-64 bg-white dark:bg-gray-700 p-4 rounded-lg shadow">
+              <canvas id="doctorPerformanceChart"></canvas>
+            </div>
+          </div>
+          {% endif %}
         </div>
 
         <!-- User Dropdown -->
@@ -186,7 +196,7 @@
               <p class="font-medium text-gray-800 dark:text-white">{{ student_data.total_logs }}</p>
             </div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div class="p-3 bg-green-100 dark:bg-green-800 rounded-lg">
               <p class="text-sm text-green-800 dark:text-green-200">Approved</p>
               <p class="text-xl font-bold text-green-800 dark:text-green-200">{{ student_data.approved_logs }}</p>
@@ -200,6 +210,16 @@
               <p class="text-xl font-bold text-red-800 dark:text-red-200">{{ student_data.rejected_logs }}</p>
             </div>
           </div>
+
+          {% if student_performance_data %}
+          <!-- Student Performance by Department Chart -->
+          <div class="mt-4">
+            <h4 class="text-lg font-medium text-gray-800 dark:text-white mb-3">Performance by Department</h4>
+            <div class="h-64 bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+              <canvas id="studentPerformanceChart"></canvas>
+            </div>
+          </div>
+          {% endif %}
         </div>
       {% endif %}
     </div>
@@ -276,6 +296,10 @@
         <a href="{% url 'admin_section:add_activity_type' %}" class="flex items-center p-4 bg-blue-50 dark:bg-blue-900 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors">
           <i class="fas fa-plus-circle text-blue-500 mr-3"></i>
           <span class="text-blue-700 dark:text-blue-200">Add Activity Type</span>
+        </a>
+        <a href="{% url 'admin_section:bulk_import_users' %}" class="flex items-center p-4 bg-teal-50 dark:bg-teal-900 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-800 transition-colors">
+          <i class="fas fa-file-import text-teal-500 mr-3"></i>
+          <span class="text-teal-700 dark:text-teal-200">Bulk Import Users</span>
         </a>
         <a href="{% url 'admin_section:core_dia_pro_session_list' %}" class="flex items-center p-4 bg-green-50 dark:bg-green-900 rounded-lg hover:bg-green-100 dark:hover:bg-green-800 transition-colors">
           <i class="fas fa-calendar-plus text-green-500 mr-3"></i>
@@ -433,6 +457,192 @@
         }
       });
 
+      // Doctor Performance Chart (if department is selected)
+      {% if selected_department and doctor_performance %}
+      const doctorPerformanceCtx = document.getElementById('doctorPerformanceChart').getContext('2d');
+      const doctorPerformanceChart = new Chart(doctorPerformanceCtx, {
+        type: 'bar',
+        data: {
+          labels: [
+            {% for doctor in doctor_performance %}
+              '{{ doctor.name }}',
+            {% endfor %}
+          ],
+          datasets: [{
+            label: 'Reviewed',
+            data: [
+              {% for doctor in doctor_performance %}
+                {{ doctor.reviewed }},
+              {% endfor %}
+            ],
+            backgroundColor: 'rgba(66, 153, 225, 0.7)',
+            borderColor: 'rgba(66, 153, 225, 1)',
+            borderWidth: 1
+          }, {
+            label: 'Approved',
+            data: [
+              {% for doctor in doctor_performance %}
+                {{ doctor.approved }},
+              {% endfor %}
+            ],
+            backgroundColor: 'rgba(72, 187, 120, 0.7)',
+            borderColor: 'rgba(72, 187, 120, 1)',
+            borderWidth: 1
+          }, {
+            label: 'Rejected',
+            data: [
+              {% for doctor in doctor_performance %}
+                {{ doctor.rejected }},
+              {% endfor %}
+            ],
+            backgroundColor: 'rgba(229, 62, 62, 0.7)',
+            borderColor: 'rgba(229, 62, 62, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              ticks: {
+                color: textColor()
+              },
+              grid: {
+                color: isDarkMode() ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+              }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: textColor()
+              },
+              grid: {
+                color: isDarkMode() ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: textColor(),
+                font: {
+                  size: 12
+                }
+              }
+            },
+            title: {
+              display: true,
+              text: 'Doctor Performance',
+              color: textColor(),
+              font: {
+                size: 16
+              }
+            }
+          }
+        }
+      });
+      {% endif %}
+
+      // Student Performance Chart (if student is searched)
+      {% if student_performance_data %}
+      const studentPerformanceCtx = document.getElementById('studentPerformanceChart').getContext('2d');
+      const studentPerformanceChart = new Chart(studentPerformanceCtx, {
+        type: 'bar',
+        data: {
+          labels: [
+            {% for dept_data in student_performance_data %}
+              '{{ dept_data.department }}',
+            {% endfor %}
+          ],
+          datasets: [{
+            label: 'Total',
+            data: [
+              {% for dept_data in student_performance_data %}
+                {{ dept_data.total }},
+              {% endfor %}
+            ],
+            backgroundColor: 'rgba(66, 153, 225, 0.7)',
+            borderColor: 'rgba(66, 153, 225, 1)',
+            borderWidth: 1
+          }, {
+            label: 'Approved',
+            data: [
+              {% for dept_data in student_performance_data %}
+                {{ dept_data.approved }},
+              {% endfor %}
+            ],
+            backgroundColor: 'rgba(72, 187, 120, 0.7)',
+            borderColor: 'rgba(72, 187, 120, 1)',
+            borderWidth: 1
+          }, {
+            label: 'Pending',
+            data: [
+              {% for dept_data in student_performance_data %}
+                {{ dept_data.pending }},
+              {% endfor %}
+            ],
+            backgroundColor: 'rgba(237, 137, 54, 0.7)',
+            borderColor: 'rgba(237, 137, 54, 1)',
+            borderWidth: 1
+          }, {
+            label: 'Rejected',
+            data: [
+              {% for dept_data in student_performance_data %}
+                {{ dept_data.rejected }},
+              {% endfor %}
+            ],
+            backgroundColor: 'rgba(229, 62, 62, 0.7)',
+            borderColor: 'rgba(229, 62, 62, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              ticks: {
+                color: textColor()
+              },
+              grid: {
+                color: isDarkMode() ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+              }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: textColor()
+              },
+              grid: {
+                color: isDarkMode() ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: textColor(),
+                font: {
+                  size: 12
+                }
+              }
+            },
+            title: {
+              display: true,
+              text: 'Student Performance by Department',
+              color: textColor(),
+              font: {
+                size: 16
+              }
+            }
+          }
+        }
+      });
+      {% endif %}
+
       // Update chart colors when theme changes
       const updateChartColors = () => {
         const newTextColor = textColor();
@@ -451,6 +661,28 @@
         departmentChart.options.plugins.legend.labels.color = newTextColor;
         departmentChart.options.plugins.title.color = newTextColor;
         departmentChart.update();
+
+        // Update doctor performance chart if it exists
+        {% if selected_department and doctor_performance %}
+        doctorPerformanceChart.options.scales.x.ticks.color = newTextColor;
+        doctorPerformanceChart.options.scales.y.ticks.color = newTextColor;
+        doctorPerformanceChart.options.scales.x.grid.color = newGridColor;
+        doctorPerformanceChart.options.scales.y.grid.color = newGridColor;
+        doctorPerformanceChart.options.plugins.legend.labels.color = newTextColor;
+        doctorPerformanceChart.options.plugins.title.color = newTextColor;
+        doctorPerformanceChart.update();
+        {% endif %}
+
+        // Update student performance chart if it exists
+        {% if student_performance_data %}
+        studentPerformanceChart.options.scales.x.ticks.color = newTextColor;
+        studentPerformanceChart.options.scales.y.ticks.color = newTextColor;
+        studentPerformanceChart.options.scales.x.grid.color = newGridColor;
+        studentPerformanceChart.options.scales.y.grid.color = newGridColor;
+        studentPerformanceChart.options.plugins.legend.labels.color = newTextColor;
+        studentPerformanceChart.options.plugins.title.color = newTextColor;
+        studentPerformanceChart.update();
+        {% endif %}
       };
 
       // Listen for theme changes

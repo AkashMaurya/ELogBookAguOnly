@@ -1,16 +1,19 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, Http404
 from django.core.paginator import Paginator
 from django.db import models
 from django.template.loader import render_to_string
+from django.core.mail import send_mail
+from django.conf import settings
 from datetime import datetime
 from xhtml2pdf import pisa
 from .forms import StudentLogFormModelForm, SupportTicketForm
-from .models import StudentLogFormModel, SupportTicket
-from admin_section.models import ActivityType, CoreDiaProSession, LogYear, Department
-from accounts.models import Doctor, Student
+from .models import StudentLogFormModel, SupportTicket, StudentNotification
+from admin_section.models import ActivityType, CoreDiaProSession, LogYear, Department, AdminNotification
+from accounts.models import Doctor, Student, CustomUser
 from django.contrib import messages
+from doctor_section.models import Notification
 
 # Create your views here.
 
@@ -65,6 +68,38 @@ def student_support(request):
             ticket = form.save(commit=False)
             ticket.student = request.user.student
             ticket.save()
+
+            # Create notification for admins
+            student_name = request.user.get_full_name() or request.user.username
+            notification_title = f"New Student Support Ticket: {ticket.subject}"
+            notification_message = f"{student_name} has submitted a new support ticket: {ticket.subject}\n\n{ticket.description}"
+
+            # Get all admin users
+            admin_users = CustomUser.objects.filter(role='admin')
+
+            # Create notification for each admin
+            for admin in admin_users:
+                AdminNotification.objects.create(
+                    recipient=admin,
+                    title=notification_title,
+                    message=notification_message,
+                    support_ticket_type='student',
+                    ticket_id=ticket.id
+                )
+
+                # Send email notification to admin
+                try:
+                    send_mail(
+                        subject=notification_title,
+                        message=notification_message,
+                        from_email=settings.EMAIL_HOST_USER,
+                        recipient_list=[admin.email],
+                        fail_silently=True,
+                    )
+                except Exception as e:
+                    # Log the error but don't stop the process
+                    print(f"Error sending email: {e}")
+
             messages.success(request, "Support ticket submitted successfully. We will respond to your issue soon.")
             return redirect("student_section:student_support")
     else:
@@ -91,6 +126,37 @@ def student_elog(request):
             log_entry.log_year_section = request.user.student.group.log_year_section
             log_entry.group = request.user.student.group
             log_entry.save()
+
+            # Get the department and tutor from the form
+            department = form.cleaned_data['department']
+            tutor = form.cleaned_data['tutor']
+
+            # Create notification for the tutor
+            student_name = request.user.get_full_name() or request.user.username
+            notification_title = f"New Log Entry from {student_name}"
+            notification_message = f"{student_name} has submitted a new log entry for {department.name} department on {log_entry.date}."
+
+            # Create notification in the database
+            Notification.objects.create(
+                recipient=tutor,
+                log_entry=log_entry,
+                title=notification_title,
+                message=notification_message
+            )
+
+            # Send email notification to the tutor
+            try:
+                send_mail(
+                    subject=notification_title,
+                    message=notification_message,
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[tutor.user.email],
+                    fail_silently=True,
+                )
+            except Exception as e:
+                # Log the error but don't stop the process
+                print(f"Error sending email: {e}")
+
             messages.success(request, "Log entry created successfully.")
             return redirect("student_section:student_elog")
     else:
@@ -529,3 +595,88 @@ def delete_support_ticket(request, ticket_id):
     else:
         messages.error(request, "Cannot delete a ticket that has been resolved.")
     return redirect('student_section:student_support')
+
+
+@login_required
+def edit_log(request, log_id):
+    # Get the log entry and verify it belongs to the current student
+    log = get_object_or_404(StudentLogFormModel, id=log_id, student=request.user.student)
+
+    # Check if the log has already been reviewed - if so, don't allow editing
+    if log.is_reviewed:
+        messages.error(request, "You cannot edit logs that have already been reviewed.")
+        return redirect('student_section:student_final_records')
+
+    if request.method == "POST":
+        form = StudentLogFormModelForm(request.POST, instance=log, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Log entry updated successfully.")
+            return redirect('student_section:student_final_records')
+    else:
+        form = StudentLogFormModelForm(instance=log, user=request.user)
+
+    student = request.user.student
+    context = {
+        "form": form,
+        "student_name": student.user.get_full_name(),
+        "student_id": student.student_id,
+        "year_name": student.group.log_year.year_name if student.group else "",
+        "section_name": student.group.log_year_section.year_section_name if student.group else "",
+        "group_name": student.group.group_name if student.group else "",
+        "is_edit": True,
+        "log": log,
+    }
+    return render(request, "student_edit_log.html", context)
+
+
+@login_required
+def delete_log(request, log_id):
+    # Get the log entry and verify it belongs to the current student
+    log = get_object_or_404(StudentLogFormModel, id=log_id, student=request.user.student)
+
+    # Check if the log has already been reviewed - if so, don't allow deletion
+    if log.is_reviewed:
+        messages.error(request, "You cannot delete logs that have already been reviewed.")
+        return redirect('student_section:student_final_records')
+
+    if request.method == "POST":
+        log.delete()
+        messages.success(request, "Log entry deleted successfully.")
+        return redirect('student_section:student_final_records')
+
+    # If it's not a POST request, redirect to the records page
+    return redirect('student_section:student_final_records')
+
+
+@login_required
+def notifications(request):
+    student = request.user.student
+
+    # Get all notifications for this student
+    notifications_list = StudentNotification.objects.filter(recipient=student).order_by('-created_at')
+
+    # Mark notifications as read if requested
+    if request.GET.get('mark_read'):
+        notification_id = request.GET.get('mark_read')
+        notification = get_object_or_404(StudentNotification, id=notification_id, recipient=student)
+        notification.mark_as_read()
+        return redirect('student_section:notifications')
+
+    # Mark all as read if requested
+    if request.GET.get('mark_all_read'):
+        notifications_list.filter(is_read=False).update(is_read=True)
+        messages.success(request, "All notifications marked as read.")
+        return redirect('student_section:notifications')
+
+    # Pagination
+    paginator = Paginator(notifications_list, 10)  # 10 items per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'notifications': page_obj,
+        'unread_count': notifications_list.filter(is_read=False).count(),
+    }
+
+    return render(request, "student_notifications.html", context)

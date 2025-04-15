@@ -1,5 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.hashers import make_password
+import csv
+import io
 from accounts.models import CustomUser, Student, Doctor, Staff
 from .models import LogYear, LogYearSection, Department, Group, TrainingSite, ActivityType, CoreDiaProSession
 
@@ -72,6 +75,48 @@ class DepartmentForm(forms.ModelForm):
             })
         }
 
+
+class GroupForm(forms.ModelForm):
+    class Meta:
+        model = Group
+        fields = ['group_name', 'log_year', 'log_year_section']
+        widgets = {
+            'group_name': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'placeholder': 'Enter group name (e.g., Group A)'
+            }),
+            'log_year': forms.Select(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+            }),
+            'log_year_section': forms.Select(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+            })
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        group_name = cleaned_data.get('group_name')
+        log_year = cleaned_data.get('log_year')
+        log_year_section = cleaned_data.get('log_year_section')
+
+        # Check for duplicate group names within the same year and section
+        if group_name and log_year and log_year_section:
+            # Check if this group already exists for this year and section
+            # Exclude the current instance if we're editing
+            existing_query = Group.objects.filter(
+                group_name=group_name,
+                log_year=log_year,
+                log_year_section=log_year_section
+            )
+
+            if self.instance.pk:
+                existing_query = existing_query.exclude(pk=self.instance.pk)
+
+            if existing_query.exists():
+                self.add_error('group_name', f"{group_name} already exists for the selected year and section.")
+
+        return cleaned_data
+
 class CustomUserForm(UserCreationForm):
     class Meta:
         model = CustomUser
@@ -123,3 +168,227 @@ class CustomUserForm(UserCreationForm):
             'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
             'placeholder': 'Confirm password'
         })
+
+
+class CSVUploadForm(forms.Form):
+    csv_file = forms.FileField(
+        label='Select a CSV file',
+        help_text='File must be a CSV with the required columns.',
+        widget=forms.FileInput(attrs={
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+            'accept': '.csv'
+        })
+    )
+    user_type = forms.ChoiceField(
+        choices=[
+            ('student', 'Students'),
+            ('doctor', 'Doctors'),
+            ('staff', 'Staff'),
+        ],
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+        })
+    )
+
+    def clean_csv_file(self):
+        csv_file = self.cleaned_data.get('csv_file')
+        if csv_file:
+            # Check file extension
+            if not csv_file.name.endswith('.csv'):
+                raise forms.ValidationError('File must be a CSV file.')
+
+            # Check file size (limit to 5MB)
+            if csv_file.size > 5 * 1024 * 1024:  # 5MB
+                raise forms.ValidationError('File size must be under 5MB.')
+
+        return csv_file
+
+
+class StudentForm(forms.ModelForm):
+    class Meta:
+        model = Student
+        fields = ['student_id', 'group']
+        widgets = {
+            'student_id': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'placeholder': 'Enter student ID'
+            }),
+            'group': forms.Select(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+            })
+        }
+
+
+class StudentUserForm(UserCreationForm):
+    class Meta:
+        model = CustomUser
+        fields = ['username', 'email', 'first_name', 'last_name', 'phone_no', 'city', 'country']
+        widgets = {
+            'username': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'placeholder': 'Enter username'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'placeholder': 'Enter email address'
+            }),
+            'first_name': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'placeholder': 'Enter first name'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'placeholder': 'Enter last name'
+            }),
+            'phone_no': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'placeholder': 'Enter phone number'
+            }),
+            'city': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'placeholder': 'Enter city'
+            }),
+            'country': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'placeholder': 'Enter country'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['password1'].widget.attrs.update({
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+            'placeholder': 'Enter password'
+        })
+        self.fields['password2'].widget.attrs.update({
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+            'placeholder': 'Confirm password'
+        })
+
+
+class BulkStudentUploadForm(forms.Form):
+    csv_file = forms.FileField(
+        label='Select a CSV file',
+        help_text='Upload a CSV file containing student information.',
+        widget=forms.FileInput(attrs={
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+            'accept': '.csv'
+        })
+    )
+    log_year = forms.ModelChoiceField(
+        queryset=LogYear.objects.all(),
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+        }),
+        help_text='Select the academic year'
+    )
+    log_year_section = forms.ModelChoiceField(
+        queryset=LogYearSection.objects.all(),
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+        }),
+        help_text='Select the year section'
+    )
+    group = forms.ModelChoiceField(
+        queryset=Group.objects.all(),
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+        }),
+        help_text='Select the group to assign all students'
+    )
+
+    def clean_csv_file(self):
+        csv_file = self.cleaned_data.get('csv_file')
+        if csv_file:
+            # Check file extension
+            if not csv_file.name.endswith('.csv'):
+                raise forms.ValidationError('File must be a CSV file.')
+
+            # Check file size (limit to 5MB)
+            if csv_file.size > 5 * 1024 * 1024:  # 5MB
+                raise forms.ValidationError('File size must be under 5MB.')
+
+            # Validate CSV structure
+            try:
+                decoded_file = csv_file.read().decode('utf-8')
+                csv_file.seek(0)  # Reset file pointer
+                reader = csv.DictReader(io.StringIO(decoded_file))
+
+                # Check required headers
+                required_headers = ['username', 'email', 'password', 'first_name', 'last_name', 'student_id']
+                headers = reader.fieldnames
+
+                if not headers:
+                    raise forms.ValidationError('CSV file is empty or has no headers.')
+
+                missing_headers = [header for header in required_headers if header not in headers]
+                if missing_headers:
+                    raise forms.ValidationError(f"Missing required columns: {', '.join(missing_headers)}")
+
+            except Exception as e:
+                raise forms.ValidationError(f'Error parsing CSV file: {str(e)}')
+
+        return csv_file
+
+
+class AssignStudentToGroupForm(forms.Form):
+    student = forms.ModelChoiceField(
+        queryset=Student.objects.filter(group__isnull=True),
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+        }),
+        empty_label="Select a student"
+    )
+    group = forms.ModelChoiceField(
+        queryset=Group.objects.all(),
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+        }),
+        empty_label="Select a group"
+    )
+
+class BulkUserUploadForm(forms.Form):
+    csv_file = forms.FileField(
+        label='Select CSV File',
+        help_text='Upload a CSV file containing user information',
+        widget=forms.FileInput(attrs={
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+            'accept': '.csv'
+        })
+    )
+
+    def clean_csv_file(self):
+        csv_file = self.cleaned_data.get('csv_file')
+        if csv_file:
+            # Check file extension
+            if not csv_file.name.endswith('.csv'):
+                raise forms.ValidationError('File must be a CSV file.')
+
+            # Check file size (limit to 5MB)
+            if csv_file.size > 5 * 1024 * 1024:  # 5MB
+                raise forms.ValidationError('File size must be under 5MB.')
+
+            # Validate CSV structure
+            try:
+                decoded_file = csv_file.read().decode('utf-8')
+                csv_file.seek(0)  # Reset file pointer
+                reader = csv.DictReader(io.StringIO(decoded_file))
+
+                # Check required headers
+                required_headers = ['username', 'email', 'password', 'first_name', 'last_name', 'role', 'profile_photo', 'phone_no', 'city', 'country', 'bio', 'speciality']
+                headers = reader.fieldnames
+
+                if not headers:
+                    raise forms.ValidationError('CSV file is empty or has no headers.')
+
+                missing_headers = [header for header in required_headers if header not in headers]
+                if missing_headers:
+                    raise forms.ValidationError(f"Missing required columns: {', '.join(missing_headers)}")
+
+            except Exception as e:
+                raise forms.ValidationError(f'Error parsing CSV file: {str(e)}')
+
+        return csv_file
+
+
+

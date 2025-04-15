@@ -26,9 +26,13 @@ urlpatterns = [
         views.get_departments_by_year,
         name="get_departments_by_year",
     ),
+    # Log editing and deletion
+    path("edit-log/<int:log_id>/", views.edit_log, name="edit_log"),
+    path("delete-log/<int:log_id>/", views.delete_log, name="delete_log"),
     path("get-activity-types/", views.get_activity_types, name="get_activity_types"),
     path("get-core-diagnosis/", views.get_core_diagnosis, name="get_core_diagnosis"),
     path("get-tutors/", views.get_tutors, name="get_tutors"),
     path("generate-records-pdf/", views.generate_records_pdf, name="generate_records_pdf"),
     path("delete-support-ticket/<int:ticket_id>/", views.delete_support_ticket, name="delete_support_ticket"),
+    path("notifications/", views.notifications, name="notifications"),
 ]

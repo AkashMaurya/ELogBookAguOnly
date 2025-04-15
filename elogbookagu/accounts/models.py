@@ -2,6 +2,7 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractUser
 
+
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=150, blank=True)
@@ -49,26 +50,30 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return f"{self.email} ({self.role}), {self.username}"
 
+
 class Student(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="student")
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE, related_name="student"
+    )
     student_id = models.CharField(max_length=30, unique=True)
     group = models.ForeignKey(
         "admin_section.Group",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="students"
+        related_name="students",
     )
 
     def __str__(self):
         return f"{self.user.email} - {self.student_id} ({self.group if self.group else 'No Group'})"
 
+
 class Doctor(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="doctor_profile")
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE, related_name="doctor_profile"
+    )
     departments = models.ManyToManyField(
-        "admin_section.Department",
-        related_name="doctors",
-        blank=True
+        "admin_section.Department", related_name="doctors", blank=True
     )
 
     def __str__(self):
@@ -78,8 +83,16 @@ class Doctor(models.Model):
         departments = [department.name for department in self.departments.all()]
         return ", ".join(departments) if departments else "No Departments"
 
+
 class Staff(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="staff_profile")
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE, related_name="staff_profile"
+    )
+    departments = models.ManyToManyField("admin_section.Department")
+
+    def get_departments(self):
+        departments = [department.name for department in self.departments.all()]
+        return ", ".join(departments) if departments else "No Departments"
 
     def __str__(self):
         return self.user.username

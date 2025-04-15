@@ -3,25 +3,130 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.db import transaction, models
 import os
+import csv
+import io
+from datetime import timedelta
+from django.contrib.auth.hashers import make_password
+
+# Models
 from admin_section.models import *
-from accounts.models import Student, Doctor
-from student_section.models import SupportTicket , StudentLogFormModel
+from accounts.models import CustomUser, Student, Doctor, Staff
+from student_section.models import SupportTicket, StudentLogFormModel
 from doctor_section.models import DoctorSupportTicket
+
+# Forms
+from .forms import BulkUserUploadForm
 from student_section.forms import AdminResponseForm
-from doctor_section.forms import AdminDoctorResponseForm
+from doctor_section.forms import AdminDoctorResponseForm, BatchReviewForm, LogReviewForm
 from django.core.paginator import Paginator
 
-
-# Django predefied models
+# Django predefined models
 from django.db.models import Count
 from django.db.models.functions import TruncMonth
-from datetime import timedelta
 
+@login_required
+def bulk_add_users(request):
+    if request.user.role != 'admin':
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('login')
+
+    if request.method == 'POST':
+        form = BulkUserUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            csv_file = request.FILES['csv_file']
+
+            # Validate file size (5MB limit)
+            if csv_file.size > 5 * 1024 * 1024:
+                messages.error(request, 'File size must be less than 5MB')
+                return redirect('admin_section:bulk_add_users')
+
+            try:
+                decoded_file = csv_file.read().decode('utf-8')
+            except UnicodeDecodeError:
+                messages.error(request, 'Please upload a valid CSV file')
+                return redirect('admin_section:bulk_add_users')
+
+            io_string = io.StringIO(decoded_file)
+            reader = csv.DictReader(io_string)
+
+            required_fields = [
+                'username', 'first_name', 'last_name', 'email',
+                'password', 'role', 'city', 'country', 'phone_no'
+            ]
+
+            # Validate headers
+            headers = reader.fieldnames
+            if not headers or not all(field in headers for field in required_fields):
+                messages.error(request, 'CSV file must contain all required fields')
+                return redirect('admin_section:bulk_add_users')
+
+            success_count = 0
+            error_count = 0
+            error_messages = []
+
+            for row in reader:
+                try:
+                    with transaction.atomic():
+                        # Basic validation
+                        username = row.get('username', '').strip()
+                        email = row.get('email', '').strip()
+                        role = row.get('role', '').strip().lower()
+
+                        if not username or not email or not role:
+                            raise ValueError("Username, email and role are required")
+
+                        if CustomUser.objects.filter(username=username).exists():
+                            raise ValueError(f"Username '{username}' already exists")
+
+                        if CustomUser.objects.filter(email=email).exists():
+                            raise ValueError(f"Email '{email}' already exists")
+
+                        if role not in ['admin', 'student', 'doctor', 'staff']:
+                            raise ValueError(f"Invalid role: {role}")
+
+                        # Create user
+                        user = CustomUser.objects.create(
+                            username=username,
+                            email=email,
+                            password=make_password(row['password'].strip()),
+                            first_name=row.get('first_name', '').strip(),
+                            last_name=row.get('last_name', '').strip(),
+                            role=role,
+                            phone_no=row.get('phone_no', '').strip(),
+                            city=row.get('city', '').strip(),
+                            country=row.get('country', '').strip(),
+                            bio=row.get('bio', '').strip(),
+                            speciality=row.get('speciality', '').strip()
+                        )
+
+                        success_count += 1
+                except Exception as e:
+                    error_count += 1
+                    error_messages.append(f"Row {reader.line_num}: {str(e)}")
+
+            if success_count > 0:
+                messages.success(request, f"Successfully added {success_count} users.")
+            if error_count > 0:
+                messages.warning(request, f"Failed to add {error_count} users. See details below.")
+
+            return render(request, 'admin_section/bulk_add_users.html', {
+                'form': form,
+                'results': {
+                    'success_count': success_count,
+                    'error_count': error_count,
+                    'error_messages': error_messages[:10],
+                    'total_errors': len(error_messages)
+                }
+            })
+    else:
+        form = BulkUserUploadForm()
+
+    return render(request, 'admin_section/bulk_add_users.html', {'form': form})
 
 # Create your views here.
-
 
 @login_required
 def admin_dash(request):
@@ -130,6 +235,28 @@ def get_monthly_trend_data(logs):
         'data': [d['count'] for d in monthly_data]
     }
 
+def download_user_template(request):
+    """Download a sample CSV template for user import"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="user_import_template.csv"'
+
+    writer = csv.writer(response)
+
+    # Write headers
+    headers = [
+        'username', 'email', 'password', 'first_name', 'last_name',
+        'role', 'city', 'country', 'phone_no', 'bio', 'speciality'
+    ]
+    writer.writerow(headers)
+
+    # Write sample data
+    sample_data = [
+        'john.doe', 'john@example.com', 'SecurePass123', 'John', 'Doe',
+        'doctor', 'New York', 'USA', '1234567890', 'Experienced doctor', 'Cardiology'
+    ]
+    writer.writerow(sample_data)
+
+    return response
 
 @login_required
 def admin_blogs(request):
@@ -220,7 +347,6 @@ def admin_reviews(request):
     page_obj = paginator.get_page(page_number)
 
     # Create batch review form
-    from doctor_section.forms import BatchReviewForm
     batch_form = BatchReviewForm()
 
     context = {
@@ -327,8 +453,6 @@ def review_log(request, log_id):
     log = get_object_or_404(StudentLogFormModel, id=log_id)
 
     if request.method == 'POST':
-        # Import the form here to avoid circular imports
-        from doctor_section.forms import LogReviewForm
         form = LogReviewForm(request.POST, instance=log)
         if form.is_valid():
             # Save the form but don't commit yet
@@ -351,8 +475,6 @@ def review_log(request, log_id):
             messages.success(request, f"Log entry has been {'approved' if is_approved == 'True' else 'rejected'}.")
             return redirect('admin_section:admin_reviews')
     else:
-        # Import the form here to avoid circular imports
-        from doctor_section.forms import LogReviewForm
         form = LogReviewForm(instance=log)
 
     context = {
@@ -368,8 +490,6 @@ def batch_review(request):
     if request.method != 'POST':
         return redirect('admin_section:admin_reviews')
 
-    # Import the form here to avoid circular imports
-    from doctor_section.forms import BatchReviewForm
     form = BatchReviewForm(request.POST)
     if not form.is_valid():
         messages.error(request, "Invalid form submission.")
@@ -433,3 +553,37 @@ def resolve_ticket(request, ticket_id):
         'ticket_type': ticket_type,
     }
     return render(request, 'admin_section/resolve_ticket.html', context)
+
+
+@login_required
+def notifications(request):
+    return render(request, 'admin_section/notifications.html')
+
+
+@login_required
+def bulk_import_users(request):
+    return render(request, 'admin_section/bulk_import_users.html')
+
+@login_required
+def download_sample_csv(request):
+    """Download a sample CSV template for student import"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="student_import_template.csv"'
+
+    writer = csv.writer(response)
+
+    # Write headers
+    headers = [
+        'username', 'email', 'password', 'first_name', 'last_name', 'student_id',
+        'phone_no', 'city', 'country', 'group'
+    ]
+    writer.writerow(headers)
+
+    # Write sample data
+    sample_data = [
+        'student1', 'student1@example.com', 'SecurePass123', 'John', 'Student',
+        'STU12345', '1234567890', 'New York', 'USA', '1'
+    ]
+    writer.writerow(sample_data)
+
+    return response

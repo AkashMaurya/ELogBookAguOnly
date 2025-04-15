@@ -32,7 +32,8 @@ class DoctorAdmin(admin.ModelAdmin):
 
 @admin.register(Staff)
 class StaffAdmin(admin.ModelAdmin):
-    list_display = ("user",)
+    list_display = ("user","get_departments")
+    list_filter = ("departments__name",)
     search_fields = ("user__username", "user__email")
 
 

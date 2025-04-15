@@ -1,18 +1,21 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout as auth_logout
-from accounts.models import Doctor
+from accounts.models import Doctor, CustomUser
 from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db import models, transaction
 from django.utils import timezone
 from datetime import datetime, timedelta
+from django.core.mail import send_mail
+from django.conf import settings
 import os
 import json
-from .models import DoctorSupportTicket
+from .models import DoctorSupportTicket, Notification
 from .forms import DoctorSupportTicketForm, LogReviewForm, BatchReviewForm
-from student_section.models import StudentLogFormModel
+from student_section.models import StudentLogFormModel, StudentNotification
+from admin_section.models import AdminNotification
 from django.db.models import Count
 from django.db.models.functions import TruncMonth
 
@@ -51,11 +54,25 @@ def doctor_dash(request):
         'monthly_trend': get_monthly_trend_data(logs),
     }
 
+    # Calculate total records, left to review, and reviewed counts
+    total_records = logs.count()
+    left_to_review = logs.filter(is_reviewed=False).count()
+    reviewed = logs.filter(is_reviewed=True).count()
+
+    # Calculate percentage for progress circle
+    review_percentage = 0
+    if total_records > 0:
+        review_percentage = int((reviewed / total_records) * 100)
+
     context = {
         'performance_data': performance_data,
         'chart_data': chart_data,
         'departments': departments,
         'selected_department': selected_department,
+        'total_records': total_records,
+        'left_to_review': left_to_review,
+        'reviewed': reviewed,
+        'review_percentage': review_percentage,
     }
 
     return render(request, "doctor_dash.html", context)
@@ -75,7 +92,7 @@ def get_daily_reviews_data(logs):
     ).values('review_date__date').annotate(
         count=Count('id')
     ).order_by('review_date__date')
-    
+
     return {
         'labels': [d['review_date__date'].strftime('%Y-%m-%d') for d in daily_reviews],
         'data': [d['count'] for d in daily_reviews]
@@ -112,7 +129,7 @@ def get_monthly_trend_data(logs):
     ).values('month').annotate(
         count=Count('id')
     ).order_by('month')
-    
+
     return {
         'labels': [d['month'].strftime('%B %Y') for d in monthly_data],
         'data': [d['count'] for d in monthly_data]
@@ -269,6 +286,38 @@ def doctor_help(request):
             ticket = form.save(commit=False)
             ticket.doctor = request.user.doctor_profile
             ticket.save()
+
+            # Create notification for admins
+            doctor_name = request.user.get_full_name() or request.user.username
+            notification_title = f"New Doctor Support Ticket: {ticket.subject}"
+            notification_message = f"Dr. {doctor_name} has submitted a new support ticket: {ticket.subject}\n\n{ticket.description}"
+
+            # Get all admin users
+            admin_users = CustomUser.objects.filter(role='admin')
+
+            # Create notification for each admin
+            for admin in admin_users:
+                AdminNotification.objects.create(
+                    recipient=admin,
+                    title=notification_title,
+                    message=notification_message,
+                    support_ticket_type='doctor',
+                    ticket_id=ticket.id
+                )
+
+                # Send email notification to admin
+                try:
+                    send_mail(
+                        subject=notification_title,
+                        message=notification_message,
+                        from_email=settings.EMAIL_HOST_USER,
+                        recipient_list=[admin.email],
+                        fail_silently=True,
+                    )
+                except Exception as e:
+                    # Log the error but don't stop the process
+                    print(f"Error sending email: {e}")
+
             messages.success(request, "Support ticket submitted successfully. We will respond to your issue soon.")
             return redirect("doctor_section:doctor_help")
     else:
@@ -351,6 +400,39 @@ def logout(request):
 
 
 @login_required
+def notifications(request):
+    doctor = request.user.doctor_profile
+
+    # Get all notifications for this doctor
+    notifications_list = Notification.objects.filter(recipient=doctor).order_by('-created_at')
+
+    # Mark notifications as read if requested
+    if request.GET.get('mark_read'):
+        notification_id = request.GET.get('mark_read')
+        notification = get_object_or_404(Notification, id=notification_id, recipient=doctor)
+        notification.mark_as_read()
+        return redirect('doctor_section:notifications')
+
+    # Mark all as read if requested
+    if request.GET.get('mark_all_read'):
+        notifications_list.filter(is_read=False).update(is_read=True)
+        messages.success(request, "All notifications marked as read.")
+        return redirect('doctor_section:notifications')
+
+    # Pagination
+    paginator = Paginator(notifications_list, 10)  # 10 items per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'notifications': page_obj,
+        'unread_count': notifications_list.filter(is_read=False).count(),
+    }
+
+    return render(request, "doctor_notifications.html", context)
+
+
+@login_required
 def delete_support_ticket(request, ticket_id):
     ticket = get_object_or_404(DoctorSupportTicket, id=ticket_id, doctor=request.user.doctor_profile)
     if ticket.status == 'pending':  # Only allow deletion of pending tickets
@@ -392,7 +474,37 @@ def review_log(request, log_id):
             log_entry.review_date = timezone.now()
             log_entry.save()
 
-            messages.success(request, f"Log entry has been {'approved' if is_approved == 'True' else 'rejected'}.")
+            # Create notification for the student
+            doctor_name = request.user.get_full_name() or request.user.username
+            is_approved_text = 'approved' if is_approved == 'True' else 'rejected'
+            notification_title = f"Your log entry has been {is_approved_text}"
+            notification_message = f"Dr. {doctor_name} has {is_approved_text} your log entry for {log.department.name} department on {log.date}."
+
+            if log_entry.reviewer_comments:
+                notification_message += f" Comments: {log_entry.reviewer_comments}"
+
+            # Create notification in the database
+            StudentNotification.objects.create(
+                recipient=log.student,
+                log_entry=log,
+                title=notification_title,
+                message=notification_message
+            )
+
+            # Send email notification to the student
+            try:
+                send_mail(
+                    subject=notification_title,
+                    message=notification_message,
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[log.student.user.email],
+                    fail_silently=True,
+                )
+            except Exception as e:
+                # Log the error but don't stop the process
+                print(f"Error sending email: {e}")
+
+            messages.success(request, f"Log entry has been {is_approved_text}.")
             return redirect('doctor_section:doctor_reviews')
     else:
         form = LogReviewForm(instance=log)
@@ -444,6 +556,36 @@ def batch_review(request):
                 log.reviewer_comments = comments if comments else "Approved"
 
             log.save()
+
+            # Create notification for the student
+            doctor_name = request.user.get_full_name() or request.user.username
+            is_approved_text = 'approved' if action == 'approve' else 'rejected'
+            notification_title = f"Your log entry has been {is_approved_text}"
+            notification_message = f"Dr. {doctor_name} has {is_approved_text} your log entry for {log.department.name} department on {log.date}."
+
+            if log.reviewer_comments:
+                notification_message += f" Comments: {log.reviewer_comments}"
+
+            # Create notification in the database
+            StudentNotification.objects.create(
+                recipient=log.student,
+                log_entry=log,
+                title=notification_title,
+                message=notification_message
+            )
+
+            # Send email notification to the student
+            try:
+                send_mail(
+                    subject=notification_title,
+                    message=notification_message,
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[log.student.user.email],
+                    fail_silently=True,
+                )
+            except Exception as e:
+                # Log the error but don't stop the process
+                print(f"Error sending email: {e}")
 
     count = logs.count()
     messages.success(request, f"{count} log entries have been {'approved' if action == 'approve' else 'rejected'}.")

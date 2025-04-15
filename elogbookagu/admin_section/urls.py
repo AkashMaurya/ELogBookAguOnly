@@ -18,8 +18,8 @@ from .views_file.add_user import add_user, edit_user, delete_user
 from .views_file.add_year import add_year, edit_year, delete_year
 from .views_file.add_elogyear import add_elogyear, edit_elogyear, delete_elogyear
 from .views_file.add_department import add_department, edit_department, delete_department, get_year_sections
-from .views_file.add_group import add_group
-from .views_file.add_student import add_student
+from .views_file.add_group import add_group, edit_group, delete_group, get_year_sections as group_get_year_sections
+from .views_file.add_student import add_student, remove_from_group, download_sample_csv as student_download_sample_csv
 from .views_file.add_doctor import add_doctor
 
 
@@ -87,6 +87,11 @@ urlpatterns = [
     # Review URLs
     path("review-log/<int:log_id>/", views.review_log, name="review_log"),
     path("batch-review/", views.batch_review, name="batch_review"),
+    path("notifications/", views.notifications, name="notifications"),
+
+    # Bulk Import URLs
+    path("bulk-import-users/", views.bulk_import_users, name="bulk_import_users"),
+    path("download-sample-csv/", views.download_sample_csv, name="download_sample_csv"),
 
     # Year Management URLs
     path("edit-year/<int:year_id>/", edit_year, name="edit_year"),
@@ -104,4 +109,17 @@ urlpatterns = [
     path("edit-department/<int:department_id>/", edit_department, name="edit_department"),
     path("delete-department/<int:department_id>/", delete_department, name="delete_department"),
     path("api/year-sections/<int:year_id>/", get_year_sections, name="get_year_sections"),
+
+    # Group Management URLs
+    path("edit-group/<int:group_id>/", edit_group, name="edit_group"),
+    path("delete-group/<int:group_id>/", delete_group, name="delete_group"),
+    path("api/group-year-sections/<int:year_id>/", group_get_year_sections, name="group_get_year_sections"),
+
+    # Student Management URLs
+    path("remove-student-from-group/<int:student_id>/", remove_from_group, name="remove_from_group"),
+    path("download-student-sample-csv/", student_download_sample_csv, name="student_download_sample_csv"),
+
+    # Bulk Add Users URLs
+    path('bulk-add-users/', views.bulk_add_users, name='bulk_add_users'),
+    path('download-user-template/', views.download_user_template, name='download_user_template'),
 ]

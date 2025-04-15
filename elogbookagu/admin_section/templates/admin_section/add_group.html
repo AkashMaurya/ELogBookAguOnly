@@ -1,18 +1,373 @@
 {% extends 'base.html' %}
 
 {% block title %}
-  Student Blogs
+  {% if is_edit %}Edit Group{% else %}Add Group{% endif %}
 {% endblock %}
 
 {% block navbar %}
 {% include 'components/admin_auth_navbar.html' %}
 {% endblock %}
 
-<!-- Main Content -->
-
 {% block content %}
-  <div class="text-center p-10 mt-10">
-    <h2 class="text-3xl font-bold">Add Groups</h2>
-    <p>This is the main content area. Add your page content here.</p>
+  <div class="container mx-auto px-4 py-8 mt-16">
+    <div class="mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 dark:text-white">
+        {% if is_edit %}Edit Group: {{ group.group_name }}{% else %}Manage Groups{% endif %}
+      </h2>
+      <p class="text-gray-600 dark:text-gray-300 mt-1">{% if is_edit %}Update group information{% else %}Add and manage student groups{% endif %}</p>
+    </div>
+
+    <!-- Messages section -->
+    {% if messages %}
+      <div class="mb-6">
+        {% for message in messages %}
+          <div class="p-4 mb-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100{% elif message.tags == 'error' %}bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100{% else %}bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Group Form -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <form method="post" action="{% if is_edit %}{% url 'admin_section:edit_group' group.id %}{% else %}{% url 'admin_section:add_group' %}{% endif %}">
+          {% csrf_token %}
+          <div class="mb-4">
+            <label for="id_group_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Group Name</label>
+            {{ form.group_name }}
+            {% if form.group_name.errors %}
+              <p class="text-red-500 text-sm mt-1">{{ form.group_name.errors.0 }}</p>
+            {% endif %}
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Example: Group A</p>
+          </div>
+
+          <div class="mb-4">
+            <label for="id_log_year" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Academic Year</label>
+            {{ form.log_year }}
+            {% if form.log_year.errors %}
+              <p class="text-red-500 text-sm mt-1">{{ form.log_year.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+          <div class="mb-4">
+            <label for="id_log_year_section" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Year Section</label>
+            {{ form.log_year_section }}
+            {% if form.log_year_section.errors %}
+              <p class="text-red-500 text-sm mt-1">{{ form.log_year_section.errors.0 }}</p>
+            {% endif %}
+          </div>
+
+          <div class="flex justify-end">
+            {% if is_edit %}
+              <a href="{% url 'admin_section:add_group' %}" class="mr-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-lg transition-colors duration-200">
+                Cancel
+              </a>
+              <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200">
+                Update Group
+              </button>
+            {% else %}
+              <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200">
+                Add Group
+              </button>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+
+      <!-- Groups Table -->
+      <div class="lg:col-span-2">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+          <!-- Filter and Search -->
+          <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-3 md:space-y-0">
+              <div class="flex flex-col md:flex-row md:items-center space-y-3 md:space-y-0 md:space-x-4">
+                <!-- Year Section Filter -->
+                <div>
+                  <form method="get" action="{% url 'admin_section:add_group' %}" class="flex items-center space-x-2">
+                    <select name="year_section" class="px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                      <option value="">All Year Sections</option>
+                      {% for section in year_sections %}
+                        <option value="{{ section.id }}" {% if selected_year_section == section.id|stringformat:"s" %}selected{% endif %}>
+                          {{ section.year_name.year_name }} - {{ section.year_section_name }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                    <button type="submit" class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200">
+                      Filter
+                    </button>
+                  </form>
+                </div>
+
+                <!-- Batch Delete Button -->
+                <button id="batch-delete-btn" class="hidden px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200">
+                  Delete Selected
+                </button>
+              </div>
+
+              <!-- Search -->
+              <div>
+                <form method="get" action="{% url 'admin_section:add_group' %}" class="flex items-center space-x-2">
+                  {% if selected_year_section %}
+                    <input type="hidden" name="year_section" value="{{ selected_year_section }}">
+                  {% endif %}
+                  <input type="text" name="q" value="{{ search_query }}" placeholder="Search groups..." class="px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                  <button type="submit" class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200">
+                    <i class="fas fa-search"></i>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <input type="checkbox" id="select-all-checkbox" class="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:bg-gray-800">
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Group Name
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Academic Year
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Year Section
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                {% for group in groups %}
+                  <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <input type="checkbox" class="group-checkbox rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 dark:bg-gray-800" data-id="{{ group.id }}">
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm font-medium text-gray-900 dark:text-white">{{ group.group_name }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm text-gray-500 dark:text-gray-300">{{ group.log_year.year_name }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm text-gray-500 dark:text-gray-300">{{ group.log_year_section.year_section_name }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <a href="{% url 'admin_section:edit_group' group.id %}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
+                        <i class="fas fa-edit"></i> Edit
+                      </a>
+                      <a href="#" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 delete-btn" data-id="{{ group.id }}" data-name="{{ group.group_name }}">
+                        <i class="fas fa-trash"></i> Delete
+                      </a>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                      No groups found.
+                      {% if search_query or selected_year_section %}
+                        <a href="{% url 'admin_section:add_group' %}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                          Clear filters
+                        </a>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          {% if groups.has_other_pages %}
+            <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+              <div class="flex justify-between items-center">
+                <div class="text-sm text-gray-700 dark:text-gray-300">
+                  Showing <span class="font-medium">{{ groups.start_index }}</span> to <span class="font-medium">{{ groups.end_index }}</span> of <span class="font-medium">{{ groups.paginator.count }}</span> groups
+                </div>
+                <nav class="inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  {% if groups.has_previous %}
+                    <a href="?page={{ groups.previous_page_number }}{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <span class="sr-only">Previous</span>
+                      <i class="fas fa-chevron-left"></i>
+                    </a>
+                  {% endif %}
+
+                  {% for i in groups.paginator.page_range %}
+                    {% if groups.number == i %}
+                      <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-blue-50 dark:bg-blue-900 text-sm font-medium text-blue-600 dark:text-blue-200">
+                        {{ i }}
+                      </span>
+                    {% elif i > groups.number|add:'-3' and i < groups.number|add:'3' %}
+                      <a href="?page={{ i }}{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        {{ i }}
+                      </a>
+                    {% endif %}
+                  {% endfor %}
+
+                  {% if groups.has_next %}
+                    <a href="?page={{ groups.next_page_number }}{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <span class="sr-only">Next</span>
+                      <i class="fas fa-chevron-right"></i>
+                    </a>
+                  {% endif %}
+                </nav>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+        <div class="absolute inset-0 bg-gray-500 dark:bg-gray-900 opacity-75"></div>
+      </div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+      <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+        <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+          <div class="sm:flex sm:items-start">
+            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900 sm:mx-0 sm:h-10 sm:w-10">
+              <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400"></i>
+            </div>
+            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+              <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="modal-title">Delete Group</h3>
+              <div class="mt-2">
+                <p class="text-sm text-gray-500 dark:text-gray-400" id="modal-message">Are you sure you want to delete this group? This action cannot be undone.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+          <form id="delete-form" method="post" action="">
+            {% csrf_token %}
+            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+              Delete
+            </button>
+          </form>
+          <button type="button" id="cancel-delete" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch Delete Form (Hidden) -->
+  <form id="batch-delete-form" method="post" action="{% url 'admin_section:add_group' %}" class="hidden">
+    {% csrf_token %}
+    <input type="hidden" name="delete_ids" id="delete-ids-input">
+  </form>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Year section dynamic loading
+      const yearSelect = document.getElementById('id_log_year');
+      const sectionSelect = document.getElementById('id_log_year_section');
+
+      if (yearSelect && sectionSelect) {
+        yearSelect.addEventListener('change', function() {
+          const yearId = this.value;
+          if (yearId) {
+            // Clear current options
+            sectionSelect.innerHTML = '<option value="">---------</option>';
+
+            // Fetch sections for selected year
+            fetch(`/admin_section/api/group-year-sections/${yearId}/`)
+              .then(response => response.json())
+              .then(data => {
+                data.forEach(section => {
+                  const option = document.createElement('option');
+                  option.value = section.id;
+                  option.textContent = section.year_section_name;
+                  sectionSelect.appendChild(option);
+                });
+              });
+          }
+        });
+      }
+
+      // Delete confirmation modal
+      const deleteModal = document.getElementById('delete-modal');
+      const deleteForm = document.getElementById('delete-form');
+      const modalTitle = document.getElementById('modal-title');
+      const modalMessage = document.getElementById('modal-message');
+      const cancelDelete = document.getElementById('cancel-delete');
+
+      // Show modal for single delete
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          const id = this.getAttribute('data-id');
+          const name = this.getAttribute('data-name');
+
+          modalTitle.textContent = 'Delete Group';
+          modalMessage.textContent = `Are you sure you want to delete the group "${name}"? This action cannot be undone.`;
+          deleteForm.action = `/admin_section/delete-group/${id}/`;
+          deleteModal.classList.remove('hidden');
+        });
+      });
+
+      // Hide modal
+      cancelDelete.addEventListener('click', function() {
+        deleteModal.classList.add('hidden');
+      });
+
+      // Batch delete functionality
+      const selectAllCheckbox = document.getElementById('select-all-checkbox');
+      const groupCheckboxes = document.querySelectorAll('.group-checkbox');
+      const batchDeleteBtn = document.getElementById('batch-delete-btn');
+      const batchDeleteForm = document.getElementById('batch-delete-form');
+      const deleteIdsInput = document.getElementById('delete-ids-input');
+
+      // Toggle all checkboxes
+      selectAllCheckbox.addEventListener('change', function() {
+        const isChecked = this.checked;
+        groupCheckboxes.forEach(checkbox => {
+          checkbox.checked = isChecked;
+        });
+        updateBatchDeleteButton();
+      });
+
+      // Update batch delete button visibility
+      groupCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateBatchDeleteButton);
+      });
+
+      function updateBatchDeleteButton() {
+        const checkedBoxes = document.querySelectorAll('.group-checkbox:checked');
+        if (checkedBoxes.length > 0) {
+          batchDeleteBtn.classList.remove('hidden');
+        } else {
+          batchDeleteBtn.classList.add('hidden');
+        }
+      }
+
+      // Handle batch delete
+      batchDeleteBtn.addEventListener('click', function() {
+        const checkedBoxes = document.querySelectorAll('.group-checkbox:checked');
+        const ids = Array.from(checkedBoxes).map(checkbox => checkbox.getAttribute('data-id'));
+
+        modalTitle.textContent = 'Delete Groups';
+        modalMessage.textContent = `Are you sure you want to delete ${ids.length} selected groups? This action cannot be undone.`;
+
+        deleteIdsInput.value = ids.join(',');
+        deleteModal.classList.remove('hidden');
+
+        // Set up the form submission
+        deleteForm.action = '';
+        deleteForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          batchDeleteForm.submit();
+        });
+      });
+    });
+  </script>
 {% endblock %}
