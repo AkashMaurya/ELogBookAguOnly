@@ -1,18 +1,226 @@
 {% extends 'base.html' %}
 
 {% block title %}
-  Student Blogs
+  Manage Students
 {% endblock %}
 
 {% block navbar %}
 {% include 'components/admin_auth_navbar.html' %}
 {% endblock %}
 
-<!-- Main Content -->
-
 {% block content %}
-  <div class="text-center p-10 mt-10">
-    <h2 class="text-3xl font-bold">Add Student in to Group</h2>
-    <p>This is the main content area. Add your page content here.</p>
+<div class="container mx-auto px-4 py-8">
+  <!-- Page Header -->
+  <div class="mb-8">
+    <h2 class="text-3xl font-bold text-gray-800 dark:text-white">Manage Students</h2>
   </div>
+
+  <!-- Forms Section -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <!-- Add Individual Student Form -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Add New Student</h3>
+      <form method="POST" action="{% url 'admin_section:add_student' %}">
+        {% csrf_token %}
+        <input type="hidden" name="add_student" value="1">
+        {{ user_form.as_p }}
+        {{ student_form.as_p }}
+        <button type="submit" class="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          Add Student
+        </button>
+      </form>
+    </div>
+
+    <!-- Bulk Upload Form -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Bulk Upload Students</h3>
+      <form method="POST" action="{% url 'admin_section:add_student' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="bulk_upload" value="1">
+        {{ bulk_form.as_p }}
+        <button type="submit" class="w-full mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+          Upload CSV
+        </button>
+      </form>
+      <div class="mt-4">
+        <a href="{% url 'admin_section:student_download_sample_csv' %}" class="text-blue-600 hover:text-blue-800">
+          Download Sample CSV
+        </a>
+      </div>
+    </div>
+
+    <!-- Assign Student to Group Form -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Assign to Group</h3>
+      <form method="POST" action="{% url 'admin_section:add_student' %}">
+        {% csrf_token %}
+        <input type="hidden" name="assign_student" value="1">
+        {{ assign_form.as_p }}
+        <button type="submit" class="w-full mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+          Assign Student
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Students List Section -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+    <!-- Search and Filter -->
+    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+      <form method="GET" class="flex flex-col md:flex-row gap-4">
+        <!-- Group Filter -->
+        <select name="group" class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600">
+          <option value="">All Groups</option>
+          {% for group in groups %}
+            <option value="{{ group.id }}" {% if selected_group == group.id|stringformat:"s" %}selected{% endif %}>
+              {{ group.group_name }}
+            </option>
+          {% endfor %}
+        </select>
+
+        <!-- Search Input -->
+        <input type="text" name="q" value="{{ search_query }}" 
+               class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600"
+               placeholder="Search by student ID, email or name">
+        
+        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          Search
+        </button>
+      </form>
+    </div>
+
+    <!-- Students Table -->
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50 dark:bg-gray-700">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              Student ID
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              Name
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              Email
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              Group
+            </th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+          {% for student in students %}
+            <tr>
+              <td class="px-6 py-4 whitespace-nowrap">{{ student.student_id }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ student.user.get_full_name }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ student.user.email }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                {{ student.group.group_name|default:"No Group" }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                {% if student.group %}
+                  <a href="{% url 'admin_section:remove_from_group' student.id %}" 
+                     class="text-red-600 hover:text-red-900"
+                     onclick="return confirm('Are you sure you want to remove this student from their group?')">
+                    Remove from Group
+                  </a>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                No students found
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if students.has_other_pages %}
+      <div class="px-6 py-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+        <nav class="flex justify-center">
+          <ul class="flex items-center space-x-2">
+            {% if students.has_previous %}
+              <li>
+                <a href="?page={{ students.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_group %}&group={{ selected_group }}{% endif %}" 
+                   class="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+                  Previous
+                </a>
+              </li>
+            {% endif %}
+
+            {% for i in students.paginator.page_range %}
+              {% if students.number == i %}
+                <li>
+                  <span class="px-3 py-1 rounded-md bg-blue-600 text-white">
+                    {{ i }}
+                  </span>
+                </li>
+              {% else %}
+                <li>
+                  <a href="?page={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_group %}&group={{ selected_group }}{% endif %}" 
+                     class="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+                    {{ i }}
+                  </a>
+                </li>
+              {% endif %}
+            {% endfor %}
+
+            {% if students.has_next %}
+              <li>
+                <a href="?page={{ students.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_group %}&group={{ selected_group }}{% endif %}" 
+                   class="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600">
+                  Next
+                </a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Display Bulk Upload Results -->
+  {% if bulk_results %}
+    <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Upload Results</h3>
+      <div class="space-y-2">
+        <p>Successfully added: {{ bulk_results.success_count }} students</p>
+        <p>Failed: {{ bulk_results.error_count }} students</p>
+        {% if bulk_results.error_messages %}
+          <div class="mt-4">
+            <h4 class="font-semibold mb-2">Errors:</h4>
+            <ul class="list-disc pl-5 text-red-600">
+              {% for error in bulk_results.error_messages %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </ul>
+            {% if bulk_results.total_errors > bulk_results.error_messages|length %}
+              <p class="mt-2 text-gray-500">
+                (Showing first 10 errors of {{ bulk_results.total_errors }} total)
+              </p>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Display Messages -->
+{% if messages %}
+  <div class="fixed top-4 right-4 z-50">
+    {% for message in messages %}
+      <div class="{% if message.tags == 'success' %}bg-green-500{% elif message.tags == 'error' %}bg-red-500{% else %}bg-blue-500{% endif %} text-white px-6 py-4 rounded-lg shadow-lg mb-4">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
 {% endblock %}

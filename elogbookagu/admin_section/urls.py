@@ -20,7 +20,7 @@ from .views_file.add_elogyear import add_elogyear, edit_elogyear, delete_elogyea
 from .views_file.add_department import add_department, edit_department, delete_department, get_year_sections
 from .views_file.add_group import add_group, edit_group, delete_group, get_year_sections as group_get_year_sections
 from .views_file.add_student import add_student, remove_from_group, download_sample_csv as student_download_sample_csv
-from .views_file.add_doctor import add_doctor
+from .views_file.add_doctor import add_doctor, remove_from_department, download_sample_csv as doctor_download_sample_csv, edit_doctor, delete_doctor
 
 
 app_name = "admin_section"
@@ -118,6 +118,12 @@ urlpatterns = [
     # Student Management URLs
     path("remove-student-from-group/<int:student_id>/", remove_from_group, name="remove_from_group"),
     path("download-student-sample-csv/", student_download_sample_csv, name="student_download_sample_csv"),
+
+    # Doctor Management URLs
+    path("edit-doctor/<int:doctor_id>/", edit_doctor, name="edit_doctor"),
+    path("delete-doctor/<int:doctor_id>/", delete_doctor, name="delete_doctor"),
+    path("remove-doctor-from-department/<int:doctor_id>/<int:department_id>/", remove_from_department, name="remove_from_department"),
+    path("download-doctor-sample-csv/", doctor_download_sample_csv, name="doctor_download_sample_csv"),
 
     # Bulk Add Users URLs
     path('bulk-add-users/', views.bulk_add_users, name='bulk_add_users'),
