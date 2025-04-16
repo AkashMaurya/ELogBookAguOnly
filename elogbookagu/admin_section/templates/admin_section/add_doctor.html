@@ -443,8 +443,17 @@
       }
 
       // Show forms section if there are bulk upload results
-      const hasBulkResults = document.querySelector('[id^="bulk_results"]') !== null;
+      const hasBulkResults = document.querySelector('.bulk_results') !== null || {% if bulk_results %}true{% else %}false{% endif %};
       if (hasBulkResults) {
+        formsSection.classList.remove('hidden');
+        toggleFormsBtn.innerHTML = '<i class="fas fa-times mr-2"></i> Hide Forms';
+        toggleFormsBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+        toggleFormsBtn.classList.add('bg-gray-600', 'hover:bg-gray-700');
+      }
+
+      // Show forms section if explicitly requested via URL parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('show_form') === 'true') {
         formsSection.classList.remove('hidden');
         toggleFormsBtn.innerHTML = '<i class="fas fa-times mr-2"></i> Hide Forms';
         toggleFormsBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');

@@ -332,12 +332,18 @@ class BulkStudentUploadForm(forms.Form):
 
 
 class AssignStudentForm(forms.Form):
-    student = forms.ModelChoiceField(
-        queryset=Student.objects.filter(group__isnull=True),
-        empty_label="Select a student",
-        widget=forms.Select(attrs={
+    student_search = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
             'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
-        })
+            'placeholder': 'Search by student ID, name or email',
+        }),
+        help_text='Enter student ID, name or email to search'
+    )
+    student_id = forms.CharField(
+        required=True,
+        widget=forms.HiddenInput(),
+        error_messages={'required': 'Please search and select a student first.'}
     )
     group = forms.ModelChoiceField(
         queryset=Group.objects.all(),

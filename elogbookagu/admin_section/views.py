@@ -24,7 +24,7 @@ from doctor_section.forms import AdminDoctorResponseForm, BatchReviewForm, LogRe
 from django.core.paginator import Paginator
 
 # Django predefined models
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.db.models.functions import TruncMonth
 
 @login_required
@@ -170,14 +170,18 @@ def bulk_add_users(request):
 def admin_dash(request):
     # Get filter parameters
     department_id = request.GET.get('department')
+    student_search = request.GET.get('student_search', '')
 
     # Get all departments
-    departments = Department.objects.all()
+    departments = Department.objects.all().order_by('name')
 
     # Base queryset for logs
-    logs = StudentLogFormModel.objects.all()
-    doctors = Doctor.objects.all()
+    logs = StudentLogFormModel.objects.select_related('student', 'student__user', 'department', 'activity_type', 'core_diagnosis').all()
+    doctors = Doctor.objects.select_related('user').prefetch_related('departments').all()
+    students = Student.objects.select_related('user', 'group').all()
+    activities = ActivityType.objects.all()
 
+    # Filter logs by department if selected
     if department_id:
         logs = logs.filter(department_id=department_id)
         doctors = doctors.filter(departments__id=department_id)
@@ -186,30 +190,123 @@ def admin_dash(request):
     today = timezone.now()
     start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-    # Performance metrics
-    performance_data = {
-        'total_logs': logs.count(),
-        'total_doctors': doctors.count(),
-        'total_students': Student.objects.count(),
-        'departments_count': departments.count(),
-        'pending_reviews': logs.filter(is_reviewed=False).count(),
-        'monthly_submissions': logs.filter(created_at__gte=start_of_month).count(),
-        'approval_rate': calculate_approval_rate(logs),
-    }
+    # Count metrics
+    total_logs = logs.count()
+    total_doctors = Doctor.objects.count()
+    total_student = Student.objects.count()
+    total_departments = Department.objects.count()
+    total_activities = ActivityType.objects.count()
 
-    # Chart data
+    # Review status counts
+    reviewed_logs = logs.filter(is_reviewed=True)
+    pending_logs = logs.filter(is_reviewed=False).count()
+    approved_logs = reviewed_logs.exclude(reviewer_comments__startswith='REJECTED').count()
+    rejected_logs = reviewed_logs.filter(reviewer_comments__startswith='REJECTED').count()
+
+    # Get recent logs for the table (limited to 10)
+    recent_logs = logs.order_by('-created_at')[:10]
+
+    # Department statistics for charts
+    department_stats = []
+    for dept in departments:
+        dept_logs = StudentLogFormModel.objects.filter(department=dept)
+        total = dept_logs.count()
+        reviewed = dept_logs.filter(is_reviewed=True).count()
+        pending = total - reviewed
+        department_stats.append({
+            'name': dept.name,
+            'total': total,
+            'reviewed': reviewed,
+            'pending': pending,
+            'doctors_count': dept.doctors.count()
+        })
+
+    # Doctor performance data if department is selected
+    doctor_performance = []
+    if department_id:
+        for doctor in doctors:
+            doctor_logs = logs.filter(tutor=doctor)
+            reviewed = doctor_logs.filter(is_reviewed=True).count()
+            approved = doctor_logs.filter(is_reviewed=True).exclude(reviewer_comments__startswith='REJECTED').count()
+            rejected = doctor_logs.filter(is_reviewed=True, reviewer_comments__startswith='REJECTED').count()
+            doctor_performance.append({
+                'name': doctor.user.get_full_name() or doctor.user.username,
+                'reviewed': reviewed,
+                'approved': approved,
+                'rejected': rejected
+            })
+
+    # Student performance search
+    student_data = None
+    student_performance_data = None
+    if student_search:
+        # Search for student by name, ID or email
+        student_query = students.filter(
+            Q(student_id__icontains=student_search) |
+            Q(user__email__icontains=student_search) |
+            Q(user__first_name__icontains=student_search) |
+            Q(user__last_name__icontains=student_search)
+        ).first()
+
+        if student_query:
+            # Get student logs
+            student_logs = logs.filter(student=student_query)
+            total_student_logs = student_logs.count()
+            approved_student_logs = student_logs.filter(is_reviewed=True).exclude(reviewer_comments__startswith='REJECTED').count()
+            pending_student_logs = student_logs.filter(is_reviewed=False).count()
+            rejected_student_logs = student_logs.filter(is_reviewed=True, reviewer_comments__startswith='REJECTED').count()
+
+            # Create student data dictionary
+            student_data = {
+                'name': student_query.user.get_full_name() or student_query.user.username,
+                'id': student_query.student_id,
+                'email': student_query.user.email,
+                'total_logs': total_student_logs,
+                'approved_logs': approved_student_logs,
+                'pending_logs': pending_student_logs,
+                'rejected_logs': rejected_student_logs
+            }
+
+            # Get performance by department
+            student_departments = student_logs.values('department__name').annotate(
+                total=Count('id'),
+                approved=Count('id', filter=Q(is_reviewed=True) & ~Q(reviewer_comments__startswith='REJECTED')),
+                pending=Count('id', filter=Q(is_reviewed=False)),
+                rejected=Count('id', filter=Q(is_reviewed=True) & Q(reviewer_comments__startswith='REJECTED'))
+            )
+
+            student_performance_data = []
+            for dept in student_departments:
+                student_performance_data.append({
+                    'department': dept['department__name'],
+                    'total': dept['total'],
+                    'approved': dept['approved'],
+                    'pending': dept['pending'],
+                    'rejected': dept['rejected']
+                })
+
+    # Prepare chart data
     chart_data = {
-        'daily_submissions': get_daily_submissions_data(logs),
-        'department_stats': get_department_stats(departments),
-        'review_status': get_review_status_data(logs),
-        'monthly_trend': get_monthly_trend_data(logs),
+        'department_stats': department_stats
     }
 
     context = {
-        'performance_data': performance_data,
-        'chart_data': chart_data,
         'departments': departments,
         'selected_department': department_id,
+        'total_logs': total_logs,
+        'total_doctors': total_doctors,
+        'total_student': total_student,
+        'total_departments': total_departments,
+        'total_activities': total_activities,
+        'approved_logs': approved_logs,
+        'pending_logs': pending_logs,
+        'rejected_logs': rejected_logs,
+        'recent_logs': recent_logs,
+        'chart_data': chart_data,
+        'doctor_performance': doctor_performance,
+        'student_search': student_search,
+        'student_data': student_data,
+        'student_performance_data': student_performance_data
     }
 
     return render(request, "admin_section/admin_dash.html", context)
@@ -272,6 +369,66 @@ def get_monthly_trend_data(logs):
         'labels': [d['month'].strftime('%B %Y') for d in monthly_data],
         'data': [d['count'] for d in monthly_data]
     }
+
+
+@login_required
+def get_user_data(request):
+    """AJAX endpoint to get user data for the dashboard"""
+    user_type = request.GET.get('user_type', '')
+
+    if not user_type or user_type not in ['student', 'doctor', 'staff', 'admin']:
+        return JsonResponse({'error': 'Invalid user type'}, status=400)
+
+    data = {'count': 0, 'users': []}
+
+    if user_type == 'student':
+        students = Student.objects.select_related('user', 'group').all()[:10]
+        data['count'] = Student.objects.count()
+
+        for student in students:
+            data['users'].append({
+                'id': student.student_id,
+                'name': student.user.get_full_name() or student.user.username,
+                'email': student.user.email,
+                'group': student.group.group_name if student.group else 'No Group'
+            })
+
+    elif user_type == 'doctor':
+        doctors = Doctor.objects.select_related('user').prefetch_related('departments').all()[:10]
+        data['count'] = Doctor.objects.count()
+
+        for doctor in doctors:
+            departments = [dept.name for dept in doctor.departments.all()]
+            data['users'].append({
+                'name': doctor.user.get_full_name() or doctor.user.username,
+                'email': doctor.user.email,
+                'departments': ', '.join(departments) if departments else 'No Department',
+                'speciality': doctor.user.speciality or 'Not specified'
+            })
+
+    elif user_type == 'staff':
+        staff = Staff.objects.select_related('user').prefetch_related('departments').all()[:10]
+        data['count'] = Staff.objects.count()
+
+        for staff_member in staff:
+            departments = [dept.name for dept in staff_member.departments.all()]
+            data['users'].append({
+                'name': staff_member.user.get_full_name() or staff_member.user.username,
+                'email': staff_member.user.email,
+                'departments': ', '.join(departments) if departments else 'No Department'
+            })
+
+    elif user_type == 'admin':
+        admins = CustomUser.objects.filter(role='admin')[:10]
+        data['count'] = CustomUser.objects.filter(role='admin').count()
+
+        for admin in admins:
+            data['users'].append({
+                'name': admin.get_full_name() or admin.username,
+                'email': admin.email
+            })
+
+    return JsonResponse(data)
 
 def download_user_template(request):
     """Download a sample CSV template for user import"""

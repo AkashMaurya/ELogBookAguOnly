@@ -3,8 +3,10 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.http import HttpResponse
+from django import forms
 import csv
 import io
 from accounts.models import CustomUser, Doctor
@@ -220,8 +222,54 @@ def edit_doctor(request, doctor_id):
     doctor = get_object_or_404(Doctor, id=doctor_id)
     user = doctor.user
 
+    # Create a custom form class for editing that doesn't include password fields
+    class DoctorUserEditForm(forms.ModelForm):
+        class Meta:
+            model = CustomUser
+            fields = ['username', 'email', 'first_name', 'last_name', 'phone_no', 'city', 'country', 'speciality', 'bio']
+            widgets = {
+                'username': forms.TextInput(attrs={
+                    'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                    'placeholder': 'Enter username'
+                }),
+                'email': forms.EmailInput(attrs={
+                    'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                    'placeholder': 'Enter email address'
+                }),
+                'first_name': forms.TextInput(attrs={
+                    'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                    'placeholder': 'Enter first name'
+                }),
+                'last_name': forms.TextInput(attrs={
+                    'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                    'placeholder': 'Enter last name'
+                }),
+                'phone_no': forms.TextInput(attrs={
+                    'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                    'placeholder': 'Enter phone number'
+                }),
+                'city': forms.TextInput(attrs={
+                    'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                    'placeholder': 'Enter city'
+                }),
+                'country': forms.TextInput(attrs={
+                    'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                    'placeholder': 'Enter country'
+                }),
+                'speciality': forms.TextInput(attrs={
+                    'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                    'placeholder': 'Enter speciality'
+                }),
+                'bio': forms.Textarea(attrs={
+                    'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                    'placeholder': 'Enter bio',
+                    'rows': 3
+                }),
+            }
+
     if request.method == 'POST':
-        user_form = DoctorUserForm(request.POST, instance=user)
+        # Use the custom edit form instead of the UserCreationForm
+        user_form = DoctorUserEditForm(request.POST, instance=user)
         doctor_form = DoctorForm(request.POST, instance=doctor)
 
         if user_form.is_valid() and doctor_form.is_valid():
@@ -232,7 +280,7 @@ def edit_doctor(request, doctor_id):
                     user.role = 'doctor'  # Ensure role is still doctor
                     user.save()
 
-                    # Update doctor profile
+                    # Update doctor profile and departments
                     doctor = doctor_form.save()
 
                     messages.success(request, f'Doctor {user.first_name} {user.last_name} updated successfully!')
@@ -240,7 +288,8 @@ def edit_doctor(request, doctor_id):
             except Exception as e:
                 messages.error(request, f'Error updating doctor: {str(e)}')
     else:
-        user_form = DoctorUserForm(instance=user)
+        # Use the custom edit form instead of the UserCreationForm
+        user_form = DoctorUserEditForm(instance=user)
         doctor_form = DoctorForm(instance=doctor)
 
     context = {

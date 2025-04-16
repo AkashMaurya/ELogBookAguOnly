@@ -19,7 +19,7 @@ from .views_file.add_year import add_year, edit_year, delete_year
 from .views_file.add_elogyear import add_elogyear, edit_elogyear, delete_elogyear
 from .views_file.add_department import add_department, edit_department, delete_department, get_year_sections
 from .views_file.add_group import add_group, edit_group, delete_group, get_year_sections as group_get_year_sections
-from .views_file.add_student import add_student, remove_from_group, download_sample_csv as student_download_sample_csv
+from .views_file.add_student import add_student, remove_from_group, download_sample_csv as student_download_sample_csv, search_students, edit_student, delete_student
 from .views_file.add_doctor import add_doctor, remove_from_department, download_sample_csv as doctor_download_sample_csv, edit_doctor, delete_doctor
 
 
@@ -116,6 +116,8 @@ urlpatterns = [
     path("api/group-year-sections/<int:year_id>/", group_get_year_sections, name="group_get_year_sections"),
 
     # Student Management URLs
+    path("edit-student/<int:student_id>/", edit_student, name="edit_student"),
+    path("delete-student/<int:student_id>/", delete_student, name="delete_student"),
     path("remove-student-from-group/<int:student_id>/", remove_from_group, name="remove_from_group"),
     path("download-student-sample-csv/", student_download_sample_csv, name="student_download_sample_csv"),
 
@@ -128,4 +130,8 @@ urlpatterns = [
     # Bulk Add Users URLs
     path('bulk-add-users/', views.bulk_add_users, name='bulk_add_users'),
     path('download-user-template/', views.download_user_template, name='download_user_template'),
+
+    # AJAX endpoints
+    path('api/get-user-data/', views.get_user_data, name='get_user_data'),
+    path('api/search-students/', search_students, name='search_students'),
 ]

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}
-  Student Blogs
+  Manage Departments
 {% endblock %}
 
 {% block navbar %}
@@ -11,206 +11,447 @@
 <!-- Main Content -->
 
 {% block content %}
-  <div class="container mx-auto px-4 py-8">
-    <div class="mb-8">
-      <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">{% if is_edit %}Edit{% else %}Add{% endif %} Department</h2>
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12">
+    <!-- Page Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-100">
+          <i class="fas fa-building text-blue-500 mr-2"></i> Departments
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400 mt-1">Manage departments for student records and activities</p>
+      </div>
+    </div>
 
-      <!-- Messages section -->
-      {% if messages %}
-        <div class="mb-6">
-          {% for message in messages %}
-            <div class="p-4 mb-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100{% elif message.tags == 'error' %}bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100{% else %}bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100{% endif %}">
-              {{ message }}
+    <!-- Messages section -->
+    {% if messages %}
+      <div class="fixed top-4 right-4 z-50 w-full max-w-sm">
+        {% for message in messages %}
+          <div class="p-4 mb-3 rounded-lg shadow-lg flex items-start {% if message.tags == 'success' %}bg-green-100 text-green-800 dark:bg-green-900/70 dark:text-green-200{% elif message.tags == 'error' %}bg-red-100 text-red-800 dark:bg-red-900/70 dark:text-red-200{% else %}bg-blue-100 text-blue-800 dark:bg-blue-900/70 dark:text-blue-200{% endif %} transform transition-all duration-300 animate-fade-in-down">
+            <div class="flex-shrink-0">
+              <i class="fas {% if message.tags == 'success' %}fa-check-circle text-green-500{% elif message.tags == 'error' %}fa-exclamation-circle text-red-500{% else %}fa-info-circle text-blue-500{% endif %} mt-0.5"></i>
             </div>
-          {% endfor %}
-        </div>
-      {% endif %}
-
-      <!-- Department Form -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <form method="post" action="{% if is_edit %}{% url 'admin_section:edit_department' department.id %}{% else %}{% url 'admin_section:add_department' %}{% endif %}">
-          {% csrf_token %}
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="mb-4">
-              <label for="id_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department Name</label>
-              {{ form.name }}
-              {% if form.name.errors %}
-                <p class="text-red-500 text-sm mt-1">{{ form.name.errors.0 }}</p>
-              {% endif %}
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Enter the department name</p>
+            <div class="ml-3 flex-grow">
+              <p class="text-sm font-medium">{{ message }}</p>
             </div>
-
-            <div class="mb-4">
-              <label for="id_log_year" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Academic Year</label>
-              {{ form.log_year }}
-              {% if form.log_year.errors %}
-                <p class="text-red-500 text-sm mt-1">{{ form.log_year.errors.0 }}</p>
-              {% endif %}
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Select the academic year</p>
-            </div>
-
-            <div class="mb-4">
-              <label for="id_log_year_section" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Year Section</label>
-              {{ form.log_year_section }}
-              {% if form.log_year_section.errors %}
-                <p class="text-red-500 text-sm mt-1">{{ form.log_year_section.errors.0 }}</p>
-              {% endif %}
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Select the year section (optional)</p>
-            </div>
-          </div>
-
-          <div class="flex justify-end mt-6">
-            {% if is_edit %}
-              <a href="{% url 'admin_section:add_department' %}" class="mr-2 px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">Cancel</a>
-            {% endif %}
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-              {% if is_edit %}Update{% else %}Add{% endif %} Department
+            <button type="button" class="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 close-message">
+              <i class="fas fa-times"></i>
             </button>
           </div>
-        </form>
+        {% endfor %}
       </div>
-    </div>
+    {% endif %}
 
-    <!-- Filter Section -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
-      <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Filter Departments</h3>
-      <form method="get" action="{% url 'admin_section:add_department' %}" class="flex flex-col md:flex-row gap-4 items-end">
-        <div class="flex-grow">
-          <label for="year_section" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Year Section</label>
-          <select id="year_section" name="year_section" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-            <option value="">All Year Sections</option>
-            {% for section in year_sections %}
-              <option value="{{ section.id }}" {% if selected_year_section == section.id|stringformat:'s' %}selected{% endif %}>{{ section.year_name.year_name }} - {{ section.year_section_name }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="flex space-x-2">
-          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-            Apply Filter
-          </button>
-          {% if selected_year_section %}
-            <a href="{% url 'admin_section:add_department' %}" class="px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200 inline-flex items-center">
-              <i class="fas fa-times mr-1"></i> Clear
-            </a>
-          {% endif %}
-        </div>
-      </form>
-    </div>
-
-    <!-- Departments Table -->
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
-      <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-        <h3 class="text-xl font-semibold text-gray-800 dark:text-white">Departments</h3>
-        <div>
-          <button id="batch-delete-btn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 opacity-50 cursor-not-allowed" disabled>
-            Delete Selected
-          </button>
-        </div>
-      </div>
-
-      {% if departments %}
-        <div class="overflow-x-auto">
-          <form id="batch-delete-form" method="post" action="{% url 'admin_section:add_department' %}">
-            {% csrf_token %}
-            <input type="hidden" name="delete_ids" id="delete_ids" value="">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead class="bg-gray-50 dark:bg-gray-700">
-                <tr>
-                  <th scope="col" class="px-3 py-3 text-center">
-                    <input type="checkbox" id="select-all-checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                  </th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">ID</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Department Name</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Academic Year</th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Year Section</th>
-                  <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {% for dept in departments %}
-                  <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td class="px-3 py-4 whitespace-nowrap text-center">
-                      <input type="checkbox" class="dept-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" data-dept-id="{{ dept.id }}">
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ dept.id }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ dept.name }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ dept.log_year.year_name }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ dept.log_year_section.year_section_name|default:"N/A" }}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <a href="{% url 'admin_section:edit_department' dept.id %}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">Edit</a>
-                      <button type="button" class="delete-dept-btn text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" data-dept-id="{{ dept.id }}" data-dept-name="{{ dept.name }}">Delete</button>
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </form>
-        </div>
-
-        <!-- Pagination -->
-        {% if departments.has_other_pages %}
-          <div class="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
-            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p class="text-sm text-gray-700 dark:text-gray-300">
-                  Showing <span class="font-medium">{{ departments.start_index }}</span> to <span class="font-medium">{{ departments.end_index }}</span> of <span class="font-medium">{{ departments.paginator.count }}</span> results
-                </p>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Department Form -->
+      <div class="lg:col-span-1">
+        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden border-t-4 {% if is_edit %}border-yellow-500{% else %}border-blue-500{% endif %}">
+          <div class="p-6">
+            <div class="flex items-center mb-6">
+              <div class="flex-shrink-0 mr-4 {% if is_edit %}text-yellow-500{% else %}text-blue-500{% endif %}">
+                <i class="fas {% if is_edit %}fa-edit text-2xl{% else %}fa-plus-circle text-2xl{% endif %}"></i>
               </div>
-              <div>
-                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  {% if departments.has_previous %}
-                    <a href="?page={{ departments.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <span class="sr-only">Previous</span>
-                      <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                      </svg>
-                    </a>
-                  {% endif %}
+              <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">
+                {{ is_edit|yesno:'Edit Existing,Add New' }} Department
+              </h2>
+            </div>
 
-                  {% for i in departments.paginator.page_range %}
-                    {% if departments.number == i %}
-                      <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-blue-50 dark:bg-blue-900 text-sm font-medium text-blue-600 dark:text-blue-200">
-                        {{ i }}
-                      </span>
-                    {% elif i > departments.number|add:'-3' and i < departments.number|add:'3' %}
-                      <a href="?page={{ i }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                        {{ i }}
-                      </a>
+            <!-- Form Errors Summary -->
+            {% if form.errors or form.non_field_errors %}
+            <div class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border-l-4 border-red-500">
+              <div class="flex items-start">
+                <div class="flex-shrink-0">
+                  <i class="fas fa-exclamation-circle text-red-600 dark:text-red-400"></i>
+                </div>
+                <div class="ml-3">
+                  <h4 class="text-sm font-medium text-red-800 dark:text-red-300">Please correct the following errors:</h4>
+                  {% if form.non_field_errors %}
+                  <ul class="mt-1 text-sm text-red-700 dark:text-red-300 list-disc list-inside">
+                    {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                  </ul>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% if is_edit %}{% url 'admin_section:edit_department' department.id %}{% else %}{% url 'admin_section:add_department' %}{% endif %}" id="departmentForm">
+              {% csrf_token %}
+
+              <!-- Department Name Field -->
+              <div class="space-y-1 mb-6">
+                <label for="id_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Department Name <span class="text-red-500">*</span>
+                </label>
+                <div class="w-full">
+                  {{ form.name.as_widget|safe }}
+                </div>
+                <style>
+                  #id_name {
+                    width: 100%;
+                    padding: 0.5rem 1rem;
+                    border-radius: 0.5rem;
+                    border: 1px solid #d1d5db;
+                    background-color: white;
+                    color: #111827;
+                  }
+                  .dark #id_name {
+                    background-color: #374151;
+                    border-color: #4b5563;
+                    color: white;
+                  }
+                  #id_name:focus {
+                    outline: none;
+                    border-color: #3b82f6;
+                    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+                  }
+                </style>
+                {% if form.name.errors %}
+                  <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.name.errors.0 }}</p>
+                {% else %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Enter a descriptive name for this department</p>
+                {% endif %}
+              </div>
+
+              <!-- Academic Year Field -->
+              <div class="space-y-1 mb-6">
+                <label for="id_log_year" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Academic Year <span class="text-red-500">*</span>
+                </label>
+                <div class="w-full">
+                  {{ form.log_year.as_widget|safe }}
+                </div>
+                <style>
+                  #id_log_year {
+                    width: 100%;
+                    padding: 0.5rem 1rem;
+                    border-radius: 0.5rem;
+                    border: 1px solid #d1d5db;
+                    background-color: white;
+                    color: #111827;
+                  }
+                  .dark #id_log_year {
+                    background-color: #374151;
+                    border-color: #4b5563;
+                    color: white;
+                  }
+                  #id_log_year:focus {
+                    outline: none;
+                    border-color: #3b82f6;
+                    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+                  }
+                </style>
+                {% if form.log_year.errors %}
+                  <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.log_year.errors.0 }}</p>
+                {% else %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Select the academic year for this department</p>
+                {% endif %}
+              </div>
+
+              <!-- Year Section Field -->
+              <div class="space-y-1 mb-6">
+                <label for="id_log_year_section" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Year Section <span class="text-gray-400 text-xs font-normal">(optional)</span>
+                </label>
+                <div class="relative">
+                  <div class="w-full">
+                    {{ form.log_year_section.as_widget|safe }}
+                  </div>
+                  <style>
+                    #id_log_year_section {
+                      width: 100%;
+                      padding: 0.5rem 1rem;
+                      border-radius: 0.5rem;
+                      border: 1px solid #d1d5db;
+                      background-color: white;
+                      color: #111827;
+                    }
+                    .dark #id_log_year_section {
+                      background-color: #374151;
+                      border-color: #4b5563;
+                      color: white;
+                    }
+                    #id_log_year_section:focus {
+                      outline: none;
+                      border-color: #3b82f6;
+                      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+                    }
+                  </style>
+                  <div id="section-loading" class="hidden absolute inset-y-0 right-0 pr-3 pointer-events-none" style="display: none;">
+                    <i class="fas fa-spinner fa-spin text-blue-500"></i>
+                  </div>
+                </div>
+                {% if form.log_year_section.errors %}
+                  <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ form.log_year_section.errors.0 }}</p>
+                {% else %}
+                  <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Select academic year first, then choose year section</p>
+                {% endif %}
+              </div>
+
+              <!-- Form Actions -->
+              <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                {% if is_edit %}
+                  <a href="{% url 'admin_section:add_department' %}" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200">
+                    <i class="fas fa-times mr-1"></i> Cancel
+                  </a>
+                  <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-yellow-500 rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition-colors duration-200">
+                    <i class="fas fa-save mr-1"></i> Update Department
+                  </button>
+                {% else %}
+                  <button type="reset" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200">
+                    <i class="fas fa-undo mr-1"></i> Reset
+                  </button>
+                  <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
+                    <i class="fas fa-plus-circle mr-1"></i> Add Department
+                  </button>
+                {% endif %}
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden border-t-4 border-purple-500 mt-6">
+          <div class="p-6">
+            <div class="flex items-center mb-4">
+              <div class="flex-shrink-0 mr-3 text-purple-500">
+                <i class="fas fa-filter text-xl"></i>
+              </div>
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Filter Departments</h3>
+            </div>
+
+            <form method="get" action="{% url 'admin_section:add_department' %}" class="space-y-4">
+              <div class="space-y-1">
+                <label for="year_section" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Year Section</label>
+                <select id="year_section" name="year_section" class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                  <option value="">All Year Sections</option>
+                  {% for section in year_sections %}
+                    <option value="{{ section.id }}" {% if selected_year_section == section.id|stringformat:'s' %}selected{% endif %}>{{ section.year_name.year_name }} - {{ section.year_section_name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                {% if selected_year_section %}
+                  <a href="{% url 'admin_section:add_department' %}" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200">
+                    <i class="fas fa-times mr-1"></i> Clear
+                  </a>
+                {% endif %}
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors duration-200">
+                  <i class="fas fa-search mr-1"></i> Apply Filter
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+
+
+      <!-- Departments Table -->
+      <div class="lg:col-span-2">
+        <div class="bg-white dark:bg-gray-800 shadow-lg rounded-lg overflow-hidden border-t-4 border-green-500">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="flex items-center">
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center">
+                <i class="fas fa-list-ul text-green-500 mr-2"></i> Departments
+                <span class="ml-2 px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">{{ departments.paginator.count }}</span>
+              </h3>
+              {% if selected_year_section %}
+              <div class="ml-4 flex items-center text-sm text-gray-600 dark:text-gray-400">
+                <span>Filtered by: </span>
+                <span class="ml-1 px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full text-xs font-medium">
+                  {% for section in year_sections %}
+                    {% if selected_year_section == section.id|stringformat:'s' %}
+                      {{ section.year_name.year_name }} - {{ section.year_section_name }}
                     {% endif %}
                   {% endfor %}
+                </span>
+              </div>
+              {% endif %}
+            </div>
+            <div>
+              <button id="batch-delete-btn" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 opacity-50 cursor-not-allowed flex items-center" disabled>
+                <i class="fas fa-trash-alt mr-1"></i> Delete Selected
+              </button>
+            </div>
+          </div>
 
-                  {% if departments.has_next %}
-                    <a href="?page={{ departments.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <span class="sr-only">Next</span>
-                      <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                      </svg>
-                    </a>
-                  {% endif %}
+          <div class="overflow-x-auto">
+            <form id="batch-delete-form" method="post" action="{% url 'admin_section:add_department' %}">
+              {% csrf_token %}
+              <input type="hidden" name="delete_ids" id="delete_ids" value="">
+              <table id="departments-table" class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th scope="col" class="px-3 py-3 text-center">
+                      <input type="checkbox" id="select-all-checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer">
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <div class="flex items-center">
+                        <span>ID</span>
+                        <i class="fas fa-sort ml-1 text-gray-400"></i>
+                      </div>
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <div class="flex items-center">
+                        <span>Department Name</span>
+                        <i class="fas fa-sort ml-1 text-gray-400"></i>
+                      </div>
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <div class="flex items-center">
+                        <span>Academic Year</span>
+                        <i class="fas fa-sort ml-1 text-gray-400"></i>
+                      </div>
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <div class="flex items-center">
+                        <span>Year Section</span>
+                        <i class="fas fa-sort ml-1 text-gray-400"></i>
+                      </div>
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {% for dept in departments %}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
+                      <td class="px-3 py-4 whitespace-nowrap text-center">
+                        <input type="checkbox" class="dept-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer" data-dept-id="{{ dept.id }}">
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ dept.id }}</td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ dept.name }}</div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                          {{ dept.log_year.year_name }}
+                        </span>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        {% if dept.log_year_section %}
+                          <span class="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                            {{ dept.log_year_section.year_section_name }}
+                          </span>
+                        {% else %}
+                          <span class="text-sm text-gray-500 dark:text-gray-400">N/A</span>
+                        {% endif %}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div class="flex justify-end space-x-2">
+                          <a href="{% url 'admin_section:edit_department' dept.id %}"
+                             class="p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors duration-200"
+                             title="Edit Department">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <button type="button"
+                                  class="delete-dept-btn p-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50 transition-colors duration-200"
+                                  data-dept-id="{{ dept.id }}"
+                                  data-dept-name="{{ dept.name }}"
+                                  title="Delete Department">
+                            <i class="fas fa-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  {% empty %}
+                    <tr>
+                      <td colspan="6" class="px-6 py-8 text-center">
+                        <div class="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                          <i class="fas fa-building text-4xl mb-3"></i>
+                          <p class="text-lg font-medium">No departments found</p>
+                          <p class="text-sm mt-1">Create your first department using the form</p>
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </form>
+          </div>
+
+          <!-- Pagination -->
+          {% if departments.has_other_pages %}
+            <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+              <div class="flex flex-col sm:flex-row justify-between items-center">
+                <div class="text-sm text-gray-700 dark:text-gray-300 mb-4 sm:mb-0">
+                  Showing <span class="font-medium">{{ departments.start_index }}</span> to <span class="font-medium">{{ departments.end_index }}</span> of <span class="font-medium">{{ departments.paginator.count }}</span> departments
+                </div>
+                <nav class="flex justify-center">
+                  <ul class="flex items-center space-x-1">
+                    {% if departments.has_previous %}
+                      <li>
+                        <a href="?page=1{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}" class="px-2 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200" title="First Page">
+                          <i class="fas fa-angle-double-left"></i>
+                        </a>
+                      </li>
+                      <li>
+                        <a href="?page={{ departments.previous_page_number }}{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}" class="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">
+                          <i class="fas fa-angle-left mr-1"></i> Prev
+                        </a>
+                      </li>
+                    {% endif %}
+
+                    {% for num in departments.paginator.page_range %}
+                      {% if departments.number == num %}
+                        <li>
+                          <span class="px-3 py-1 rounded-md bg-blue-600 text-white font-medium">
+                            {{ num }}
+                          </span>
+                        </li>
+                      {% elif num > departments.number|add:-3 and num < departments.number|add:3 %}
+                        <li>
+                          <a href="?page={{ num }}{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}" class="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">
+                            {{ num }}
+                          </a>
+                        </li>
+                      {% endif %}
+                    {% endfor %}
+
+                    {% if departments.has_next %}
+                      <li>
+                        <a href="?page={{ departments.next_page_number }}{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}" class="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">
+                          Next <i class="fas fa-angle-right ml-1"></i>
+                        </a>
+                      </li>
+                      <li>
+                        <a href="?page={{ departments.paginator.num_pages }}{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}" class="px-2 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200" title="Last Page">
+                          <i class="fas fa-angle-double-right"></i>
+                        </a>
+                      </li>
+                    {% endif %}
+                  </ul>
                 </nav>
               </div>
             </div>
-          </div>
-        {% endif %}
-      {% else %}
-        <div class="text-center py-8">
-          <p class="text-gray-500 dark:text-gray-400">No departments found. Add your first department above.</p>
+          {% endif %}
         </div>
-      {% endif %}
+      </div>
     </div>
   </div>
 
   <!-- Delete Confirmation Modal -->
-  <div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+  <div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 transition-opacity duration-300">
     <div class="flex items-center justify-center min-h-screen px-4">
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Confirm Deletion</h3>
-        <p class="text-gray-700 dark:text-gray-300 mb-6">Are you sure you want to delete the department <span id="deptNameToDelete" class="font-semibold"></span>? This action cannot be undone.</p>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6 transform transition-all duration-300 scale-95 opacity-0" id="singleModalContent">
+        <div class="flex items-center mb-4">
+          <div class="flex-shrink-0 mr-3 text-red-500">
+            <i class="fas fa-exclamation-triangle text-xl"></i>
+          </div>
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white">Confirm Deletion</h3>
+        </div>
+        <p class="text-gray-700 dark:text-gray-300 mb-6 pl-8">Are you sure you want to delete the department <span id="deptNameToDelete" class="font-semibold text-red-600 dark:text-red-400"></span>? This action cannot be undone.</p>
         <div class="flex justify-end space-x-3">
-          <button id="cancelDelete" class="px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">Cancel</button>
+          <button id="cancelDelete" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200">
+            <i class="fas fa-times mr-1"></i> Cancel
+          </button>
           <form id="deleteForm" method="post">
             {% csrf_token %}
-            <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">Delete</button>
+            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200">
+              <i class="fas fa-trash mr-1"></i> Delete
+            </button>
           </form>
         </div>
       </div>
@@ -218,30 +459,41 @@
   </div>
 
   <!-- Batch Delete Confirmation Modal -->
-  <div id="batchDeleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+  <div id="batchDeleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 transition-opacity duration-300">
     <div class="flex items-center justify-center min-h-screen px-4">
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Confirm Batch Deletion</h3>
-        <p class="text-gray-700 dark:text-gray-300 mb-6">Are you sure you want to delete <span id="deptCountToDelete" class="font-semibold"></span> selected departments? This action cannot be undone.</p>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6 transform transition-all duration-300 scale-95 opacity-0" id="batchModalContent">
+        <div class="flex items-center mb-4">
+          <div class="flex-shrink-0 mr-3 text-red-500">
+            <i class="fas fa-exclamation-triangle text-xl"></i>
+          </div>
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white">Confirm Batch Deletion</h3>
+        </div>
+        <p class="text-gray-700 dark:text-gray-300 mb-6 pl-8">Are you sure you want to delete <span id="deptCountToDelete" class="font-semibold text-red-600 dark:text-red-400"></span> selected departments? This action cannot be undone.</p>
         <div class="flex justify-end space-x-3">
-          <button id="cancelBatchDelete" class="px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">Cancel</button>
-          <button id="confirmBatchDelete" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">Delete</button>
+          <button id="cancelBatchDelete" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200">
+            <i class="fas fa-times mr-1"></i> Cancel
+          </button>
+          <button id="confirmBatchDelete" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200">
+            <i class="fas fa-trash-alt mr-1"></i> Delete All
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- JavaScript for delete confirmation -->
+  <!-- JavaScript for enhanced functionality -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Single delete modal
+      // Single delete modal elements
       const deleteModal = document.getElementById('deleteModal');
+      const singleModalContent = document.getElementById('singleModalContent');
       const deptNameToDelete = document.getElementById('deptNameToDelete');
       const deleteForm = document.getElementById('deleteForm');
       const cancelDelete = document.getElementById('cancelDelete');
 
       // Batch delete elements
       const batchDeleteModal = document.getElementById('batchDeleteModal');
+      const batchModalContent = document.getElementById('batchModalContent');
       const deptCountToDelete = document.getElementById('deptCountToDelete');
       const batchDeleteBtn = document.getElementById('batch-delete-btn');
       const confirmBatchDelete = document.getElementById('confirmBatchDelete');
@@ -250,8 +502,9 @@
       const deleteIdsInput = document.getElementById('delete_ids');
       const selectAllCheckbox = document.getElementById('select-all-checkbox');
       const deptCheckboxes = document.querySelectorAll('.dept-checkbox');
+      const closeMessageBtns = document.querySelectorAll('.close-message');
 
-      // Show delete confirmation modal for single delete
+      // Show delete confirmation modal for single delete with animation
       document.querySelectorAll('.delete-dept-btn').forEach(button => {
         button.addEventListener('click', function() {
           const deptId = this.getAttribute('data-dept-id');
@@ -259,19 +512,46 @@
 
           deptNameToDelete.textContent = deptName;
           deleteForm.action = `/admin_section/delete-department/${deptId}/`;
+
+          // Show modal with animation
           deleteModal.classList.remove('hidden');
+          setTimeout(() => {
+            deleteModal.classList.add('opacity-100');
+            singleModalContent.classList.remove('scale-95', 'opacity-0');
+            singleModalContent.classList.add('scale-100', 'opacity-100');
+          }, 10);
         });
       });
 
-      // Hide single delete confirmation modal
-      cancelDelete.addEventListener('click', function() {
-        deleteModal.classList.add('hidden');
-      });
+      // Hide single delete confirmation modal with animation
+      function hideSingleModal() {
+        singleModalContent.classList.remove('scale-100', 'opacity-100');
+        singleModalContent.classList.add('scale-95', 'opacity-0');
+        deleteModal.classList.remove('opacity-100');
 
-      // Close single delete modal when clicking outside
+        setTimeout(() => {
+          deleteModal.classList.add('hidden');
+        }, 300);
+      }
+
+      // Hide batch delete confirmation modal with animation
+      function hideBatchModal() {
+        batchModalContent.classList.remove('scale-100', 'opacity-100');
+        batchModalContent.classList.add('scale-95', 'opacity-0');
+        batchDeleteModal.classList.remove('opacity-100');
+
+        setTimeout(() => {
+          batchDeleteModal.classList.add('hidden');
+        }, 300);
+      }
+
+      // Hide single modal events
+      cancelDelete.addEventListener('click', hideSingleModal);
+
+      // Close single modal when clicking outside
       deleteModal.addEventListener('click', function(event) {
         if (event.target === deleteModal) {
-          deleteModal.classList.add('hidden');
+          hideSingleModal();
         }
       });
 
@@ -284,9 +564,11 @@
         if (count > 0) {
           batchDeleteBtn.disabled = false;
           batchDeleteBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          batchDeleteBtn.innerHTML = `<i class="fas fa-trash-alt mr-1"></i> Delete Selected (${count})`;
         } else {
           batchDeleteBtn.disabled = true;
           batchDeleteBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          batchDeleteBtn.innerHTML = `<i class="fas fa-trash-alt mr-1"></i> Delete Selected`;
         }
 
         // Update "select all" checkbox
@@ -294,53 +576,69 @@
       }
 
       // Handle "select all" checkbox
-      selectAllCheckbox.addEventListener('change', function() {
-        deptCheckboxes.forEach(checkbox => {
-          checkbox.checked = selectAllCheckbox.checked;
+      if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+          deptCheckboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+          });
+          updateSelectedCount();
         });
-        updateSelectedCount();
-      });
+      }
 
       // Handle individual checkboxes
       deptCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', updateSelectedCount);
       });
 
-      // Show batch delete confirmation modal
-      batchDeleteBtn.addEventListener('click', function() {
-        const selectedCheckboxes = document.querySelectorAll('.dept-checkbox:checked');
-        const count = selectedCheckboxes.length;
+      // Show batch delete confirmation modal with animation
+      if (batchDeleteBtn) {
+        batchDeleteBtn.addEventListener('click', function() {
+          const selectedCheckboxes = document.querySelectorAll('.dept-checkbox:checked');
+          const count = selectedCheckboxes.length;
 
-        if (count > 0) {
-          deptCountToDelete.textContent = count;
-          batchDeleteModal.classList.remove('hidden');
-        }
-      });
+          if (count > 0) {
+            deptCountToDelete.textContent = count;
+
+            // Show modal with animation
+            batchDeleteModal.classList.remove('hidden');
+            setTimeout(() => {
+              batchDeleteModal.classList.add('opacity-100');
+              batchModalContent.classList.remove('scale-95', 'opacity-0');
+              batchModalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+          }
+        });
+      }
 
       // Hide batch delete confirmation modal
-      cancelBatchDelete.addEventListener('click', function() {
-        batchDeleteModal.classList.add('hidden');
-      });
+      if (cancelBatchDelete) {
+        cancelBatchDelete.addEventListener('click', hideBatchModal);
+      }
 
       // Close batch delete modal when clicking outside
-      batchDeleteModal.addEventListener('click', function(event) {
-        if (event.target === batchDeleteModal) {
-          batchDeleteModal.classList.add('hidden');
-        }
-      });
+      if (batchDeleteModal) {
+        batchDeleteModal.addEventListener('click', function(event) {
+          if (event.target === batchDeleteModal) {
+            hideBatchModal();
+          }
+        });
+      }
 
       // Submit batch delete form
-      confirmBatchDelete.addEventListener('click', function() {
-        const selectedCheckboxes = document.querySelectorAll('.dept-checkbox:checked');
-        const selectedIds = Array.from(selectedCheckboxes).map(checkbox => checkbox.getAttribute('data-dept-id'));
+      if (confirmBatchDelete && batchDeleteForm && deleteIdsInput) {
+        confirmBatchDelete.addEventListener('click', function() {
+          const selectedCheckboxes = document.querySelectorAll('.dept-checkbox:checked');
+          const selectedIds = Array.from(selectedCheckboxes).map(checkbox => checkbox.getAttribute('data-dept-id'));
 
-        deleteIdsInput.value = selectedIds.join(',');
-        batchDeleteForm.submit();
-      });
+          deleteIdsInput.value = selectedIds.join(',');
+          batchDeleteForm.submit();
+        });
+      }
 
       // Dynamic filtering of year sections based on selected year
       const yearSelect = document.getElementById('id_log_year');
       const sectionSelect = document.getElementById('id_log_year_section');
+      const sectionLoading = document.getElementById('section-loading');
 
       if (yearSelect && sectionSelect) {
         yearSelect.addEventListener('change', function() {
@@ -352,9 +650,17 @@
           }
 
           if (yearId) {
+            // Show loading indicator
+            if (sectionLoading) {
+              sectionLoading.style.display = 'flex';
+            }
+
             // Fetch sections for the selected year
             fetch(`/admin_section/api/year-sections/${yearId}/`)
-              .then(response => response.json())
+              .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
+              })
               .then(data => {
                 if (data.sections) {
                   // Add new options
@@ -364,9 +670,116 @@
                     option.textContent = section.name;
                     sectionSelect.appendChild(option);
                   });
+                  sectionSelect.disabled = false;
                 }
               })
-              .catch(error => console.error('Error fetching sections:', error));
+              .catch(error => {
+                console.error('Error fetching sections:', error);
+                // Add error option
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'Error loading sections';
+                sectionSelect.appendChild(option);
+              })
+              .finally(() => {
+                // Hide loading indicator
+                if (sectionLoading) {
+                  sectionLoading.style.display = 'none';
+                }
+              });
+          } else {
+            sectionSelect.disabled = true;
+          }
+        });
+      }
+
+      // Close message functionality
+      if (closeMessageBtns.length > 0) {
+        closeMessageBtns.forEach(btn => {
+          btn.addEventListener('click', function() {
+            const message = this.closest('.mb-3');
+            if (message) {
+              message.style.opacity = '0';
+              setTimeout(() => {
+                message.remove();
+              }, 300);
+            }
+          });
+        });
+
+        // Auto-hide messages after 5 seconds
+        setTimeout(function() {
+          document.querySelectorAll('.fixed.top-4.right-4 .mb-3').forEach(function(message) {
+            message.style.opacity = '0';
+            setTimeout(function() {
+              message.remove();
+            }, 300);
+          });
+        }, 5000);
+      }
+
+      // Form validation
+      const departmentForm = document.getElementById('departmentForm');
+      const nameInput = document.querySelector('#id_name');
+      const yearInput = document.querySelector('#id_log_year');
+
+      if (departmentForm && nameInput && yearInput) {
+        departmentForm.addEventListener('submit', function(e) {
+          let isValid = true;
+
+          // Validate department name
+          if (!nameInput.value.trim()) {
+            isValid = false;
+            nameInput.classList.add('border-red-500');
+
+            // Add error message if it doesn't exist
+            let errorElement = nameInput.parentNode.querySelector('.error-message');
+            if (!errorElement) {
+              errorElement = document.createElement('p');
+              errorElement.className = 'mt-1 text-sm text-red-600 dark:text-red-400 error-message';
+              nameInput.parentNode.appendChild(errorElement);
+            }
+            errorElement.textContent = 'Please enter a department name';
+          }
+
+          // Validate academic year
+          if (!yearInput.value) {
+            isValid = false;
+            yearInput.classList.add('border-red-500');
+
+            // Add error message if it doesn't exist
+            let errorElement = yearInput.parentNode.querySelector('.error-message');
+            if (!errorElement) {
+              errorElement = document.createElement('p');
+              errorElement.className = 'mt-1 text-sm text-red-600 dark:text-red-400 error-message';
+              yearInput.parentNode.appendChild(errorElement);
+            }
+            errorElement.textContent = 'Please select an academic year';
+          }
+
+          if (!isValid) {
+            e.preventDefault();
+          }
+        });
+
+        // Remove error styling on input
+        nameInput.addEventListener('input', function() {
+          if (this.value.trim()) {
+            this.classList.remove('border-red-500');
+            const errorElement = this.parentNode.querySelector('.error-message');
+            if (errorElement) {
+              errorElement.remove();
+            }
+          }
+        });
+
+        yearInput.addEventListener('change', function() {
+          if (this.value) {
+            this.classList.remove('border-red-500');
+            const errorElement = this.parentNode.querySelector('.error-message');
+            if (errorElement) {
+              errorElement.remove();
+            }
           }
         });
       }
