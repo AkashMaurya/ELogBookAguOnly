@@ -93,13 +93,13 @@
   </div>
 
   <!-- Edit Profile Modal -->
-  <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+  <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" aria-hidden="true">
     <div class="flex items-center justify-center min-h-screen px-4">
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
         <div class="p-6">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold dark:text-white">Edit Contact Information</h2>
-            <button id="closeModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 text-xl p-1"><i class="fas fa-times"></i></button>
+            <h2 id="editModalTitle" class="text-xl font-bold dark:text-white">Edit Contact Information</h2>
+            <button id="closeModal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 text-xl p-1" aria-label="Close modal"><i class="fas fa-times"></i></button>
           </div>
 
           <form hx-post="{% url 'admin_section:update_contact_info' %}" hx-trigger="submit">
@@ -126,59 +126,7 @@
   </div>
 {% endblock %}
 
+{% load static %}
 {% block extra_scripts %}
-  <script>
-    // Modal controls
-    document.getElementById('openModal').addEventListener('click', function () {
-      document.getElementById('editModal').classList.remove('hidden')
-    })
-
-    document.getElementById('closeModal').addEventListener('click', function () {
-      document.getElementById('editModal').classList.add('hidden')
-    })
-
-    document.getElementById('editModal').addEventListener('click', function (event) {
-      if (event.target === this) {
-        this.classList.add('hidden')
-      }
-    })
-
-    // Profile photo upload
-    document.getElementById('profile-photo-upload').addEventListener('change', function () {
-      if (this.files && this.files[0]) {
-        htmx.trigger('#profile-photo-form', 'submit')
-      }
-    })
-
-    // HTMX response handling
-    document.body.addEventListener('htmx:afterRequest', function (event) {
-      if (event.detail.successful) {
-        try {
-          const jsonData = JSON.parse(event.detail.xhr.responseText)
-          if (jsonData.success) {
-            // Handle profile photo update
-            if (jsonData.profile_photo) {
-              document.querySelector('[alt="Profile Photo"]').src = jsonData.profile_photo
-              alert('Profile photo updated successfully!')
-            }
-            // Handle contact info update
-            else if (jsonData.phone || jsonData.city || jsonData.country) {
-              document.getElementById('editModal').classList.add('hidden')
-              document.getElementById('phone-text').textContent = jsonData.phone
-              document.getElementById('city-text').textContent = jsonData.city
-              document.getElementById('country-text').textContent = jsonData.country
-              alert('Contact information updated successfully!')
-            }
-          } else {
-            alert(jsonData.error || 'Failed to update information')
-          }
-        } catch (error) {
-          console.error('Error parsing response:', error)
-          alert('An error occurred while updating information')
-        }
-      } else {
-        alert('Failed to update information. Please try again.')
-      }
-    })
-  </script>
+  <script src="{% static 'js/admin_profile.js' %}" defer></script>
 {% endblock %}

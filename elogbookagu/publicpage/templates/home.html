@@ -8,93 +8,119 @@
   {% include './components/public_navbar.html' %}
 {% endblock %}
 
-<style>
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  .animate-fade-in {
-    animation: fadeIn 1s ease-in-out;
-  }
-
-  @keyframes bounce {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
-  }
-  
-  .animate-bounce {
-    animation: bounce 1s ease-in-out;
-  }
-
+{% block extra_head %}
+  <!-- Optimized CSS: Moved styles to head for better performance -->
   <style>
-    .slider {
-      display: flex;
-      transition: transform 0.5s ease-in-out;
-      width: 300%;
+    /* Animation keyframes */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    .slide {
-      flex: 1;
-      transition: opacity 1s ease-in-out;
+
+    @keyframes fadeInLeft {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes fadeInRight {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Animation classes */
+    .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
+    .animate-fade-in-left { animation: fadeInLeft 0.8s ease-out forwards; }
+    .animate-fade-in-right { animation: fadeInRight 0.8s ease-out forwards; }
+    .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; }
+
+    /* Delay classes */
+    .delay-100 { animation-delay: 0.1s; }
+    .delay-200 { animation-delay: 0.2s; }
+    .delay-300 { animation-delay: 0.3s; }
+
+    /* Reduce motion for accessibility */
+    @media (prefers-reduced-motion: reduce) {
+      .animate-fade-in, .animate-fade-in-left, .animate-fade-in-right, .animate-fade-in-up {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+    }
+
+    /* Optimize image loading */
+    .lazy-image {
+      transition: opacity 0.3s ease;
       opacity: 0;
     }
-    .slide.opacity-100 {
+
+    .lazy-image.loaded {
       opacity: 1;
     }
-</style>
+  </style>
 
-
-
-
-
-
+  <!-- Preload hero image -->
+  <link rel="preload" as="image" href="https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?q=80&w=2091" fetchpriority="high">
+{% endblock %}
 
 {% block content %}
   <!-- Hero Section -->
-  <section class="bg-gradient-to-r from-blue-600 to-purple-700 dark:from-gray-800 dark:to-gray-900 py-20">
-    <div class="text-center my-20">
-      <h1 class="text-5xl font-bold text-white animate-fade-in">Welcome to ElogBook</h1>
-      <p class="mt-4 text-xl text-white">Revolutionizing Medical Education at Arabian Gulf University</p>
-      <a href="#" class="mt-8 inline-block bg-white text-blue-600 dark:bg-gray-900 dark:text-white px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition duration-300">Get Started</a>
+  <section class="bg-gradient-to-r  from-blue-600 to-purple-700 dark:from-gray-800 dark:to-gray-900 py-20">
+    <div class=" text-center">
+      <h1 class="text-4xl md:text-6xl font-bold text-white animate-fade-in mb-6">Welcome to ElogBook</h1>
+      <p class="text-xl md:text-2xl text-white opacity-90 mb-8">Revolutionizing Medical Education at Arabian Gulf University</p>
+      <a href="{% url 'login' %}" class="inline-block bg-white text-blue-600 dark:bg-gray-900 dark:text-white px-8 py-4 rounded-lg shadow-lg hover:shadow-xl transition duration-300 font-medium text-lg">Get Started</a>
     </div>
   </section>
-  
-  
 
-  <!-- Featured Content (Modern Cards) -->
-  <section class="py-16">
-    <div class="text center p-15">
-      <h2 class="text-3xl font-bold text-center mb-12 animate-fade-in">Our Services</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <!-- Card 1 -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-100">
-          <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Medical Records" class="rounded-xl mb-4 shadow-lg" />
-          <h3 class="text-2xl font-semibold mb-4">Medical Records</h3>
+  <!-- Services Section -->
+  <section class="py-16 container mx-auto px-4">
+    <h2 class="text-3xl md:text-4xl font-bold text-center mb-12 animate-fade-in">Our Services</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Service Card 1 -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-100">
+        <img
+          src="https://images.unsplash.com/photo-1631217868264-e5b90bb7e133?q=80&w=2091"
+          alt="Medical Records"
+          class="rounded-t-xl w-full h-56 object-cover"
+          loading="lazy"
+        />
+        <div class="p-6">
+          <h3 class="text-2xl font-semibold mb-3">Medical Records</h3>
           <p class="text-gray-600 dark:text-gray-300">Efficiently manage and access patient records with our secure platform.</p>
           <a href="#" class="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline font-medium">Learn More →</a>
         </div>
-        <!-- Card 2 -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-200">
-          <img src="https://images.unsplash.com/photo-1579165466814-e646cfa4a3be?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Research Tools" class="rounded-xl mb-4 shadow-lg" />
-          <h3 class="text-2xl font-semibold mb-4">Research Tools</h3>
+      </div>
+
+      <!-- Service Card 2 -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-200">
+        <img
+          src="https://images.unsplash.com/photo-1581594693702-fbdc51b2763b?q=80&w=2070"
+          alt="Research Tools"
+          class="rounded-t-xl w-full h-56 object-cover"
+          loading="lazy"
+        />
+        <div class="p-6">
+          <h3 class="text-2xl font-semibold mb-3">Research Tools</h3>
           <p class="text-gray-600 dark:text-gray-300">Access cutting-edge tools for medical research and collaboration.</p>
           <a href="#" class="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline font-medium">Learn More →</a>
         </div>
-        <!-- Card 3 -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-300">
-          <img src="https://images.unsplash.com/photo-1530026186672-2cd00ffc50fe?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Learning Resources" class="rounded-xl mb-4 shadow-lg" />
-          <h3 class="text-2xl font-semibold mb-4">Learning Resources</h3>
+      </div>
+
+      <!-- Service Card 3 -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-300">
+        <img
+          src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=2070"
+          alt="Learning Resources"
+          class="rounded-t-xl w-full h-56 object-cover"
+          loading="lazy"
+        />
+        <div class="p-6">
+          <h3 class="text-2xl font-semibold mb-3">Learning Resources</h3>
           <p class="text-gray-600 dark:text-gray-300">Explore a vast library of medical textbooks, journals, and case studies.</p>
           <a href="#" class="mt-4 inline-block text-blue-600 dark:text-blue-400 hover:underline font-medium">Learn More →</a>
         </div>
@@ -102,69 +128,136 @@
     </div>
   </section>
 
-
-  
-
-<!-- Gallery Section -->
-<section class="py-16 bg-gray-100 dark:bg-gray-800">
-  <div class="text-center">
-    <h2 class="text-3xl font-bold text-center mb-12">Our Gallery</h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 p-3">
-      <!-- Gallery Item 1 -->
-      <div class="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-200">
-        <img src="https://th.bing.com/th/id/OIP.SJfvSb5ewD3S-CPfuMOZowHaEL?rs=1&pid=ImgDetMain" alt="Gallery Image 1" class="w-full h-80 object-cover transition-transform duration-500 transform hover:scale-110" />
-        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition duration-500"></div>
-      </div>
-      <!-- Gallery Item 2 -->
-      <div class="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-200">
-        <img src="https://th.bing.com/th/id/OIP.a2ZJzhD_Uo-iv8LFkxOmEQHaEo?rs=1&pid=ImgDetMain" alt="Gallery Image 2" class="w-full h-80 object-cover transition-transform duration-500 transform hover:scale-110" />
-        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition duration-500"></div>
-      </div>
-      <!-- Gallery Item 3 -->
-      <div class="relative overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 animate-fade-in-up delay-200">
-        <img src="https://th.bing.com/th/id/OIP.QKeQcLcmq2YfYGLqAGaOGQHaEK?w=640&h=360&rs=1&pid=ImgDetMain" alt="Gallery Image 3" class="w-full h-80 object-cover transition-transform duration-500 transform hover:scale-110" />
-        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition duration-500"></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Add this to your HTML for animations -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-
-
-
-  <!-- Testimonials Section -->
-  <section class="py-16">
-    <div class="text-center">
-      <h2 class="text-3xl font-bold text-center mb-12 animate-fade-in">What Our Users Say</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 p-4">
-        <!-- Testimonial 1 -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-fade-in-left">
-          <div class="flex items-center mb-4">
-            <img src="https://via.placeholder.com/50" alt="Dr. Ahmed Al-Mansoori" class="rounded-full w-12 h-12" />
-            <div class="ml-4">
-              <p class="font-bold">Dr. Ahmed Al-Mansoori</p>
-              <p class="text-sm text-gray-600 dark:text-gray-300">Medical Director</p>
-            </div>
+  <!-- Gallery Section -->
+  <section class="py-16 bg-gray-100 dark:bg-gray-800">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl md:text-4xl font-bold text-center mb-12">Our Gallery</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Gallery Item 1 -->
+        <div class="group relative h-72 overflow-hidden rounded-xl shadow-lg">
+          <img
+            src="https://images.unsplash.com/photo-1516549655169-df83a0774514?q=80&w=2070"
+            alt="Medical Research Lab"
+            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
+            <p class="text-white p-4 font-medium">State-of-the-art Research Facilities</p>
           </div>
-          <p class="text-gray-600 dark:text-gray-300">"ElogBook has transformed the way we manage medical records. It's a game-changer!"</p>
         </div>
-        <!-- Testimonial 2 -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-fade-in-right">
-          <div class="flex items-center mb-4">
-            <img src="https://via.placeholder.com/50" alt="Dr. Fatima Al-Hassan" class="rounded-full w-12 h-12" />
-            <div class="ml-4">
-              <p class="font-bold">Dr. Fatima Al-Hassan</p>
-              <p class="text-sm text-gray-600 dark:text-gray-300">Research Scientist</p>
-            </div>
+
+        <!-- Gallery Item 2 -->
+        <div class="group relative h-72 overflow-hidden rounded-xl shadow-lg">
+          <img
+            src="https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?q=80&w=2073"
+            alt="Medical Education"
+            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
+            <p class="text-white p-4 font-medium">Interactive Learning Environment</p>
           </div>
-          <p class="text-gray-600 dark:text-gray-300">"The research tools are incredible. Highly recommended for medical professionals."</p>
+        </div>
+
+        <!-- Gallery Item 3 -->
+        <div class="group relative h-72 overflow-hidden rounded-xl shadow-lg">
+          <img
+            src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?q=80&w=2080"
+            alt="Medical Technology"
+            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            loading="lazy"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
+            <p class="text-white p-4 font-medium">Advanced Medical Technology</p>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
+  <!-- Testimonials Section - Optimized -->
+  <section class="py-12 md:py-16 container mx-auto px-4">
+    <h2 class="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12 animate-fade-in">What Our Users Say</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 max-w-4xl mx-auto">
+      <!-- Testimonial 1 - Optimized -->
+      <div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300 animate-fade-in-left">
+        <div class="flex items-center mb-4">
+          <img
+            src="https://randomuser.me/api/portraits/men/32.jpg"
+            alt="Dr. Ahmed Al-Mansoori"
+            class="rounded-full w-12 h-12 object-cover"
+            width="48"
+            height="48"
+            loading="lazy"
+          />
+          <div class="ml-4">
+            <p class="font-bold text-gray-900 dark:text-white">Dr. Ahmed Al-Mansoori</p>
+            <p class="text-sm text-gray-600 dark:text-gray-300">Medical Director</p>
+          </div>
+        </div>
+        <p class="text-gray-600 dark:text-gray-300">"ElogBook has transformed the way we manage medical records. It's a game-changer for our institution!"</p>
+      </div>
 
-  
+      <!-- Testimonial 2 - Optimized -->
+      <div class="bg-white dark:bg-gray-800 p-5 md:p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300 animate-fade-in-right">
+        <div class="flex items-center mb-4">
+          <img
+            src="https://randomuser.me/api/portraits/women/44.jpg"
+            alt="Dr. Fatima Al-Hassan"
+            class="rounded-full w-12 h-12 object-cover"
+            width="48"
+            height="48"
+            loading="lazy"
+          />
+          <div class="ml-4">
+            <p class="font-bold text-gray-900 dark:text-white">Dr. Fatima Al-Hassan</p>
+            <p class="text-sm text-gray-600 dark:text-gray-300">Research Scientist</p>
+          </div>
+        </div>
+        <p class="text-gray-600 dark:text-gray-300">"The research tools are incredible. Highly recommended for medical professionals and educators alike."</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section - Added for better conversion -->
+  <section class="py-12 md:py-16 bg-gradient-to-r from-blue-600 to-purple-700 dark:from-gray-800 dark:to-gray-900">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">Ready to Get Started?</h2>
+      <p class="text-white text-opacity-90 mb-6 max-w-2xl mx-auto">Join thousands of medical professionals using ElogBook to transform their practice and education.</p>
+      <div class="flex flex-col sm:flex-row justify-center gap-4">
+        <a href="{% url 'login' %}" class="px-6 py-3 bg-white text-blue-600 font-medium rounded-lg shadow-lg hover:shadow-xl transition duration-300">Sign In</a>
+        <a href="#" class="px-6 py-3 bg-transparent text-white border-2 border-white font-medium rounded-lg hover:bg-white hover:bg-opacity-10 transition duration-300">Learn More</a>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block extra_scripts %}
+  <!-- Optimized JavaScript for image loading -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Intersection Observer for lazy loading images
+      if ('IntersectionObserver' in window) {
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              const img = entry.target;
+              img.classList.add('loaded');
+              observer.unobserve(img);
+            }
+          });
+        }, { rootMargin: '50px 0px', threshold: 0.1 });
+
+        // Observe all images with lazy-image class
+        document.querySelectorAll('.lazy-image').forEach(img => {
+          imageObserver.observe(img);
+        });
+      } else {
+        // Fallback for browsers that don't support Intersection Observer
+        document.querySelectorAll('.lazy-image').forEach(img => {
+          img.classList.add('loaded');
+        });
+      }
+    });
+  </script>
 {% endblock %}

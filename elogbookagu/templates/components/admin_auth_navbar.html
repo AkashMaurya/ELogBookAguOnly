@@ -1,3 +1,4 @@
+{% load static %}
 <div class="bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
   <div class="flex overflow-hidden bg-white dark:bg-gray-800">
     <!-- Sidebar Backdrop Overlay -->
@@ -153,92 +154,5 @@
       </div>
     </div>
   </div>
-
-  <script>
-    // Theme handling
-    ;(function () {
-      const savedTheme = localStorage.getItem('theme')
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark)
-      document.documentElement.classList.toggle('dark', isDark)
-      updateThemeIcons(isDark)
-    })()
-
-    function updateThemeIcons(isDark) {
-      document.getElementById('theme-toggle-light-icon').classList.toggle('hidden', !isDark)
-      document.getElementById('theme-toggle-dark-icon').classList.toggle('hidden', isDark)
-    }
-
-    const themeToggleBtn = document.getElementById('theme-toggle')
-    themeToggleBtn.addEventListener('click', () => {
-      const isDark = !document.documentElement.classList.contains('dark')
-      document.documentElement.classList.toggle('dark', isDark)
-      localStorage.setItem('theme', isDark ? 'dark' : 'light')
-      updateThemeIcons(isDark)
-    })
-
-    // Sidebar and dropdown handling
-    const sidebar = document.getElementById('sidebar')
-    const sidebarBackdrop = document.getElementById('sidebar-backdrop')
-    const openSidebarButton = document.getElementById('open-sidebar')
-    const closeSidebarButton = document.getElementById('close-sidebar')
-    const addDataButton = document.getElementById('addDataButton')
-    const addDataMenu = document.getElementById('addDataMenu')
-    const dropdownArrow = document.getElementById('dropdown-arrow')
-
-    // Toggle sidebar
-    function openSidebar() {
-      sidebar.classList.remove('-translate-x-full')
-      sidebarBackdrop.classList.remove('hidden')
-      // Prevent body scrolling when sidebar is open
-      document.body.classList.add('overflow-hidden', 'md:overflow-auto')
-    }
-
-    function closeSidebar() {
-      sidebar.classList.add('-translate-x-full')
-      sidebarBackdrop.classList.add('hidden')
-      // Restore body scrolling
-      document.body.classList.remove('overflow-hidden', 'md:overflow-auto')
-    }
-
-    openSidebarButton.addEventListener('click', (e) => {
-      e.stopPropagation()
-      openSidebar()
-    })
-
-    closeSidebarButton.addEventListener('click', () => {
-      closeSidebar()
-    })
-
-    sidebarBackdrop.addEventListener('click', () => {
-      closeSidebar()
-    })
-
-    // Toggle dropdown
-    addDataButton.addEventListener('click', (e) => {
-      e.stopPropagation()
-      const isHidden = addDataMenu.classList.toggle('hidden')
-      // Rotate arrow when dropdown is toggled
-      dropdownArrow.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(180deg)'
-    })
-
-    // Close sidebar and dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!sidebar.contains(e.target) && !openSidebarButton.contains(e.target)) {
-        closeSidebar()
-      }
-      if (!addDataButton.contains(e.target) && !addDataMenu.contains(e.target)) {
-        addDataMenu.classList.add('hidden')
-        dropdownArrow.style.transform = 'rotate(0deg)'
-      }
-    })
-
-    // Handle window resize
-    window.addEventListener('resize', () => {
-      if (window.innerWidth >= 768) { // md breakpoint
-        // On larger screens, we might want to keep the sidebar open
-        document.body.classList.remove('overflow-hidden')
-      }
-    })
-  </script>
+  <script src="{% static 'js/admin_navbar.js' %}" defer></script>
 </div>
