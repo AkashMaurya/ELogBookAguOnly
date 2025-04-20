@@ -20,6 +20,7 @@ urlpatterns = [
     path("review-log/<int:log_id>/", views.review_log, name="review_log"),
     path("batch-review/", views.batch_review, name="batch_review"),
     path("notifications/", views.notifications, name="notifications"),
+    path("export-logs/", views.export_logs, name="export_logs"),
 ]
 
 

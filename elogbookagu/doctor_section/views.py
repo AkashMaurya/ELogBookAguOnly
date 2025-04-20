@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout as auth_logout
-from accounts.models import Doctor, CustomUser
+from accounts.models import Doctor, CustomUser,Student
 from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 from django.core.paginator import Paginator
@@ -12,6 +12,14 @@ from django.core.mail import send_mail
 from django.conf import settings
 import os
 import json
+import csv
+import io
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
 from .models import DoctorSupportTicket, Notification
 from .forms import DoctorSupportTicketForm, LogReviewForm, BatchReviewForm
 from student_section.models import StudentLogFormModel, StudentNotification
@@ -24,6 +32,7 @@ from django.db.models.functions import TruncMonth
 def doctor_dash(request):
     doctor = request.user.doctor_profile
     selected_department = request.GET.get('department')
+    search_query = request.GET.get('q', '').strip()
 
     # Get doctor's departments
     departments = doctor.departments.all()
@@ -46,12 +55,16 @@ def doctor_dash(request):
         'approval_rate': calculate_approval_rate(logs),
     }
 
-    # Chart data
+    # Basic chart data (without student performance data yet)
     chart_data = {
         'daily_reviews': get_daily_reviews_data(logs),
         'department_stats': get_department_stats(logs, departments),
         'review_status': get_review_status_data(logs),
         'monthly_trend': get_monthly_trend_data(logs),
+        'activity_distribution': get_activity_distribution_data(logs),
+        'participation_distribution': get_participation_distribution_data(logs),
+        'student_status_distribution': get_student_status_distribution(logs),
+        'department_performance': get_department_performance_data(logs, departments),
     }
 
     # Calculate total records, left to review, and reviewed counts
@@ -64,6 +77,85 @@ def doctor_dash(request):
     if total_records > 0:
         review_percentage = int((reviewed / total_records) * 100)
 
+    # Get student performance data
+    student_performance = []
+    priority_records = []
+
+    # Get unique students who submitted logs in the doctor's departments
+    student_ids = logs.values_list('student', flat=True).distinct()
+    students = Student.objects.filter(id__in=student_ids)
+
+    # Filter students by search query if provided
+    if search_query:
+        students = students.filter(
+            models.Q(user__first_name__icontains=search_query) |
+            models.Q(user__last_name__icontains=search_query) |
+            models.Q(user__email__icontains=search_query) |
+            models.Q(student_id__icontains=search_query)
+        )
+
+    # Get performance data for each student
+    for student in students:
+        student_logs = logs.filter(student=student)
+        total_student_logs = student_logs.count()
+        reviewed_logs = student_logs.filter(is_reviewed=True).count()
+        pending_logs = total_student_logs - reviewed_logs
+        approved_logs = student_logs.filter(is_reviewed=True).exclude(reviewer_comments__startswith='REJECTED').count()
+        rejected_logs = student_logs.filter(is_reviewed=True, reviewer_comments__startswith='REJECTED').count()
+
+        # Calculate completion percentage
+        completion_percentage = 0
+        if total_student_logs > 0:
+            completion_percentage = int((reviewed_logs / total_student_logs) * 100)
+
+        student_performance.append({
+            'id': student.id,
+            'name': student.user.get_full_name() or student.user.username,
+            'student_id': student.student_id,
+            'email': student.user.email,
+            'group': student.group.group_name if student.group else 'No Group',
+            'total_logs': total_student_logs,
+            'reviewed_logs': reviewed_logs,
+            'pending_logs': pending_logs,
+            'approved_logs': approved_logs,
+            'rejected_logs': rejected_logs,
+            'completion_percentage': completion_percentage
+        })
+
+        # Add to priority records if there are pending logs
+        if pending_logs > 0:
+            # Get the oldest pending log for this student
+            oldest_pending = student_logs.filter(is_reviewed=False).order_by('date').first()
+            if oldest_pending:
+                priority_records.append({
+                    'id': oldest_pending.id,
+                    'student_name': student.user.get_full_name() or student.user.username,
+                    'due_date': oldest_pending.date,
+                    'department': oldest_pending.department.name
+                })
+
+    # Sort priority records by due date (oldest first)
+    priority_records = sorted(priority_records, key=lambda x: x['due_date'])
+
+    # Add top students data to chart_data after student_performance is populated
+    chart_data['top_students'] = get_top_students_data(student_performance[:5] if student_performance else [])
+
+    # Activity and participation distribution data is now handled by helper functions
+
+    # Debug chart data
+    print("Chart Data:")
+    for key, value in chart_data.items():
+        print(f"  {key}: {value}")
+
+    # Ensure all chart data has valid format
+    for key, data in chart_data.items():
+        if 'labels' not in data or 'data' not in data:
+            print(f"WARNING: Invalid chart data format for {key}")
+            chart_data[key] = {'labels': ['No Data'], 'data': [1]}
+        elif not data['labels'] or not data['data']:
+            print(f"WARNING: Empty chart data for {key}")
+            chart_data[key] = {'labels': ['No Data'], 'data': [1]}
+
     context = {
         'performance_data': performance_data,
         'chart_data': chart_data,
@@ -73,6 +165,9 @@ def doctor_dash(request):
         'left_to_review': left_to_review,
         'reviewed': reviewed,
         'review_percentage': review_percentage,
+        'student_performance': student_performance,
+        'priority_records': priority_records[:5],  # Limit to top 5 priority records
+        'search_query': search_query
     }
 
     return render(request, "doctor_dash.html", context)
@@ -112,6 +207,27 @@ def get_department_stats(logs, departments):
         })
     return dept_stats
 
+def get_department_performance_data(logs, departments):
+    """Get data for department performance chart"""
+    # If no departments, return default values
+    if not departments:
+        return {
+            'labels': ['No Department Data'],
+            'reviewed': [0],
+            'pending': [0]
+        }
+
+    dept_stats = get_department_stats(logs, departments)
+
+    # Sort by total logs (descending)
+    dept_stats = sorted(dept_stats, key=lambda x: x['total'], reverse=True)
+
+    return {
+        'labels': [dept['name'] for dept in dept_stats],
+        'reviewed': [dept['reviewed'] for dept in dept_stats],
+        'pending': [dept['pending'] for dept in dept_stats]
+    }
+
 def get_review_status_data(logs):
     total = logs.count()
     reviewed = logs.filter(is_reviewed=True).count()
@@ -130,9 +246,100 @@ def get_monthly_trend_data(logs):
         count=Count('id')
     ).order_by('month')
 
+    # Handle empty data case
+    if not monthly_data:
+        return {
+            'labels': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            'data': [0, 0, 0, 0, 0, 0]
+        }
+
     return {
         'labels': [d['month'].strftime('%B %Y') for d in monthly_data],
         'data': [d['count'] for d in monthly_data]
+    }
+
+
+def get_activity_distribution_data(logs):
+    """Get distribution of logs by activity type"""
+    activity_data = logs.values('activity_type__name').annotate(
+        count=Count('id')
+    ).order_by('-count')
+
+    # Handle empty data case
+    if not activity_data:
+        return {
+            'labels': ['No Activity Data'],
+            'data': [1]
+        }
+
+    return {
+        'labels': [d['activity_type__name'] for d in activity_data],
+        'data': [d['count'] for d in activity_data]
+    }
+
+
+def get_participation_distribution_data(logs):
+    """Get distribution of logs by participation type"""
+    participation_data = logs.values('participation_type').annotate(
+        count=Count('id')
+    ).order_by('-count')
+
+    # Handle empty data case
+    if not participation_data:
+        return {
+            'labels': ['Observed', 'Assisted'],
+            'data': [1, 1]
+        }
+
+    return {
+        'labels': [d['participation_type'] for d in participation_data],
+        'data': [d['count'] for d in participation_data]
+    }
+
+
+def get_student_status_distribution(logs):
+    """Get distribution of logs by review status"""
+    reviewed = logs.filter(is_reviewed=True).count()
+    pending = logs.filter(is_reviewed=False).count()
+
+    # If there are no logs, return default values to avoid empty charts
+    if reviewed == 0 and pending == 0:
+        return {
+            'labels': ['Reviewed', 'Pending'],
+            'data': [1, 1]  # Default values for empty data
+        }
+
+    return {
+        'labels': ['Reviewed', 'Pending'],
+        'data': [reviewed, pending]
+    }
+
+
+def get_top_students_data(student_performance):
+    """Get data for top students by log count"""
+    # If no student performance data, return default values
+    if not student_performance:
+        return {
+            'labels': ['No Student Data'],
+            'data': [0]
+        }
+
+    # Sort student performance data by total logs (descending)
+    sorted_students = sorted(student_performance, key=lambda x: x['total_logs'], reverse=True)
+
+    # Get top 5 students (or fewer if less than 5 students)
+    top_students = sorted_students[:5]
+
+    # If no students have logs, return default values
+    if not top_students or all(student['total_logs'] == 0 for student in top_students):
+        return {
+            'labels': ['No Log Data'],
+            'data': [0]
+        }
+
+    return {
+        'labels': [student['name'] for student in top_students],
+        'data': [student['total_logs'] for student in top_students]
     }
 
 
@@ -156,13 +363,15 @@ def doctor_profile(request):
 
     # Get doctor's departments
     if doctor:
+        # Get departments as a comma-separated string
         doctor_departments = ", ".join(
             dept.name for dept in doctor.departments.all()
-        )  # ✅ स्ट्रिंग में बदलें
-    else:
-        doctor_departments = (
-            None  # ❌ Empty string ना रखें, ताकि `{% if doctor_departments %}` सही से चले
         )
+        # Get departments as a list for template iteration
+        department_list = [dept.name for dept in doctor.departments.all()]
+    else:
+        doctor_departments = None
+        department_list = []
 
     # Fetch other session data (making sure these values exist in session)
     username = request.session.get("username", "Guest").upper()
@@ -208,6 +417,7 @@ def doctor_profile(request):
         "user_email": user_email,
         "editable_fields": editable_fields,  # List of fields that can be edited
         "doctor_departments": doctor_departments,
+        "department_list": department_list,  # List of department names for iteration
     }
 
     # Debugging to check the profile photo URL
@@ -329,6 +539,7 @@ def doctor_help(request):
     context = {
         "form": form,
         "tickets": tickets,
+        "now": timezone.now(),  # Add current date for the "New" badge
     }
     return render(request, "doctor_help.html", context)
 
@@ -590,3 +801,175 @@ def batch_review(request):
     count = logs.count()
     messages.success(request, f"{count} log entries have been {'approved' if action == 'approve' else 'rejected'}.")
     return redirect('doctor_section:doctor_reviews')
+
+
+@login_required
+def export_logs(request):
+    """Export logs as CSV or PDF based on the current filters"""
+    doctor = request.user.doctor_profile
+    export_format = request.GET.get('format', 'csv').lower()
+
+    # Get filter parameters (same as in doctor_reviews view)
+    department_id = request.GET.get('department')
+    status = request.GET.get('status', 'pending')
+    search_query = request.GET.get('q', '').strip()
+
+    # Get departments associated with this doctor
+    doctor_departments = doctor.departments.all()
+
+    # Base queryset - filter by departments the doctor is associated with
+    logs = StudentLogFormModel.objects.filter(department__in=doctor_departments)
+
+    # Apply filters
+    if department_id:
+        logs = logs.filter(department_id=department_id)
+
+    if status == 'pending':
+        logs = logs.filter(is_reviewed=False)
+    elif status == 'reviewed':
+        logs = logs.filter(is_reviewed=True)
+
+    if search_query:
+        logs = logs.filter(
+            models.Q(student__user__first_name__icontains=search_query) |
+            models.Q(student__user__last_name__icontains=search_query) |
+            models.Q(student__student_id__icontains=search_query) |
+            models.Q(department__name__icontains=search_query) |
+            models.Q(activity_type__name__icontains=search_query)
+        )
+
+    # Order by most recent first
+    logs = logs.order_by('-date', '-created_at')
+
+    # Prepare filename with timestamp
+    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+    filename_base = f"student_logs_{timestamp}"
+
+    if export_format == 'csv':
+        return export_logs_csv(logs, filename_base)
+    elif export_format == 'pdf':
+        return export_logs_pdf(logs, filename_base, doctor)
+    else:
+        # Default to CSV if format is not recognized
+        return export_logs_csv(logs, filename_base)
+
+
+def export_logs_csv(logs, filename_base):
+    """Export logs as CSV file"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{filename_base}.csv"'
+
+    writer = csv.writer(response)
+
+    # Write header row
+    writer.writerow([
+        'Student ID', 'Student Name', 'Date', 'Department',
+        'Activity Type', 'Core Diagnosis', 'Status', 'Review Date', 'Comments'
+    ])
+
+    # Write data rows
+    for log in logs:
+        status = 'Pending'
+        if log.is_reviewed:
+            status = 'Rejected' if log.reviewer_comments and 'REJECTED:' in log.reviewer_comments else 'Approved'
+
+        writer.writerow([
+            log.student.student_id,
+            log.student.user.get_full_name(),
+            log.date.strftime('%Y-%m-%d'),
+            log.department.name,
+            log.activity_type.name,
+            log.core_diagnosis.name,
+            status,
+            log.review_date.strftime('%Y-%m-%d') if log.review_date else '',
+            log.reviewer_comments or ''
+        ])
+
+    return response
+
+
+def export_logs_pdf(logs, filename_base, doctor):
+    """Export logs as PDF file"""
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename_base}.pdf"'
+
+    # Create a buffer for the PDF
+    buffer = io.BytesIO()
+
+    # Create the PDF document
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    elements = []
+
+    # Define styles
+    styles = getSampleStyleSheet()
+    title_style = styles['Heading1']
+    subtitle_style = styles['Heading2']
+    normal_style = styles['Normal']
+
+    # Add title and metadata
+    elements.append(Paragraph(f"Student Logs Report", title_style))
+    elements.append(Spacer(1, 0.25*inch))
+
+    # Add doctor info
+    elements.append(Paragraph(f"Generated by: {doctor.user.get_full_name()}", subtitle_style))
+    elements.append(Paragraph(f"Date: {timezone.now().strftime('%Y-%m-%d %H:%M')}", normal_style))
+    elements.append(Paragraph(f"Departments: {', '.join([dept.name for dept in doctor.departments.all()])}", normal_style))
+    elements.append(Spacer(1, 0.5*inch))
+
+    # Create table data
+    data = [
+        ['Student ID', 'Student Name', 'Date', 'Department', 'Activity Type', 'Status']
+    ]
+
+    # Add log data to table
+    for log in logs:
+        status = 'Pending'
+        if log.is_reviewed:
+            status = 'Rejected' if log.reviewer_comments and 'REJECTED:' in log.reviewer_comments else 'Approved'
+
+        data.append([
+            log.student.student_id,
+            log.student.user.get_full_name(),
+            log.date.strftime('%Y-%m-%d'),
+            log.department.name,
+            log.activity_type.name,
+            status
+        ])
+
+    # Create the table
+    table = Table(data, repeatRows=1)
+
+    # Style the table
+    table_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ])
+
+    # Add alternating row colors
+    for i in range(1, len(data)):
+        if i % 2 == 0:
+            table_style.add('BACKGROUND', (0, i), (-1, i), colors.lightgrey)
+
+    table.setStyle(table_style)
+    elements.append(table)
+
+    # Add summary information
+    elements.append(Spacer(1, 0.5*inch))
+    elements.append(Paragraph(f"Total Records: {len(logs)}", subtitle_style))
+
+    # Build the PDF
+    doc.build(elements)
+
+    # Get the value of the buffer and write it to the response
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
+
+    return response

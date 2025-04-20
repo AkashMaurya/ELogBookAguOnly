@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.db.models import Q
 from admin_section.models import Department, LogYear, LogYearSection
 from admin_section.forms import DepartmentForm
+from accounts.models import Student
 
 
 def add_department(request):

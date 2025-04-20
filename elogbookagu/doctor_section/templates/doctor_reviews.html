@@ -9,16 +9,26 @@
 
 {% block content %}
   <div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold text-gray-800 dark:text-white">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+      <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-4 sm:mb-0">
         {% if selected_status == 'pending' %}
-          Pending Review Logs
+          <i class="fas fa-clock mr-2 text-yellow-500"></i>Pending Review Logs
         {% elif selected_status == 'reviewed' %}
-          Reviewed Logs
+          <i class="fas fa-check-circle mr-2 text-green-500"></i>Reviewed Logs
         {% else %}
-          All Student Logs
+          <i class="fas fa-list-alt mr-2 text-blue-500"></i>All Student Logs
         {% endif %}
       </h2>
+
+      <!-- Quick action buttons -->
+      <div class="flex space-x-2">
+        <button id="export-csv" class="flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200">
+          <i class="fas fa-file-csv mr-2"></i>Export CSV
+        </button>
+        <button id="export-pdf" class="flex items-center px-3 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200">
+          <i class="fas fa-file-pdf mr-2"></i>Export PDF
+        </button>
+      </div>
     </div>
 
     <!-- Messages section -->
@@ -34,10 +44,31 @@
 
     <!-- Filters Section -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
-      <div class="flex flex-col md:flex-row md:items-end space-y-4 md:space-y-0 md:space-x-4">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white"><i class="fas fa-filter mr-2"></i>Filter Options</h3>
+        <!-- Quick filter buttons -->
+        <div class="flex flex-wrap gap-2">
+          <button id="filter-pending" class="px-3 py-1 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100 rounded-full hover:bg-yellow-200 dark:hover:bg-yellow-700 transition-colors duration-200" aria-label="Show pending logs">
+            <i class="fas fa-clock mr-1"></i>Pending
+          </button>
+          <button id="filter-approved" class="px-3 py-1 text-xs bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 rounded-full hover:bg-green-200 dark:hover:bg-green-700 transition-colors duration-200" aria-label="Show approved logs">
+            <i class="fas fa-check mr-1"></i>Approved
+          </button>
+          <button id="filter-rejected" class="px-3 py-1 text-xs bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100 rounded-full hover:bg-red-200 dark:hover:bg-red-700 transition-colors duration-200" aria-label="Show rejected logs">
+            <i class="fas fa-times mr-1"></i>Rejected
+          </button>
+          <button id="filter-all" class="px-3 py-1 text-xs bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 rounded-full hover:bg-blue-200 dark:hover:bg-blue-700 transition-colors duration-200" aria-label="Show all logs">
+            <i class="fas fa-list mr-1"></i>All
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <!-- Department Filter -->
-        <div class="flex-1">
-          <label for="department-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department</label>
+        <div>
+          <label for="department-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <i class="fas fa-hospital mr-1"></i>Department
+          </label>
           <select id="department-filter" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
             <option value="">All Departments</option>
             {% for dept in departments %}
@@ -47,8 +78,10 @@
         </div>
 
         <!-- Status Filter -->
-        <div class="flex-1">
-          <label for="status-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+        <div>
+          <label for="status-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <i class="fas fa-tasks mr-1"></i>Status
+          </label>
           <select id="status-filter" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
             <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending Review</option>
             <option value="reviewed" {% if selected_status == 'reviewed' %}selected{% endif %}>Reviewed</option>
@@ -57,17 +90,31 @@
         </div>
 
         <!-- Search Box -->
-        <div class="flex-1">
-          <label for="search-box" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
-          <input type="text" id="search-box" placeholder="Search by name, ID, etc." value="{{ search_query }}" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-        </div>
-
-        <!-- Apply Filters Button -->
         <div>
-          <button id="apply-filters" class="w-full md:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-            Apply Filters
-          </button>
+          <label for="search-box" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <i class="fas fa-search mr-1"> </i>Search  
+          </label>
+          <div class="relative">
+            <input type="text" id="search-box" placeholder="Search by name, ID, etc." value="{{ search_query }}" class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+             
+            </div>
+            <button id="clear-search" class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" aria-label="Clear search">
+              <i class="fas fa-times-circle"></i>
+            </button>
+          </div>
         </div>
+      </div>
+
+      <!-- Apply Filters Button -->
+      <div class="flex justify-end">
+        <button id="reset-filters" class="px-4 py-2 mr-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
+          <i class="fas fa-undo mr-1"></i>Reset
+        </button>
+        <button id="apply-filters" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
+          <i class="fas fa-filter mr-1"></i>Apply Filters
+          <span id="loading-indicator" class="hidden ml-2"><i class="fas fa-spinner fa-spin"></i></span>
+        </button>
       </div>
     </div>
 
@@ -77,39 +124,53 @@
       {{ batch_form.log_ids }}
 
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-        <h3 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Batch Review</h3>
-
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Action:</label>
-          <div class="flex space-x-4">
-            {% for value, text in batch_form.action.field.choices %}
-              <div class="flex items-center">
-                <input type="radio" name="action" id="id_action_{{ forloop.counter0 }}" value="{{ value }}"
-                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                       {% if forloop.first %}checked{% endif %}>
-                <label for="id_action_{{ forloop.counter0 }}" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                  {{ text }}
-                </label>
-              </div>
-            {% endfor %}
-          </div>
-        </div>
-
-        <div class="mb-4">
-          <label for="id_comments" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Comments (Optional)</label>
-          {{ batch_form.comments }}
-        </div>
-
-        <div class="flex justify-between items-center">
-          <div>
-            <label class="inline-flex items-center">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
+            <i class="fas fa-tasks mr-2 text-blue-500"></i>Batch Review
+          </h3>
+          <div class="flex items-center">
+            <div class="mr-4">
+              <span id="selected-count" class="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 rounded-full text-xs font-semibold">0 selected</span>
+            </div>
+            <label class="inline-flex items-center cursor-pointer">
               <input type="checkbox" id="select-all-checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
               <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Select All</span>
             </label>
           </div>
+        </div>
 
-          <button type="submit" id="batch-submit" disabled class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 opacity-50 cursor-not-allowed">
-            Process Selected
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <i class="fas fa-check-circle mr-1"></i>Action:
+            </label>
+            <div class="flex space-x-4">
+              {% for value, text in batch_form.action.field.choices %}
+                <div class="flex items-center">
+                  <input type="radio" name="action" id="id_action_{{ forloop.counter0 }}" value="{{ value }}"
+                         class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                         {% if forloop.first %}checked{% endif %}>
+                  <label for="id_action_{{ forloop.counter0 }}" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                    {{ text }}
+                  </label>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div>
+            <label for="id_comments" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <i class="fas fa-comment mr-1"></i>Comments (Optional)
+            </label>
+            {{ batch_form.comments }}
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button type="submit" id="batch-submit" disabled
+                  class="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 opacity-50 cursor-not-allowed transition-all duration-200">
+            <i class="fas fa-check-double mr-2"></i>Process Selected
+            <span id="batch-loading" class="hidden ml-2"><i class="fas fa-spinner fa-spin"></i></span>
           </button>
         </div>
       </div>
@@ -118,59 +179,128 @@
     <!-- Records Table -->
     <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
       {% if logs %}
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2 sm:mb-0">
+            <i class="fas fa-clipboard-list mr-2 text-blue-500"></i>Student Logs
+          </h3>
+          <div class="flex items-center space-x-2">
+            <span class="text-sm text-gray-600 dark:text-gray-400">
+              <i class="fas fa-sort mr-1"></i>Sort by:
+            </span>
+            <select id="sort-field" class="text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+              <option value="date">Date</option>
+              <option value="student">Student Name</option>
+              <option value="department">Department</option>
+              <option value="activity">Activity</option>
+              <option value="status">Status</option>
+            </select>
+            <button id="sort-direction" class="text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+              <i class="fas fa-sort-amount-down"></i>
+            </button>
+          </div>
+        </div>
         <!-- Table Container for Scroll -->
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead class="bg-gray-50 dark:bg-gray-700">
+          <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 table-fixed">
+            <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0 z-10">
               <tr>
-                <th scope="col" class="px-3 py-3 text-center">
+                <th scope="col" class="px-3 py-3 text-center w-10">
                   <span class="sr-only">Select</span>
                 </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Student</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Department</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Activity</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/5">
+                  <div class="flex items-center">
+                    <span>Student</span>
+                    <button class="ml-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" aria-label="Sort by student">
+                      <i class="fas fa-sort"></i>
+                    </button>
+                  </div>
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/6">
+                  <div class="flex items-center">
+                    <span>Date</span>
+                    <button class="ml-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" aria-label="Sort by date">
+                      <i class="fas fa-sort"></i>
+                    </button>
+                  </div>
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/6">
+                  <div class="flex items-center">
+                    <span>Department</span>
+                    <button class="ml-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" aria-label="Sort by department">
+                      <i class="fas fa-sort"></i>
+                    </button>
+                  </div>
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/6">
+                  <div class="flex items-center">
+                    <span>Activity</span>
+                    <button class="ml-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" aria-label="Sort by activity">
+                      <i class="fas fa-sort"></i>
+                    </button>
+                  </div>
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/8">
+                  <div class="flex items-center">
+                    <span>Status</span>
+                    <button class="ml-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200" aria-label="Sort by status">
+                      <i class="fas fa-sort"></i>
+                    </button>
+                  </div>
+                </th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-1/8">Actions</th>
               </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {% for log in logs %}
-                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
                   <td class="px-3 py-4 whitespace-nowrap text-center">
                     {% if not log.is_reviewed %}
-                      <input type="checkbox" name="log_checkbox" value="{{ log.id }}" class="log-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                      <input type="checkbox" name="log_checkbox" value="{{ log.id }}" class="log-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer">
                     {% endif %}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ log.student.user.get_full_name }}</div>
-                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ log.student.student_id }}</div>
+                    <div class="flex items-center">
+                      <div class="flex-shrink-0 h-8 w-8 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center">
+                        <span class="text-blue-600 dark:text-blue-200 font-semibold">{{ log.student.user.get_full_name|slice:"0:1" }}</span>
+                      </div>
+                      <div class="ml-3">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ log.student.user.get_full_name }}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">ID: {{ log.student.student_id }}</div>
+                      </div>
+                    </div>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ log.date }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-500 dark:text-gray-300">{{ log.date }}</div>
+                    <div class="text-xs text-gray-400 dark:text-gray-500">{{ log.created_at|date:"H:i" }}</div>
+                  </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{{ log.department.name }}</td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm text-gray-900 dark:text-white">{{ log.activity_type.name }}</div>
-                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ log.core_diagnosis.name }}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ log.core_diagnosis.name }}</div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     {% if log.is_reviewed %}
                       {% if log.reviewer_comments and 'REJECTED:' in log.reviewer_comments %}
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100">
-                          Rejected
+                        <span class="px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100">
+                          <i class="fas fa-times-circle mr-1"></i>Rejected
                         </span>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ log.review_date|date:"M d, Y" }}</div>
                       {% else %}
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
-                          Approved
+                        <span class="px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                          <i class="fas fa-check-circle mr-1"></i>Approved
                         </span>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ log.review_date|date:"M d, Y" }}</div>
                       {% endif %}
                     {% else %}
-                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100">
-                        Pending
+                      <span class="px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100">
+                        <i class="fas fa-clock mr-1"></i>Pending
                       </span>
                     {% endif %}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <a href="{% url 'doctor_section:review_log' log.id %}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                    <a href="{% url 'doctor_section:review_log' log.id %}"
+                       class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-150">
+                      <i class="fas {% if log.is_reviewed %}fa-eye{% else %}fa-edit{% endif %} mr-1"></i>
                       {% if log.is_reviewed %}View{% else %}Review{% endif %}
                     </a>
                   </td>
@@ -180,44 +310,87 @@
           </table>
         </div>
 
+        <!-- Empty state for when table is loading -->
+        <div id="table-loading" class="hidden">
+          <div class="flex justify-center items-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        </div>
+
         <!-- Pagination -->
         {% if logs.has_other_pages %}
-          <div class="bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
-            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p class="text-sm text-gray-700 dark:text-gray-300">
-                  Showing <span class="font-medium">{{ logs.start_index }}</span> to <span class="font-medium">{{ logs.end_index }}</span> of <span class="font-medium">{{ logs.paginator.count }}</span> results
+          <div class="bg-white dark:bg-gray-800 px-4 py-4 flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 dark:border-gray-700 sm:px-6">
+            <div class="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between w-full">
+              <div class="mb-4 sm:mb-0">
+                <p class="text-sm text-gray-700 dark:text-gray-300 flex items-center">
+                  <i class="fas fa-list-ol mr-2 text-blue-500"></i>
+                  Showing <span class="font-medium mx-1">{{ logs.start_index }}</span> to <span class="font-medium mx-1">{{ logs.end_index }}</span> of <span class="font-medium mx-1">{{ logs.paginator.count }}</span> results
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Page {{ logs.number }} of {{ logs.paginator.num_pages }}
                 </p>
               </div>
-              <div>
+              <div class="flex justify-center">
                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <!-- First page link -->
                   {% if logs.has_previous %}
-                    <a href="?page={{ logs.previous_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <span class="sr-only">Previous</span>
-                      <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                      </svg>
+                    <a href="?page=1{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+                       class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
+                       aria-label="First page">
+                      <span class="sr-only">First</span>
+                      <i class="fas fa-angle-double-left h-5 w-5"></i>
                     </a>
                   {% endif %}
 
+                  <!-- Previous page link -->
+                  {% if logs.has_previous %}
+                    <a href="?page={{ logs.previous_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+                       class="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
+                       aria-label="Previous page">
+                      <span class="sr-only">Previous</span>
+                      <i class="fas fa-angle-left h-5 w-5"></i>
+                    </a>
+                  {% else %}
+                    <span class="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-sm font-medium text-gray-400 dark:text-gray-500 cursor-not-allowed">
+                      <i class="fas fa-angle-left h-5 w-5"></i>
+                    </span>
+                  {% endif %}
+
+                  <!-- Page numbers -->
                   {% for i in logs.paginator.page_range %}
                     {% if logs.number == i %}
-                      <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-blue-50 dark:bg-blue-900 text-sm font-medium text-blue-600 dark:text-blue-200">
+                      <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-blue-50 dark:bg-blue-900 text-sm font-medium text-blue-600 dark:text-blue-200 transition-colors duration-150">
                         {{ i }}
                       </span>
                     {% elif i > logs.number|add:'-3' and i < logs.number|add:'3' %}
-                      <a href="?page={{ i }}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <a href="?page={{ i }}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+                         class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
                         {{ i }}
                       </a>
                     {% endif %}
                   {% endfor %}
 
+                  <!-- Next page link -->
                   {% if logs.has_next %}
-                    <a href="?page={{ logs.next_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <a href="?page={{ logs.next_page_number }}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+                       class="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
+                       aria-label="Next page">
                       <span class="sr-only">Next</span>
-                      <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                      </svg>
+                      <i class="fas fa-angle-right h-5 w-5"></i>
+                    </a>
+                  {% else %}
+                    <span class="relative inline-flex items-center px-2 py-2 border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-sm font-medium text-gray-400 dark:text-gray-500 cursor-not-allowed">
+                      <i class="fas fa-angle-right h-5 w-5"></i>
+                    </span>
+                  {% endif %}
+
+                  <!-- Last page link -->
+                  {% if logs.has_next %}
+                    <a href="?page={{ logs.paginator.num_pages }}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+                       class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
+                       aria-label="Last page">
+                      <span class="sr-only">Last</span>
+                      <i class="fas fa-angle-double-right h-5 w-5"></i>
                     </a>
                   {% endif %}
                 </nav>
@@ -226,41 +399,106 @@
           </div>
         {% endif %}
       {% else %}
-        <div class="text-center py-8">
-          <p class="text-gray-500 dark:text-gray-400">No logs found matching your criteria.</p>
+        <!-- Empty state when no logs found -->
+        <div class="flex flex-col items-center justify-center py-12">
+          <div class="text-gray-400 dark:text-gray-500 mb-4">
+            <i class="fas fa-search fa-4x"></i>
+          </div>
+          <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No logs found</h3>
+          <p class="text-gray-500 dark:text-gray-400 text-center max-w-md">No logs match your current filter criteria. Try adjusting your filters or search terms.</p>
+          <button id="clear-all-filters" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
+            <i class="fas fa-undo mr-2"></i>Clear All Filters
+          </button>
         </div>
       {% endif %}
     </div>
   </div>
 
-  <!-- JavaScript for filters and batch selection -->
+  <!-- JavaScript for filters, batch selection, and enhanced functionality -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Filter application
-      document.getElementById('apply-filters').addEventListener('click', function() {
-        const departmentValue = document.getElementById('department-filter').value;
-        const statusValue = document.getElementById('status-filter').value;
-        const searchValue = document.getElementById('search-box').value.trim();
+      // ===== Constants and DOM Elements =====
+      const BASE_URL = '{% url "doctor_section:doctor_reviews" %}';
 
-        let url = '{% url "doctor_section:doctor_reviews" %}';
+      // Filter elements
+      const departmentFilter = document.getElementById('department-filter');
+      const statusFilter = document.getElementById('status-filter');
+      const searchBox = document.getElementById('search-box');
+      const applyFiltersBtn = document.getElementById('apply-filters');
+      const resetFiltersBtn = document.getElementById('reset-filters');
+      const clearSearchBtn = document.getElementById('clear-search');
+      const loadingIndicator = document.getElementById('loading-indicator');
+      const clearAllFiltersBtn = document.getElementById('clear-all-filters');
+
+      // Quick filter buttons
+      const filterPendingBtn = document.getElementById('filter-pending');
+      const filterApprovedBtn = document.getElementById('filter-approved');
+      const filterRejectedBtn = document.getElementById('filter-rejected');
+      const filterAllBtn = document.getElementById('filter-all');
+
+      // Export buttons
+      const exportCsvBtn = document.getElementById('export-csv');
+      const exportPdfBtn = document.getElementById('export-pdf');
+
+      // Batch review elements
+      const selectAllCheckbox = document.getElementById('select-all-checkbox');
+      const logCheckboxes = document.querySelectorAll('.log-checkbox');
+      const batchSubmitButton = document.getElementById('batch-submit');
+      const logIdsInput = document.querySelector('input[name="log_ids"]');
+      const selectedCountDisplay = document.getElementById('selected-count');
+      const batchLoading = document.getElementById('batch-loading');
+
+      // Table elements
+      const tableLoading = document.getElementById('table-loading');
+      const sortField = document.getElementById('sort-field');
+      const sortDirection = document.getElementById('sort-direction');
+
+      // ===== Helper Functions =====
+
+      // Debounce function to limit how often a function can be called
+      function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+      }
+
+      // Function to show loading state
+      function showLoading() {
+        loadingIndicator.classList.remove('hidden');
+        applyFiltersBtn.disabled = true;
+      }
+
+      // Function to build and navigate to filtered URL
+      function applyFilters() {
+        showLoading();
+
+        const departmentValue = departmentFilter.value;
+        const statusValue = statusFilter.value;
+        const searchValue = searchBox.value.trim();
+        const sortFieldValue = sortField.value;
+        const sortDirectionValue = sortDirection.getAttribute('data-direction') || 'desc';
+
         const params = [];
 
         if (departmentValue) params.push(`department=${departmentValue}`);
         if (statusValue) params.push(`status=${statusValue}`);
         if (searchValue) params.push(`q=${encodeURIComponent(searchValue)}`);
+        if (sortFieldValue) params.push(`sort=${sortFieldValue}`);
+        if (sortDirectionValue) params.push(`direction=${sortDirectionValue}`);
 
-        if (params.length > 0) {
-          url += '?' + params.join('&');
-        }
-
+        const url = params.length > 0 ? `${BASE_URL}?${params.join('&')}` : BASE_URL;
         window.location.href = url;
-      });
+      }
 
-      // Select all checkbox functionality
-      const selectAllCheckbox = document.getElementById('select-all-checkbox');
-      const logCheckboxes = document.querySelectorAll('.log-checkbox');
-      const batchSubmitButton = document.getElementById('batch-submit');
-      const logIdsInput = document.querySelector('input[name="log_ids"]');
+      // Function to reset all filters
+      function resetFilters() {
+        departmentFilter.value = '';
+        statusFilter.value = 'pending';
+        searchBox.value = '';
+        applyFilters();
+      }
 
       // Function to update the hidden input with selected log IDs
       function updateSelectedLogIds() {
@@ -269,9 +507,13 @@
           .map(checkbox => checkbox.value);
 
         logIdsInput.value = selectedIds.join(',');
+        const count = selectedIds.length;
+
+        // Update selected count display
+        selectedCountDisplay.textContent = `${count} selected`;
 
         // Enable/disable the submit button based on selection
-        if (selectedIds.length > 0) {
+        if (count > 0) {
           batchSubmitButton.disabled = false;
           batchSubmitButton.classList.remove('opacity-50', 'cursor-not-allowed');
         } else {
@@ -280,25 +522,196 @@
         }
       }
 
-      // Select all checkbox handler
-      selectAllCheckbox.addEventListener('change', function() {
-        logCheckboxes.forEach(checkbox => {
-          checkbox.checked = selectAllCheckbox.checked;
+      // Function to toggle sort direction
+      function toggleSortDirection() {
+        const currentDirection = sortDirection.getAttribute('data-direction') || 'desc';
+        const newDirection = currentDirection === 'desc' ? 'asc' : 'desc';
+
+        sortDirection.setAttribute('data-direction', newDirection);
+
+        // Update icon
+        const icon = sortDirection.querySelector('i');
+        if (newDirection === 'asc') {
+          icon.classList.remove('fa-sort-amount-down');
+          icon.classList.add('fa-sort-amount-up');
+        } else {
+          icon.classList.remove('fa-sort-amount-up');
+          icon.classList.add('fa-sort-amount-down');
+        }
+      }
+
+      // Function to export table data
+      function exportData(format) {
+        // Show loading state
+        tableLoading.classList.remove('hidden');
+
+        // Build export URL with current filters
+        const departmentValue = departmentFilter.value;
+        const statusValue = statusFilter.value;
+        const searchValue = searchBox.value.trim();
+
+        const params = [`format=${format}`];
+
+        if (departmentValue) params.push(`department=${departmentValue}`);
+        if (statusValue) params.push(`status=${statusValue}`);
+        if (searchValue) params.push(`q=${encodeURIComponent(searchValue)}`);
+
+        const exportUrl = `{% url "doctor_section:export_logs" %}?${params.join('&')}`;
+
+        // Open in new tab/window
+        window.open(exportUrl, '_blank');
+
+        // Hide loading after a short delay
+        setTimeout(() => {
+          tableLoading.classList.add('hidden');
+        }, 500);
+      }
+
+      // ===== Event Listeners =====
+
+      // Apply filters button
+      if (applyFiltersBtn) {
+        applyFiltersBtn.addEventListener('click', applyFilters);
+      }
+
+      // Reset filters button
+      if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener('click', resetFilters);
+      }
+
+      // Clear all filters button (on empty state)
+      if (clearAllFiltersBtn) {
+        clearAllFiltersBtn.addEventListener('click', resetFilters);
+      }
+
+      // Clear search button
+      if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', function() {
+          searchBox.value = '';
+          searchBox.focus();
         });
-        updateSelectedLogIds();
-      });
+      }
+
+      // Search box - apply filters on Enter key
+      if (searchBox) {
+        searchBox.addEventListener('keyup', function(e) {
+          if (e.key === 'Enter') {
+            applyFilters();
+          }
+        });
+      }
+
+      // Quick filter buttons
+      if (filterPendingBtn) {
+        filterPendingBtn.addEventListener('click', function() {
+          statusFilter.value = 'pending';
+          applyFilters();
+        });
+      }
+
+      if (filterApprovedBtn) {
+        filterApprovedBtn.addEventListener('click', function() {
+          statusFilter.value = 'reviewed';
+          // We need to add additional logic here when the backend supports filtering by approved status
+          applyFilters();
+        });
+      }
+
+      if (filterRejectedBtn) {
+        filterRejectedBtn.addEventListener('click', function() {
+          statusFilter.value = 'reviewed';
+          // We need to add additional logic here when the backend supports filtering by rejected status
+          applyFilters();
+        });
+      }
+
+      if (filterAllBtn) {
+        filterAllBtn.addEventListener('click', function() {
+          statusFilter.value = 'all';
+          applyFilters();
+        });
+      }
+
+      // Export buttons
+      if (exportCsvBtn) {
+        exportCsvBtn.addEventListener('click', function() {
+          exportData('csv');
+        });
+      }
+
+      if (exportPdfBtn) {
+        exportPdfBtn.addEventListener('click', function() {
+          exportData('pdf');
+        });
+      }
+
+      // Sort field change
+      if (sortField) {
+        sortField.addEventListener('change', function() {
+          applyFilters();
+        });
+      }
+
+      // Sort direction toggle
+      if (sortDirection) {
+        sortDirection.addEventListener('click', function() {
+          toggleSortDirection();
+          applyFilters();
+        });
+      }
+
+      // Batch review form submission
+      const batchForm = document.getElementById('batch-review-form');
+      if (batchForm) {
+        batchForm.addEventListener('submit', function() {
+          batchLoading.classList.remove('hidden');
+        });
+      }
+
+      // Select all checkbox handler
+      if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+          logCheckboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+          });
+          updateSelectedLogIds();
+        });
+      }
 
       // Individual checkbox handlers
       logCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
           // Update "select all" checkbox state
-          selectAllCheckbox.checked = Array.from(logCheckboxes).every(cb => cb.checked);
+          if (selectAllCheckbox) {
+            selectAllCheckbox.checked = Array.from(logCheckboxes).every(cb => cb.checked);
+          }
           updateSelectedLogIds();
         });
       });
 
       // Initialize
       updateSelectedLogIds();
+
+      // Set up keyboard shortcuts
+      document.addEventListener('keydown', function(e) {
+        // Alt+F to focus search box
+        if (e.altKey && e.key === 'f') {
+          e.preventDefault();
+          searchBox.focus();
+        }
+
+        // Alt+A to apply filters
+        if (e.altKey && e.key === 'a') {
+          e.preventDefault();
+          applyFilters();
+        }
+
+        // Alt+R to reset filters
+        if (e.altKey && e.key === 'r') {
+          e.preventDefault();
+          resetFilters();
+        }
+      });
     });
   </script>
 {% endblock %}
