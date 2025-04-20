@@ -26,13 +26,13 @@
 
   <body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300 min-h-screen flex flex-col">
     {% block navbar %}
-
+    <!-- Navigation will be included here -->
     {% endblock %}
 
     <main class="flex-grow">
-      <div class="">
+      <div class="container mx-auto">
         {% block content %}
-
+        <!-- Content will be rendered here -->
         {% endblock %}
         {% block extra_scripts %}{% endblock %}
       </div>
