@@ -232,10 +232,30 @@
                 </select>
               </div>
 
+              <!-- Search Input Field -->
+              <div class="space-y-1 mt-4">
+                <label for="search-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search Departments</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-search text-gray-400"></i>
+                  </div>
+                  <input id="search-input" type="text" name="q" value="{{ search_query }}"
+                         class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                         placeholder="Search by name or year...">
+                  {% if search_query %}
+                  <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <button type="button" id="clear-search" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+
               <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-                {% if selected_year_section %}
+                {% if selected_year_section or search_query %}
                   <a href="{% url 'admin_section:add_department' %}" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200">
-                    <i class="fas fa-times mr-1"></i> Clear
+                    <i class="fas fa-times mr-1"></i> Clear All
                   </a>
                 {% endif %}
                 <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors duration-200">
@@ -258,18 +278,27 @@
                 <i class="fas fa-list-ul text-green-500 mr-2"></i> Departments
                 <span class="ml-2 px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">{{ departments.paginator.count }}</span>
               </h3>
-              {% if selected_year_section %}
-              <div class="ml-4 flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <span>Filtered by: </span>
-                <span class="ml-1 px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full text-xs font-medium">
-                  {% for section in year_sections %}
-                    {% if selected_year_section == section.id|stringformat:'s' %}
-                      {{ section.year_name.year_name }} - {{ section.year_section_name }}
-                    {% endif %}
-                  {% endfor %}
-                </span>
+              <div class="ml-4 flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                {% if selected_year_section or search_query %}
+                  <span>Filtered by: </span>
+                {% endif %}
+
+                {% if selected_year_section %}
+                  <span class="px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full text-xs font-medium">
+                    {% for section in year_sections %}
+                      {% if selected_year_section == section.id|stringformat:'s' %}
+                        <i class="fas fa-layer-group mr-1"></i> {{ section.year_name.year_name }} - {{ section.year_section_name }}
+                      {% endif %}
+                    {% endfor %}
+                  </span>
+                {% endif %}
+
+                {% if search_query %}
+                  <span class="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full text-xs font-medium">
+                    <i class="fas fa-search mr-1"></i> "{{ search_query }}"
+                  </span>
+                {% endif %}
               </div>
-              {% endif %}
             </div>
             <div>
               <button id="batch-delete-btn" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 opacity-50 cursor-not-allowed flex items-center" disabled>
@@ -383,12 +412,12 @@
                   <ul class="flex items-center space-x-1">
                     {% if departments.has_previous %}
                       <li>
-                        <a href="?page=1{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}" class="px-2 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200" title="First Page">
+                        <a href="?page=1{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="px-2 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200" title="First Page">
                           <i class="fas fa-angle-double-left"></i>
                         </a>
                       </li>
                       <li>
-                        <a href="?page={{ departments.previous_page_number }}{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}" class="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">
+                        <a href="?page={{ departments.previous_page_number }}{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">
                           <i class="fas fa-angle-left mr-1"></i> Prev
                         </a>
                       </li>
@@ -403,7 +432,7 @@
                         </li>
                       {% elif num > departments.number|add:-3 and num < departments.number|add:3 %}
                         <li>
-                          <a href="?page={{ num }}{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}" class="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">
+                          <a href="?page={{ num }}{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">
                             {{ num }}
                           </a>
                         </li>
@@ -412,12 +441,12 @@
 
                     {% if departments.has_next %}
                       <li>
-                        <a href="?page={{ departments.next_page_number }}{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}" class="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">
+                        <a href="?page={{ departments.next_page_number }}{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">
                           Next <i class="fas fa-angle-right ml-1"></i>
                         </a>
                       </li>
                       <li>
-                        <a href="?page={{ departments.paginator.num_pages }}{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}" class="px-2 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200" title="Last Page">
+                        <a href="?page={{ departments.paginator.num_pages }}{% if selected_year_section %}&year_section={{ selected_year_section }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" class="px-2 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200" title="Last Page">
                           <i class="fas fa-angle-double-right"></i>
                         </a>
                       </li>
@@ -689,6 +718,32 @@
               });
           } else {
             sectionSelect.disabled = true;
+          }
+        });
+      }
+
+      // Clear search button functionality
+      const clearSearchBtn = document.getElementById('clear-search');
+      const searchInput = document.getElementById('search-input');
+
+      if (clearSearchBtn && searchInput) {
+        clearSearchBtn.addEventListener('click', function() {
+          searchInput.value = '';
+          // If there's only a search parameter, redirect to the base URL
+          // Otherwise, submit the form to maintain other filters
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.has('q') && !urlParams.has('year_section') && !urlParams.has('page')) {
+            window.location.href = '{% url "admin_section:add_department" %}';
+          } else {
+            searchInput.form.submit();
+          }
+        });
+
+        // Allow clearing search with Escape key
+        searchInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape') {
+            searchInput.value = '';
+            // Don't auto-submit on Escape, let user decide to submit
           }
         });
       }

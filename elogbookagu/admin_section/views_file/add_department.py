@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import JsonResponse
+from django.db.models import Q
 from admin_section.models import Department, LogYear, LogYearSection
 from admin_section.forms import DepartmentForm
 
@@ -38,6 +39,7 @@ def add_department(request):
 
     # Get filter parameters
     year_section_id = request.GET.get('year_section')
+    search_query = request.GET.get('q', '').strip()
 
     # Get all year sections for the filter dropdown
     year_sections = LogYearSection.objects.filter(is_deleted=False).order_by('year_name__year_name', 'year_section_name')
@@ -48,6 +50,14 @@ def add_department(request):
     # Apply filter if selected
     if year_section_id:
         departments = departments.filter(log_year_section_id=year_section_id)
+
+    # Apply search if provided
+    if search_query:
+        departments = departments.filter(
+            Q(name__icontains=search_query) |
+            Q(log_year__year_name__icontains=search_query) |
+            Q(log_year_section__year_section_name__icontains=search_query)
+        ).distinct()
 
     # Order the departments
     departments = departments.order_by('log_year_section__year_section_name', 'name')
@@ -62,6 +72,7 @@ def add_department(request):
         'departments': page_obj,
         'year_sections': year_sections,
         'selected_year_section': year_section_id,
+        'search_query': search_query,
     }
 
     return render(request, "admin_section/add_department.html", context)
