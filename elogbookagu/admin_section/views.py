@@ -168,6 +168,12 @@ def bulk_add_users(request):
 
 @login_required
 def admin_dash(request):
+    # Check if user wants to use Streamlit dashboard
+    use_streamlit = request.GET.get('streamlit', 'false').lower() == 'true'
+
+    if use_streamlit:
+        return redirect('admin_section:streamlit_dashboard')
+
     # Get filter parameters
     department_id = request.GET.get('department')
     student_search = request.GET.get('student_search', '')
@@ -429,6 +435,38 @@ def get_user_data(request):
             })
 
     return JsonResponse(data)
+
+@login_required
+def streamlit_dashboard(request):
+    """Launch Streamlit dashboard in a new process"""
+    if request.user.role != 'admin':
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('login')
+
+    # Get the path to the Streamlit script
+    streamlit_script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'streamlit_dashboard.py')
+
+    # Check if the script exists
+    if not os.path.exists(streamlit_script_path):
+        messages.error(request, "Streamlit dashboard script not found.")
+        return redirect('admin_section:admin_dash')
+
+    # Launch Streamlit in a subprocess
+    try:
+        # Use a different port to avoid conflicts with Django
+        port = 8501
+        subprocess.Popen(
+            [sys.executable, '-m', 'streamlit', 'run', streamlit_script_path, '--server.port', str(port)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+
+        # Redirect to the Streamlit dashboard
+        return redirect(f'http://localhost:{port}')
+    except Exception as e:
+        messages.error(request, f"Failed to launch Streamlit dashboard: {str(e)}")
+        return redirect('admin_section:admin_dash')
+
 
 def download_user_template(request):
     """Download a sample CSV template for user import"""

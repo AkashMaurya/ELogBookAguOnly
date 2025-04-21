@@ -131,10 +131,10 @@
 {% endblock %}
 
 {% block navbar %}
+  {% include 'components/admin_auth_navbar.html' %}
 {% endblock %}
 
 {% block content %}
-  {% include 'components/admin_auth_navbar.html' %}
   <div class="px-4 sm:px-6 lg:px-8 py-8 transition-all duration-300 w-full mx-auto" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }" :class="{ 'dark': darkMode }">
     <!-- Responsive Layout Indicator for Development -->
     <div class="fixed bottom-4 right-4 z-50 hidden">
@@ -148,8 +148,11 @@
       </div>
     </div>
 
-    <!-- Print Controls -->
-    <div class="print:hidden mb-4 flex justify-end">
+    <!-- Dashboard Controls -->
+    <div class="print:hidden mb-4 flex justify-end space-x-3">
+      <a href="{% url 'admin_section:admin_dash' %}?streamlit=true" class="inline-flex items-center px-3 py-2 border border-indigo-500 dark:border-indigo-400 shadow-sm text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        <i class="fas fa-chart-line mr-2"></i> Streamlit Dashboard
+      </a>
       <button id="printDashboard" class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
         <i class="fas fa-print mr-2"></i> Print Dashboard
       </button>

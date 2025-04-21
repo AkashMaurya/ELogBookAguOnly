@@ -1,132 +1,60 @@
-<!-- Fixed Header -->
-<div class="flex flex-row dark:bg-gray-800 bg-gray-100 py-3 fixed top-0 left-0 right-0 z-20 shadow-md">
-  <button id="sidebar-toggle" class="bg-gray-200 dark:bg-gray-800 py-2 px-4 ml-4 rounded-lg text-center cursor-pointer transition-transform duration-300 hover:scale-105 active:scale-95">
-    <i class="fas fa-bars"></i>
-  </button>
-  <h1 class="text-2xl font-bold text-center flex-grow dark:text-white">Welcome: {{ request.session.first_name }} {{ request.session.last_name }}</h1>
+{% extends 'components/auth_navbar_base.html' %}
 
-  <!-- Notification Icon -->
-  <div class="relative mr-4">
-    <a href="{% url 'student_section:notifications' %}" class="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
-      <i class="fas fa-bell text-xl"></i>
-      {% if student_unread_notifications_count > 0 %}
-        <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{{ student_unread_notifications_count }}</span>
-      {% endif %}
-    </a>
-  </div>
-</div>
+{% block home_url %}{% url 'student_section:student_dash' %}{% endblock %}
+{% block header_icon %}fas fa-user-graduate{% endblock %}
+{% block portal_name %}Student Portal{% endblock %}
+{% block user_role %}Student{% endblock %}
+{% block user_role_header %}Student{% endblock %}
+{% block profile_url %}{% url 'student_section:student_profile' %}{% endblock %}
+{% block notifications_url %}{% url 'student_section:notifications' %}{% endblock %}
+{% block logout_url %}{% url 'student_section:logout' %}{% endblock %}
+{% block logout_url_bottom %}{% url 'student_section:logout' %}{% endblock %}
 
-<!-- Fixed Sidebar -->
-<aside id="sidebar" class="w-64 bg-gray-100 dark:bg-gray-800 p-4 flex flex-col fixed top-16 bottom-0 left-0 transition-transform transform -translate-x-full z-30 md:translate-x-0">
-  <nav class="flex-grow">
-    <ul>
-      <li class="flex items-center space-x-2">
-        <i class="fas fa-chart-line"></i>
-        <a href="{% url 'student_section:student_dash' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Dashboard</a>
-      </li>
-      <li class="flex items-center space-x-2">
-        <i class="fas fa-user-md"></i>
-        <a href="{% url 'student_section:student_profile' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Profile</a>
-      </li>
-      <li class="flex items-center space-x-2">
-        <i class="far fa-edit"></i>
-        <a href="{% url 'student_section:student_blogs' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Posts</a>
-      </li>
-      <li class="flex items-center space-x-2">
-        <i class="fab fa-hire-a-helper"></i>
-        <a href="{% url 'student_section:student_support' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Support</a>
-      </li>
-      <li class="flex items-center space-x-2">
-        <i class="fas fa-book-reader"></i>
-        <a href="{% url 'student_section:student_elog' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Fill Elog</a>
-      </li>
-      <li class="flex items-center space-x-2">
-        <i class="fas fa-book-reader"></i>
-        <a href="{% url 'student_section:student_final_records' %}" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700">Your Records</a>
-      </li>
-      <li class="flex items-center space-x-2">
-        <form method="POST" action="{% url 'student_section:logout' %}" class="w-full">
-          {% csrf_token %}
-          <button type="submit" class="block py-2 px-4 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 w-full text-left">
-            <i class="fas fa-sign-out-alt"></i> Logout
-          </button>
-        </form>
-      </li>
-      <li class="flex items-center space-x-2 mt-4">
-        <button id="theme-toggle" onclick="toggleTheme()" class="text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-300 transition duration-300 ease-in-out">
-          <svg id="theme-toggle-dark-icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
-          </svg>
-          <svg id="theme-toggle-light-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path>
-          </svg>
-        </button>
-      </li>
-    </ul>
-  </nav>
-</aside>
+{% block sidebar_menu %}
+  <!-- Dashboard -->
+  <a href="{% url 'student_section:student_dash' %}" class="nav-item flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 group transition-colors duration-200">
+    <i class="fas fa-chart-line w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+    <span class="ml-3 font-medium">Dashboard</span>
+  </a>
 
+  <!-- Profile -->
+  <a href="{% url 'student_section:student_profile' %}" class="nav-item flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 group transition-colors duration-200">
+    <i class="fas fa-user-graduate w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+    <span class="ml-3 font-medium">Profile</span>
+  </a>
 
+  <!-- Posts -->
+  <a href="{% url 'student_section:student_blogs' %}" class="nav-item flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 group transition-colors duration-200">
+    <i class="far fa-edit w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+    <span class="ml-3 font-medium">Posts</span>
+  </a>
 
-<!-- JavaScript for Sidebar and Theme -->
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const sidebarToggleBtn = document.getElementById('sidebar-toggle');
-    const sidebar = document.getElementById('sidebar');
+  <!-- Support -->
+  <a href="{% url 'student_section:student_support' %}" class="nav-item flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 group transition-colors duration-200">
+    <i class="fab fa-hire-a-helper w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+    <span class="ml-3 font-medium">Support</span>
+  </a>
 
-    if (!sidebarToggleBtn || !sidebar) {
-      console.error('Required elements not found:', { sidebarToggleBtn, sidebar });
-      return;
-    }
+  <!-- Fill Elog -->
+  <a href="{% url 'student_section:student_elog' %}" class="nav-item flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 group transition-colors duration-200">
+    <i class="fas fa-pen-fancy w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+    <span class="ml-3 font-medium">Fill Elog</span>
+  </a>
 
-    function toggleSidebar() {
-      sidebar.classList.toggle('-translate-x-full');
-      sidebar.classList.toggle('translate-x-0');
-    }
+  <!-- Your Records -->
+  <a href="{% url 'student_section:student_final_records' %}" class="nav-item flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 group transition-colors duration-200">
+    <i class="fas fa-book-reader w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+    <span class="ml-3 font-medium">Your Records</span>
+  </a>
 
-    function closeSidebar() {
-      sidebar.classList.add('-translate-x-full');
-      sidebar.classList.remove('translate-x-0');
-    }
-
-    sidebarToggleBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      toggleSidebar();
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!sidebar.contains(e.target) && !sidebarToggleBtn.contains(e.target)) {
-        closeSidebar();
-      }
-    });
-  });
-</script>
-
-<!-- Inline Styles -->
-<style>
-  #sidebar {
-    transition: transform 0.3s ease-in-out;
-  }
-  #sidebar.-translate-x-full {
-    transform: translateX(-100%);
-  }
-  #sidebar.translate-x-0 {
-    transform: translateX(0);
-  }
-  .container {
-    padding-top: 64px; /* Height of fixed header */
-    margin-left: 0 !important; /* Ensure content stays in place */
-  }
-  input, select {
-    color: #000 !important;
-    background-color: #fff !important;
-    padding: 0.5rem;
-    border: 1px solid #d1d5db !important;
-    border-radius: 0.375rem !important;
-  }
-  .dark input, .dark select {
-    color: #fff !important;
-    background-color: #4a5568 !important;
-    border: 1px solid #6b7280 !important;
-  }
-</style>
+  <!-- Notifications -->
+  <a href="{% url 'student_section:notifications' %}" class="nav-item flex items-center px-4 py-3 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 group transition-colors duration-200">
+    <i class="fas fa-bell w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+    <span class="ml-3 font-medium">Notifications</span>
+    {% if student_unread_notifications_count > 0 %}
+      <span class="ml-auto bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+        {{ student_unread_notifications_count }}
+      </span>
+    {% endif %}
+  </a>
+{% endblock %}

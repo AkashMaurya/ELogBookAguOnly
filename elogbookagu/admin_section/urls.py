@@ -134,4 +134,7 @@ urlpatterns = [
     # AJAX endpoints
     path('api/get-user-data/', views.get_user_data, name='get_user_data'),
     path('api/search-students/', search_students, name='search_students'),
+
+    # Streamlit Dashboard
+    path('streamlit-dashboard/', views.streamlit_dashboard, name='streamlit_dashboard'),
 ]
