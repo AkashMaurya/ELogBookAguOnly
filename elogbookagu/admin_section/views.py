@@ -866,7 +866,85 @@ def resolve_ticket(request, ticket_id):
 
 @login_required
 def notifications(request):
-    return render(request, 'admin_section/notifications.html')
+    # Check if user is admin
+    if request.user.role != 'admin':
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('login')
+
+    # Get all notifications for this admin
+    notifications_list = AdminNotification.objects.filter(recipient=request.user).order_by('-created_at')
+
+    # Apply filters if provided
+    filter_param = request.GET.get('filter', '')
+
+    if filter_param == 'unread':
+        notifications_list = notifications_list.filter(is_read=False)
+    elif filter_param in ['student', 'doctor', 'staff']:
+        notifications_list = notifications_list.filter(support_ticket_type=filter_param)
+    # 'all' or empty filter shows everything (default behavior)
+
+    # Mark notifications as read if requested
+    if request.GET.get('mark_read'):
+        notification_id = request.GET.get('mark_read')
+        notification = get_object_or_404(AdminNotification, id=notification_id, recipient=request.user)
+        notification.is_read = True
+        notification.save()
+
+        # Preserve filter when redirecting
+        redirect_url = 'admin_section:notifications'
+        if filter_param:
+            return redirect(f'{redirect_url}?filter={filter_param}')
+        return redirect(redirect_url)
+
+    # Mark all as read if requested
+    if request.GET.get('mark_all_read'):
+        # Apply the same filters to mark only filtered notifications as read
+        to_mark = notifications_list.filter(is_read=False)
+        count = to_mark.count()
+        to_mark.update(is_read=True)
+
+        if count > 0:
+            messages.success(request, f"{count} notifications marked as read.")
+        else:
+            messages.info(request, "No unread notifications to mark as read.")
+
+        # Preserve filter when redirecting
+        redirect_url = 'admin_section:notifications'
+        if filter_param:
+            return redirect(f'{redirect_url}?filter={filter_param}')
+        return redirect(redirect_url)
+
+    # View ticket if requested
+    if request.GET.get('view_ticket'):
+        notification_id = request.GET.get('view_ticket')
+        notification = get_object_or_404(AdminNotification, id=notification_id, recipient=request.user)
+
+        # Mark as read
+        if not notification.is_read:
+            notification.is_read = True
+            notification.save()
+
+        # Redirect to the appropriate ticket page
+        if notification.ticket_id:
+            ticket_type = notification.support_ticket_type
+            return redirect(f'/admin_section/resolve_ticket/{notification.ticket_id}/?type={ticket_type}')
+
+    # Get unread count (for display in the UI)
+    unread_count = AdminNotification.objects.filter(recipient=request.user, is_read=False).count()
+
+    # Pagination
+    paginator = Paginator(notifications_list, 10)  # 10 items per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'notifications': page_obj,
+        'unread_count': unread_count,
+        'filter': filter_param,
+        'total_count': AdminNotification.objects.filter(recipient=request.user).count(),
+    }
+
+    return render(request, 'admin_section/notifications.html', context)
 
 
 @login_required
