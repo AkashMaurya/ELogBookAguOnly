@@ -8,7 +8,7 @@ app_name = "staff_section"  # This is crucial for namespacing URLs
 
 urlpatterns = [
     path("", views.staff_dash, name="staff_dash"),
-    path("staff_blogs/", views.staff_blogs, name="staff_blogs"),
+
     path("staff_support/", views.staff_support, name="staff_support"),
     path("staff_reviews/", views.staff_reviews, name="staff_reviews"),
     path("review_log/<int:log_id>/", views.review_log, name="review_log"),

@@ -40,7 +40,6 @@ def staff_dash(request):
 
     # Get filter parameters
     selected_department = request.GET.get('department')
-    selected_doctor = request.GET.get('doctor')
     search_query = request.GET.get('search', '').strip()
 
     # Get staff's departments
@@ -69,20 +68,7 @@ def staff_dash(request):
             # If the department doesn't exist, ignore the filter
             selected_department = None
 
-    # Filter by selected doctor if provided
-    if selected_doctor:
-        try:
-            doctor = Doctor.objects.get(id=selected_doctor)
-            # Check if doctor belongs to staff's departments
-            if doctor.departments.filter(id__in=departments.values_list('id', flat=True)).exists():
-                # Filter logs by doctor as tutor (since there's no reviewer field)
-                logs = logs.filter(tutor=doctor)
-            else:
-                # If doctor doesn't belong to staff's departments, ignore the filter
-                selected_doctor = None
-        except Doctor.DoesNotExist:
-            # If doctor doesn't exist, ignore the filter
-            selected_doctor = None
+    # We've removed the doctor filter functionality
 
     # Filter doctors by search query if provided
     filtered_doctors = department_doctors
@@ -91,7 +77,8 @@ def staff_dash(request):
             models.Q(user__first_name__icontains=search_query) |
             models.Q(user__last_name__icontains=search_query) |
             models.Q(user__email__icontains=search_query) |
-            models.Q(user__username__icontains=search_query)
+            models.Q(user__username__icontains=search_query) |
+            models.Q(user__speciality__icontains=search_query)
         )
 
     # Get current date and start of month
@@ -191,25 +178,16 @@ def staff_dash(request):
         'chart_data': chart_data,
         'departments': departments,
         'selected_department': selected_department,
-        'selected_doctor': selected_doctor,
         'search_query': search_query,
         'total_records': total_records,
         'left_to_review': left_to_review,
         'reviewed': reviewed_count,
         'review_percentage': review_percentage,
         'doctors': doctors_info,
-        'all_doctors': department_doctors,
+        'today': today,
     }
 
     return render(request, "staff_section/staff_dash.html", context)
-
-@login_required
-# Staff Blogs View
-def staff_blogs(request):
-    if request.user.role != 'staff':
-        messages.error(request, 'You do not have permission to access this page.')
-        return redirect('login')
-    return render(request, "staff_section/staff_blogs.html")
 
 @login_required
 # Staff Support View
