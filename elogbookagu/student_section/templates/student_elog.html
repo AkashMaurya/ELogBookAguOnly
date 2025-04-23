@@ -97,7 +97,13 @@
 
           <div>
             <label for="{{ form.date.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date</label>
-            {{ form.date }}
+            <div class="relative">
+              {{ form.date }}
+              <div class="absolute right-2 top-2 text-gray-400">
+                <i class="far fa-calendar-alt"></i>
+              </div>
+            </div>
+            <p class="text-gray-500 text-xs mt-1" id="date-restrictions-info">Loading date restrictions...</p>
           </div>
 
           <div>
@@ -135,7 +141,9 @@
       const activityTypeSelect = document.getElementById('id_activity_type')
       const coreDiagnosisSelect = document.getElementById('id_core_diagnosis')
       const tutorSelect = document.getElementById('id_tutor')
-    
+      const dateInput = document.getElementById('id_date')
+      const dateRestrictionsInfo = document.getElementById('date-restrictions-info')
+
       // Reset dependent fields with a placeholder message
       const resetDependentFields = (exceptField = null) => {
         const fields = [
@@ -143,7 +151,7 @@
           { select: coreDiagnosisSelect, text: 'Choose Activity Type ' },
           { select: tutorSelect, text: 'Choose Department' }
         ]
-    
+
         fields.forEach(({ select, text }) => {
           if (select !== exceptField) {
             select.innerHTML = `<option value="">${text}</option>`
@@ -151,25 +159,25 @@
           }
         })
       }
-    
+
       // Show loading state
       const showLoading = (selectElement, message = 'Loading...') => {
         selectElement.innerHTML = `<option value="">${message}</option>`
         selectElement.disabled = true
       }
-    
+
       // Department change handler
       departmentSelect.addEventListener('change', async function () {
         const departmentId = this.value
         resetDependentFields()
-    
+
         if (!departmentId) return
-    
+
         try {
           // Show loading state
           showLoading(activityTypeSelect)
           showLoading(tutorSelect)
-    
+
           // Fetch activity types and tutors in parallel
           const [activityTypesResponse, tutorsResponse] = await Promise.all([
             fetch(`/student_section/get-activity-types/?department=${departmentId}`, {
@@ -179,17 +187,17 @@
               headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
           ])
-    
+
           const activityTypes = await activityTypesResponse.json()
           const tutors = await tutorsResponse.json()
-    
+
           // Update activity types
           activityTypeSelect.innerHTML = '<option value="">Choose Activity Type</option>'
           activityTypes.forEach((type) => {
             activityTypeSelect.add(new Option(type.name, type.id))
           })
           activityTypeSelect.disabled = false
-    
+
           // Update tutors
           tutorSelect.innerHTML = '<option value="">Choose Tutor</option>'
           tutors.forEach((tutor) => {
@@ -202,24 +210,24 @@
           tutorSelect.innerHTML = '<option value="">error: data is not loaded</option>'
         }
       })
-    
+
       // Activity type change handler
       activityTypeSelect.addEventListener('change', async function () {
         const activityTypeId = this.value
         coreDiagnosisSelect.innerHTML = '<option value="">Choose Core Diagnosis</option>'
         coreDiagnosisSelect.disabled = true
-    
+
         if (!activityTypeId) return
-    
+
         try {
           // Show loading state
           showLoading(coreDiagnosisSelect)
-    
+
           const response = await fetch(`/student_section/get-core-diagnosis/?activity_type=${activityTypeId}`, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
           })
           const diagnoses = await response.json()
-    
+
           coreDiagnosisSelect.innerHTML = '<option value="">Choose Core Diagnosis </option>'
           diagnoses.forEach((diagnosis) => {
             coreDiagnosisSelect.add(new Option(diagnosis.name, diagnosis.id))
@@ -230,25 +238,192 @@
           coreDiagnosisSelect.innerHTML = '<option value="">error: data is not loaded</option>'
         }
       })
-    
+
+      // Date restrictions handler
+      let dateSettings = {
+        pastDaysLimit: 7,
+        allowFutureDates: false,
+        futureDaysLimit: 0,
+        isCurrentDayAllowed: true,
+        allowedDays: [0, 1, 2, 3, 4, 5, 6],
+        isActive: true
+      }
+
+      // Function to fetch date restriction settings
+      const fetchDateRestrictions = async () => {
+        try {
+          const response = await fetch('/student_section/get-date-restrictions/', {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+          })
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch date restrictions')
+          }
+
+          const data = await response.json()
+          dateSettings = data
+
+          // Update the date input min and max attributes
+          updateDateRestrictions()
+
+          // Update the info text
+          updateDateRestrictionsInfo()
+        } catch (error) {
+          console.error('Error fetching date restrictions:', error)
+          dateRestrictionsInfo.textContent = 'Using default date restrictions (7 days past, no future dates)'
+          // Use default settings
+          updateDateRestrictions()
+        }
+      }
+
+      // Function to update date input restrictions
+      const updateDateRestrictions = () => {
+        const today = new Date()
+
+        // Calculate earliest allowed date
+        const earliestDate = new Date(today)
+        earliestDate.setDate(today.getDate() - dateSettings.pastDaysLimit)
+
+        // Calculate latest allowed date
+        const latestDate = new Date(today)
+        if (dateSettings.allowFutureDates) {
+          latestDate.setDate(today.getDate() + dateSettings.futureDaysLimit)
+        } else {
+          // If future dates are not allowed, max date is today
+          latestDate.setDate(today.getDate())
+        }
+
+        // Format dates for the date input (YYYY-MM-DD)
+        const formatDate = (date) => {
+          const year = date.getFullYear()
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
+          return `${year}-${month}-${day}`
+        }
+
+        // Set min and max attributes
+        dateInput.min = formatDate(earliestDate)
+        dateInput.max = formatDate(latestDate)
+      }
+
+      // Function to update the date restrictions info text
+      const updateDateRestrictionsInfo = () => {
+        const today = new Date()
+        const earliestDate = new Date(today)
+        earliestDate.setDate(today.getDate() - dateSettings.pastDaysLimit)
+
+        const formatDateForDisplay = (date) => {
+          return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          })
+        }
+
+        // Check if date restrictions are active
+        if (!dateSettings.isActive) {
+          dateRestrictionsInfo.textContent = 'Date restrictions are currently inactive.'
+          return
+        }
+
+        // Check if today is an allowed day
+        if (!dateSettings.isCurrentDayAllowed) {
+          dateRestrictionsInfo.innerHTML = '<span class="text-red-500">Logs cannot be submitted today. Please try on an allowed day.</span>'
+          return
+        }
+
+        // Format allowed days of week
+        const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        const allowedDayNames = dateSettings.allowedDays.map(day => dayNames[day])
+
+        let infoText = `You can select dates from ${formatDateForDisplay(earliestDate)} to `
+
+        if (dateSettings.allowFutureDates) {
+          const latestDate = new Date(today)
+          latestDate.setDate(today.getDate() + dateSettings.futureDaysLimit)
+          infoText += formatDateForDisplay(latestDate)
+        } else {
+          infoText += formatDateForDisplay(today) + ' (today)'
+        }
+
+        // Add allowed days info if not all days are allowed
+        if (dateSettings.allowedDays.length < 7) {
+          infoText += `<br><span class="text-xs">Allowed days: ${allowedDayNames.join(', ')}</span>`
+        }
+
+        dateRestrictionsInfo.innerHTML = infoText
+      }
+
+      // Fetch date restrictions when the page loads
+      fetchDateRestrictions()
+
+      // Add event listener for date input
+      dateInput.addEventListener('change', function() {
+        if (!dateSettings.isActive) {
+          // If date restrictions are inactive, allow any date
+          return
+        }
+
+        const selectedDate = new Date(this.value)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0) // Reset time part for comparison
+
+        const earliestDate = new Date(today)
+        earliestDate.setDate(today.getDate() - dateSettings.pastDaysLimit)
+
+        const latestDate = new Date(today)
+        if (dateSettings.allowFutureDates) {
+          latestDate.setDate(today.getDate() + dateSettings.futureDaysLimit)
+        }
+
+        // Get day of week (0=Monday, 6=Sunday)
+        const selectedDay = selectedDate.getDay()
+        // Convert from Sunday=0 to Monday=0 format
+        const adjustedDay = selectedDay === 0 ? 6 : selectedDay - 1
+
+        // Validate the selected date
+        if (selectedDate < earliestDate) {
+          alert(`Date cannot be more than ${dateSettings.pastDaysLimit} days in the past.`)
+          this.value = ''
+        } else if (selectedDate > today && !dateSettings.allowFutureDates) {
+          alert('Future dates are not allowed.')
+          this.value = ''
+        } else if (selectedDate > latestDate) {
+          alert(`Date cannot be more than ${dateSettings.futureDaysLimit} days in the future.`)
+          this.value = ''
+        } else if (!dateSettings.allowedDays.includes(adjustedDay)) {
+          const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+          alert(`Logs cannot be submitted on ${dayNames[adjustedDay]}. Please select an allowed day.`)
+          this.value = ''
+        }
+      })
+
       // Form submission handler
       form.addEventListener('submit', function (e) {
         console.log('Form submission attempted')
-    
+
+        // Check if date restrictions are active and today is not an allowed day
+        if (dateSettings.isActive && !dateSettings.isCurrentDayAllowed) {
+          e.preventDefault()
+          alert('Logs cannot be submitted today. Please try on an allowed day.')
+          return false
+        }
+
         const requiredFields = [
           { field: departmentSelect, name: 'Department' },
           { field: activityTypeSelect, name: 'Activity Type' },
           { field: coreDiagnosisSelect, name: 'Core Diagnosis' },
-          { field: tutorSelect, name: 'Tutor' }
+          { field: tutorSelect, name: 'Tutor' },
+          { field: dateInput, name: 'Date' }
         ]
-    
+
         // Debug: Log the values of all required fields
         requiredFields.forEach(({ field, name }) => {
           console.log(`${name} value:`, field.value)
         })
-    
+
         const emptyFields = requiredFields.filter(({ field }) => !field.value).map(({ name }) => name)
-    
+
         if (emptyFields.length > 0) {
           e.preventDefault()
           e.stopPropagation() // किसी और हैंडलर को चलने से रोकें
@@ -256,7 +431,7 @@
           console.log('Form submission prevented due to empty fields:', emptyFields)
           return false
         }
-    
+
         console.log('Form submission allowed - all fields filled')
         //alert('Form submitted successfully!')
       })

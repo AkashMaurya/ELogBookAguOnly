@@ -28,6 +28,7 @@ app_name = "admin_section"
 urlpatterns = [
     # Other URLs
     path("", views.admin_dash, name="admin_dash"),
+    path("date_restrictions/", views.date_restrictions, name="date_restrictions"),
     path("admin_blogs/", views.admin_blogs, name="admin_blogs"),
     path("admin_support/", views.admin_support, name="admin_support"),
     path("admin_reviews/", views.admin_reviews, name="admin_reviews"),

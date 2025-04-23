@@ -1,6 +1,8 @@
 from django import forms
+from django.utils import timezone
+from datetime import timedelta
 from .models import StudentLogFormModel, SupportTicket
-from admin_section.models import Department, ActivityType, CoreDiaProSession
+from admin_section.models import Department, ActivityType, CoreDiaProSession, DateRestrictionSettings
 from accounts.models import Doctor, Student
 
 
@@ -116,7 +118,9 @@ class StudentLogFormModelForm(forms.ModelForm):
         activity_type = cleaned_data.get("activity_type")
         core_diagnosis = cleaned_data.get("core_diagnosis")
         tutor = cleaned_data.get("tutor")
+        date = cleaned_data.get("date")
 
+        # Validate department, activity type, core diagnosis, and tutor
         if department:
             activity_types = ActivityType.objects.filter(department=department)
             tutors = Doctor.objects.filter(departments=department).distinct()
@@ -131,6 +135,77 @@ class StudentLogFormModelForm(forms.ModelForm):
 
             if tutor and tutor not in tutors:
                 self.add_error("tutor", "एक सही विकल्प चुनें। वह विकल्प उपलब्ध विकल्पों में से एक नहीं है।")
+
+        # Validate date based on date restriction settings
+        if date:
+            today = timezone.now().date()
+            request = self.request if hasattr(self, 'request') else None
+
+            # Get date restriction settings or use defaults
+            try:
+                settings = DateRestrictionSettings.objects.first()
+                if not settings:
+                    # Create default settings if none exist
+                    settings = DateRestrictionSettings.objects.create(
+                        past_days_limit=7,
+                        allow_future_dates=False,
+                        future_days_limit=0
+                    )
+
+                # Get active status from session or use default
+                is_active = True
+                if request and hasattr(request, 'session'):
+                    is_active = request.session.get('date_restrictions_active', True)
+                else:
+                    is_active = True
+
+                # Skip validation if date restrictions are inactive
+                if not is_active:
+                    return cleaned_data
+
+            except Exception:
+                # Use default values if there's an error
+                past_days_limit = 7
+                allow_future_dates = False
+                future_days_limit = 0
+                allowed_days = [0, 1, 2, 3, 4, 5, 6]  # All days allowed by default
+                is_active = True
+            else:
+                past_days_limit = settings.past_days_limit
+                allow_future_dates = settings.allow_future_dates
+                future_days_limit = settings.future_days_limit
+
+                # Get allowed days from session or use default
+                if request and hasattr(request, 'session'):
+                    allowed_days_str = request.session.get('allowed_days_for_students', '0,1,2,3,4,5,6')
+                    allowed_days = [int(day) for day in allowed_days_str.split(',') if day.strip()]
+                else:
+                    allowed_days = [0, 1, 2, 3, 4, 5, 6]  # All days allowed by default
+
+            # Skip further validation if restrictions are inactive
+            if not is_active:
+                return cleaned_data
+
+            # Check if the day of week is allowed
+            day_of_week = date.weekday()  # 0=Monday, 6=Sunday
+            if day_of_week not in allowed_days:
+                day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                self.add_error("date", f"Logs cannot be submitted on {day_names[day_of_week]}. Please select an allowed day.")
+
+            # Check if date is in the past beyond the limit
+            earliest_allowed_date = today - timedelta(days=past_days_limit)
+            if date < earliest_allowed_date:
+                self.add_error("date", f"Date cannot be more than {past_days_limit} days in the past.")
+
+            # Check if date is in the future when not allowed
+            if date > today and not allow_future_dates:
+                self.add_error("date", "Future dates are not allowed.")
+
+            # Check if date is too far in the future
+            if date > today and allow_future_dates:
+                latest_allowed_date = today + timedelta(days=future_days_limit)
+                if date > latest_allowed_date:
+                    self.add_error("date", f"Date cannot be more than {future_days_limit} days in the future.")
 
         return cleaned_data
     class Meta:

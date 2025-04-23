@@ -167,6 +167,90 @@ def bulk_add_users(request):
 # Create your views here.
 
 @login_required
+def date_restrictions(request):
+    """View for managing date restrictions for students and doctors"""
+    # Check if user is admin
+    if request.user.role != 'admin':
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('admin_section:admin_dash')
+
+    # Get or create settings
+    settings, created = DateRestrictionSettings.objects.get_or_create(pk=1)
+
+    if request.method == 'POST':
+        # Process form data
+        try:
+            # Student settings (using the original fields)
+            settings.past_days_limit = int(request.POST.get('student_past_days_limit', 7))
+            settings.allow_future_dates = 'student_allow_future_dates' in request.POST
+            settings.future_days_limit = int(request.POST.get('student_future_days_limit', 0))
+
+            # Store doctor settings and other fields in session for now
+            # In a real implementation, these would be stored in the database
+            request.session['doctor_past_days_limit'] = int(request.POST.get('doctor_past_days_limit', 30))
+            request.session['doctor_allow_future_dates'] = 'doctor_allow_future_dates' in request.POST
+            request.session['doctor_future_days_limit'] = int(request.POST.get('doctor_future_days_limit', 0))
+
+            # Process allowed days for students
+            student_days = []
+            for day_value, _ in settings.DAYS_OF_WEEK:
+                if f'student_days_{day_value}' in request.POST:
+                    student_days.append(str(day_value))
+
+            # If no days selected, default to all days
+            if not student_days:
+                student_days = ['0', '1', '2', '3', '4', '5', '6']
+
+            request.session['allowed_days_for_students'] = ','.join(student_days)
+
+            # Process allowed days for doctors
+            doctor_days = []
+            for day_value, _ in settings.DAYS_OF_WEEK:
+                if f'doctor_days_{day_value}' in request.POST:
+                    doctor_days.append(str(day_value))
+
+            # If no days selected, default to all days
+            if not doctor_days:
+                doctor_days = ['0', '1', '2', '3', '4', '5', '6']
+
+            request.session['allowed_days_for_doctors'] = ','.join(doctor_days)
+            request.session['date_restrictions_active'] = 'is_active' in request.POST
+
+            # Set updated by
+            settings.updated_by = request.user
+
+            # Save settings
+            settings.save()
+
+            # Save session
+            request.session.modified = True
+
+            messages.success(request, "Date restrictions updated successfully.")
+        except Exception as e:
+            messages.error(request, f"Error updating date restrictions: {str(e)}")
+
+    # Add virtual properties to settings object for template rendering
+    settings._doctor_past_days_limit = request.session.get('doctor_past_days_limit', 30)
+    settings._doctor_allow_future_dates = request.session.get('doctor_allow_future_dates', False)
+    settings._doctor_future_days_limit = request.session.get('doctor_future_days_limit', 0)
+    settings._allowed_days_for_students = request.session.get('allowed_days_for_students', '0,1,2,3,4,5,6')
+    settings._allowed_days_for_doctors = request.session.get('allowed_days_for_doctors', '0,1,2,3,4,5,6')
+    settings._is_active = request.session.get('date_restrictions_active', True)
+
+    # Get unread notifications count for the admin
+    unread_notifications_count = AdminNotification.objects.filter(recipient=request.user, is_read=False).count()
+
+    # Session variables are now handled by the context processor
+
+    context = {
+        'settings': settings,
+        'unread_notifications_count': unread_notifications_count,
+        'admin_unread_notifications_count': unread_notifications_count,
+    }
+
+    return render(request, 'admin_section/date_restrictions_simple.html', context)
+
+@login_required
 def admin_dash(request):
     # Check if user wants to use Streamlit dashboard
     use_streamlit = request.GET.get('streamlit', 'false').lower() == 'true'

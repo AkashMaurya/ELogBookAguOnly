@@ -90,6 +90,103 @@ class CoreDiaProSession(models.Model):
         verbose_name_plural = "Core Diagnosis Procedure Sessions"
 
 
+# Date Restriction Settings Model
+class DateRestrictionSettings(models.Model):
+    # Original fields (for backward compatibility)
+    past_days_limit = models.PositiveIntegerField(
+        default=7,
+        help_text="Maximum number of days in the past a student can select"
+    )
+    allow_future_dates = models.BooleanField(
+        default=False,
+        help_text="Whether students can select future dates"
+    )
+    future_days_limit = models.PositiveIntegerField(
+        default=0,
+        help_text="Maximum number of days in the future a student can select (if future dates are allowed)"
+    )
+
+    # Last updated timestamp
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # Updated by
+    updated_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='date_restriction_updates'
+    )
+
+    # New fields for extended functionality
+    # These will be added via migration
+
+    # Specific days of week settings (for reference)
+    DAYS_OF_WEEK = [
+        (0, 'Monday'),
+        (1, 'Tuesday'),
+        (2, 'Wednesday'),
+        (3, 'Thursday'),
+        (4, 'Friday'),
+        (5, 'Saturday'),
+        (6, 'Sunday'),
+    ]
+
+    class Meta:
+        verbose_name = "Date Restriction Setting"
+        verbose_name_plural = "Date Restriction Settings"
+
+    def __str__(self):
+        return f"Date Restrictions (Past: {self.past_days_limit} days, Future: {'Allowed' if self.allow_future_dates else 'Not Allowed'})"
+
+    # Properties for student settings
+    @property
+    def student_past_days_limit(self):
+        return self.past_days_limit
+
+    @property
+    def student_allow_future_dates(self):
+        return self.allow_future_dates
+
+    @property
+    def student_future_days_limit(self):
+        return self.future_days_limit
+
+    # Properties for doctor settings
+    @property
+    def doctor_past_days_limit(self):
+        return getattr(self, '_doctor_past_days_limit', 30)
+
+    @property
+    def doctor_allow_future_dates(self):
+        return getattr(self, '_doctor_allow_future_dates', False)
+
+    @property
+    def doctor_future_days_limit(self):
+        return getattr(self, '_doctor_future_days_limit', 0)
+
+    # Properties for allowed days
+    @property
+    def allowed_days_for_students(self):
+        return getattr(self, '_allowed_days_for_students', "0,1,2,3,4,5,6")
+
+    @property
+    def allowed_days_for_doctors(self):
+        return getattr(self, '_allowed_days_for_doctors', "0,1,2,3,4,5,6")
+
+    @property
+    def is_active(self):
+        return getattr(self, '_is_active', True)
+
+    # Helper methods for getting allowed days as lists
+    def get_allowed_days_for_students(self):
+        allowed_days_str = getattr(self, '_allowed_days_for_students', '0,1,2,3,4,5,6')
+        return [int(day) for day in allowed_days_str.split(',') if day.strip()]
+
+    def get_allowed_days_for_doctors(self):
+        allowed_days_str = getattr(self, '_allowed_days_for_doctors', '0,1,2,3,4,5,6')
+        return [int(day) for day in allowed_days_str.split(',') if day.strip()]
+
 # Admin Notification Model
 class AdminNotification(models.Model):
     recipient = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='admin_notifications', limit_choices_to={'role': 'admin'})

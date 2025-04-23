@@ -10,7 +10,7 @@ from datetime import datetime
 from xhtml2pdf import pisa
 from .forms import StudentLogFormModelForm, SupportTicketForm
 from .models import StudentLogFormModel, SupportTicket, StudentNotification
-from admin_section.models import ActivityType, CoreDiaProSession, LogYear, Department, AdminNotification
+from admin_section.models import ActivityType, CoreDiaProSession, LogYear, Department, AdminNotification, DateRestrictionSettings
 from accounts.models import Doctor, Student, CustomUser
 from django.contrib import messages
 from doctor_section.models import Notification
@@ -55,9 +55,6 @@ def student_dash(request):
     return render(request, "student_dash.html", data)
 
 
-@login_required
-def student_blogs(request):
-    return render(request, "student_blogs.html")
 
 
 @login_required
@@ -503,6 +500,52 @@ def get_tutors(request):
         {"id": tutor.id, "name": f"{tutor.user.get_full_name()}"} for tutor in tutors
     ]
     return JsonResponse(tutor_data, safe=False)
+
+
+@login_required
+def get_date_restrictions(request):
+    """API endpoint to get date restriction settings for students"""
+    try:
+        # Get date restriction settings or create default if none exist
+        settings = DateRestrictionSettings.objects.first()
+        if not settings:
+            settings = DateRestrictionSettings.objects.create(
+                past_days_limit=7,
+                allow_future_dates=False,
+                future_days_limit=0
+            )
+
+        # Get current day of week (0=Monday, 6=Sunday)
+        current_day = timezone.now().weekday()
+
+        # Get allowed days from session or use default
+        allowed_days_str = request.session.get('allowed_days_for_students', '0,1,2,3,4,5,6')
+        allowed_days = [int(day) for day in allowed_days_str.split(',') if day.strip()]
+
+        # Get active status from session or use default
+        is_active = request.session.get('date_restrictions_active', True)
+
+        # Return settings as JSON
+        data = {
+            "pastDaysLimit": settings.past_days_limit,
+            "allowFutureDates": settings.allow_future_dates,
+            "futureDaysLimit": settings.future_days_limit,
+            "isCurrentDayAllowed": current_day in allowed_days,
+            "allowedDays": allowed_days,
+            "isActive": is_active
+        }
+        return JsonResponse(data)
+    except Exception as e:
+        # Return default settings in case of error
+        return JsonResponse({
+            "pastDaysLimit": 7,
+            "allowFutureDates": False,
+            "futureDaysLimit": 0,
+            "isCurrentDayAllowed": True,
+            "allowedDays": [0, 1, 2, 3, 4, 5, 6],
+            "isActive": True,
+            "error": str(e)
+        })
 
 
 @login_required

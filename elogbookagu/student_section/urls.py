@@ -6,7 +6,7 @@ app_name = "student_section"
 
 urlpatterns = [
     path("", views.student_dash, name="student_dash"),
-    path("student_blogs/", views.student_blogs, name="student_blogs"),
+
     path("student_support/", views.student_support, name="student_support"),
     path("student_elog/", views.student_elog, name="student_elog"),
     path("student_profile/", views.student_profile, name="student_profile"),
@@ -32,6 +32,7 @@ urlpatterns = [
     path("get-activity-types/", views.get_activity_types, name="get_activity_types"),
     path("get-core-diagnosis/", views.get_core_diagnosis, name="get_core_diagnosis"),
     path("get-tutors/", views.get_tutors, name="get_tutors"),
+    path("get-date-restrictions/", views.get_date_restrictions, name="get_date_restrictions"),
     path("generate-records-pdf/", views.generate_records_pdf, name="generate_records_pdf"),
     path("delete-support-ticket/<int:ticket_id>/", views.delete_support_ticket, name="delete_support_ticket"),
     path("notifications/", views.notifications, name="notifications"),

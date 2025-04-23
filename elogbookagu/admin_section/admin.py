@@ -11,6 +11,7 @@ from .models import (
     TrainingSite,
     ActivityType,
     CoreDiaProSession,
+    DateRestrictionSettings,
     AdminNotification
 )
 
@@ -118,6 +119,27 @@ class CoreDiaProSessionAdmin(ImportExportModelAdmin):
     list_filter = ("activity_type", "department")  # Filters shown in the sidebar
     search_fields = ("name", "activity_type__name", "department__name")  # Fields searchable in the search bar
     ordering = ("name",)  # Default ordering of records
+
+
+# Admin configuration for DateRestrictionSettings
+@admin.register(DateRestrictionSettings)
+class DateRestrictionSettingsAdmin(admin.ModelAdmin):
+    list_display = ("past_days_limit", "allow_future_dates", "future_days_limit", "updated_at", "updated_by")
+    readonly_fields = ("updated_at",)
+
+    fieldsets = (
+        ('Student Restrictions', {
+            'fields': ('past_days_limit', 'allow_future_dates', 'future_days_limit')
+        }),
+        ('Audit', {
+            'fields': ('updated_at', 'updated_by'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def save_model(self, request, obj, form, change):
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
 
 
 # Admin configuration for AdminNotification
