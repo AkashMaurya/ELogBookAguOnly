@@ -8,72 +8,117 @@
 {% endblock %}
 
 {% block content %}
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-    <div class="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-lg shadow-xl animate-fade-in-up">
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="w-full max-w-md p-8 space-y-6 bg-white dark:bg-gray-800 rounded-xl shadow-2xl animate-fade-in-up border border-gray-200 dark:border-gray-700">
       <div class="text-center">
-        <h1 class="text-3xl font-bold">Welcome Back</h1>
+        <div class="flex justify-center mb-4">
+          <div class="rounded-full bg-blue-100 dark:bg-blue-900 p-3 inline-flex">
+            <i class="fas fa-book-medical text-blue-600 dark:text-blue-400 text-3xl"></i>
+          </div>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Welcome Back</h1>
         <p class="mt-2 text-gray-600 dark:text-gray-300">Sign in to your ElogBook account</p>
         {% if messages %}
-          <ul>
+          <div class="mt-4">
             {% for message in messages %}
-              <li>{{ message }}</li>
+              <div class="p-3 mb-2 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400{% else %}bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400{% endif %}">
+                {{ message }}
+              </div>
             {% endfor %}
-          </ul>
+          </div>
         {% endif %}
       </div>
 
-      <form method="post" class="mt-8 space-y-6">
+      <form method="post" class="mt-6 space-y-6">
         {% csrf_token %}
-        <div class="space-y-4">
+        <div class="space-y-5">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-            <input type="email" name="email" class="w-full px-4 py-2 mt-1 border rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="user@aguniversity.edu" required autocomplete="off" />
+            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Address</label>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fas fa-envelope text-gray-400"></i>
+              </div>
+              <input type="email" id="email" name="email" class="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="user@aguniversity.edu" required autocomplete="off" />
+            </div>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-            <input type="password" name="password" class="w-full px-4 py-2 mt-1 border rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="" required autocomplete="off" />
+            <div class="flex items-center justify-between mb-1">
+              <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+              <a href="{% url 'password_reset' %}" class="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">Forgot Password?</a>
+            </div>
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fas fa-lock text-gray-400"></i>
+              </div>
+              <input type="password" id="password" name="password" class="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="••••••••" required autocomplete="off" />
+            </div>
           </div>
         </div>
 
-        <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition">Sign In</button>
-
-        <div class="text-center">
-          <a href="{% url 'password_reset' %}" class="text-blue-500 hover:text-blue-600 dark:text-blue-400">Forgot Password?</a>
+        <div class="mt-6">
+          <button type="submit" class="w-full flex justify-center items-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            <i class="fas fa-sign-in-alt mr-2"></i> Sign In
+          </button>
         </div>
 
-        <div class="relative">
+        <div class="relative my-6">
           <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-gray-300"></div>
+            <div class="w-full border-t border-gray-200 dark:border-gray-700"></div>
           </div>
-          {% comment %} <div class="relative flex justify-center text-sm">
-            <span class="px-2 bg-white dark:bg-gray-800 text-gray-500">Or continue with</span>
-          </div> {% endcomment %}
+          <div class="relative flex justify-center text-sm">
+            <span class="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">Or</span>
+          </div>
         </div>
-
-        <div class="flex space-x-4 justify-center">
-          {% comment %} <button type="button" class="p-2 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-700 transition"><img src="https://img.icons8.com/color/48/000000/google-logo.png" class="w-6 h-6" alt="Google" /></button>
-          <button type="button" class="p-2 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-700 transition"><img src="https://img.icons8.com/color/48/000000/microsoft.png" class="w-6 h-6" alt="Microsoft" /></button> {% endcomment %}
-        </div>
-
-        {% comment %} <p class="text-center text-gray-600 dark:text-gray-300">
-          Don't have an account?
-          <a href="#" class="text-blue-500 hover:text-blue-600 dark:text-blue-400">Sign up</a>
-        </p> {% endcomment %}
       </form>
 
       <!-- SSO Login for Students -->
-      <div class="text-center mt-8">
-        <p class="text-gray-600 dark:text-gray-300 mb-2">Login with Microsoft office 365</p>
-        <button type="button" class="p-2 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-700 transition"><img src="https://img.icons8.com/color/48/000000/microsoft.png" class="w-6 h-6 cursor-pointer" alt="Microsoft" /></button>
+      <div class="text-center">
+        <a href="#" class="inline-flex items-center justify-center w-full px-4 py-2.5 bg-white dark:bg-gray-700 text-gray-800 dark:text-white font-medium border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200">
+          <img src="https://img.icons8.com/color/48/000000/microsoft.png" class="w-5 h-5 mr-2" alt="Microsoft" />
+          <span>Continue with Microsoft Office 365</span>
+        </a>
+
+        <p class="mt-6 text-xs text-gray-500 dark:text-gray-400">
+          By signing in, you agree to our
+          <a href="#" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">Terms of Service</a> and
+          <a href="#" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">Privacy Policy</a>
+        </p>
       </div>
     </div>
   </div>
 
+  <!-- Footer -->
+  <footer class="bg-white dark:bg-gray-800 shadow-inner py-6 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div class="flex items-center mb-4 md:mb-0">
+          <i class="fas fa-book-medical text-blue-600 dark:text-blue-400 text-xl mr-2"></i>
+          <span class="text-gray-700 dark:text-gray-300 font-medium">ElogBook</span>
+        </div>
+        <div class="text-sm text-gray-500 dark:text-gray-400">
+          &copy; {{ current_year|default:"2023" }} AGU University. All rights reserved.
+        </div>
+      </div>
+    </div>
+  </footer>
+
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+      // Clear form fields on page load
       document.querySelector('input[name="email"]').value = ''
       document.querySelector('input[name="password"]').value = ''
+
+      // Add focus effect to input fields
+      const inputs = document.querySelectorAll('input[type="email"], input[type="password"]')
+      inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+          this.parentElement.classList.add('ring-2', 'ring-blue-100', 'dark:ring-blue-900')
+        })
+        input.addEventListener('blur', function() {
+          this.parentElement.classList.remove('ring-2', 'ring-blue-100', 'dark:ring-blue-900')
+        })
+      })
     })
   </script>
 {% endblock %}

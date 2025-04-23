@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 import time
+import datetime
 from django.core.exceptions import ValidationError
 from accounts.models import CustomUser, Student, Staff, Doctor
 import os  # Moved os import here
@@ -168,7 +169,8 @@ def login(request):
         return redirect(role_redirects.get(user.role, "dashboard"))
 
     # Agar GET request hai, to login page render karen
-    return render(request, "login.html")
+    current_year = datetime.datetime.now().year
+    return render(request, "login.html", {"current_year": current_year})
 
 
 def logout(request):

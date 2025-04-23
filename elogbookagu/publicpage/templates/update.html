@@ -4,19 +4,21 @@
 {% block navbar %}
   {% include './components/public_navbar.html' %}
 {% endblock %}
-{% block content %}
-<!-- Hero Section -->
-<section class="bg-gradient-to-r from-blue-600 to-purple-700 dark:from-gray-800 dark:to-gray-900 py-20">
-    <div class="text-center my-16">
+{% block content_container %}
+<!-- Hero Section - Full Width -->
+<section class="bg-gradient-to-r from-blue-600 to-purple-700 dark:from-gray-800 dark:to-gray-900 py-20 w-full">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center my-16">
         <h1 class="text-5xl font-bold text-white animate-fade-in">Latest Updates</h1>
         <p class="mt-4 text-xl text-white animate-fade-in delay-100">Stay informed with the latest news and announcements</p>
     </div>
 </section>
 
+{% block content %}
+
 <!-- Updates Section -->
-<section class="py-16">
-    <div class="text-center my-10">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-10">
+<section class="py-16 w-full">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <!-- Update Card -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition duration-300 animate-fade-in-up">
                 <img src="https://via.placeholder.com/400x250" alt="Update Image" class="w-full h-48 object-cover rounded-t-lg">
@@ -51,4 +53,5 @@
         </div>
     </div>
 </section>
+{% endblock %}
 {% endblock %}
