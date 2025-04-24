@@ -22,7 +22,7 @@
         transform: translateY(0);
       }
     }
-    
+
     @keyframes fadeInLeft {
       from {
         opacity: 0;
@@ -33,7 +33,7 @@
         transform: translateX(0);
       }
     }
-    
+
     @keyframes fadeInRight {
       from {
         opacity: 0;
@@ -44,7 +44,7 @@
         transform: translateX(0);
       }
     }
-    
+
     @keyframes fadeInUp {
       from {
         opacity: 0;
@@ -55,7 +55,7 @@
         transform: translateY(0);
       }
     }
-    
+
     @keyframes float {
       0% {
         transform: translateY(0px);
@@ -67,7 +67,7 @@
         transform: translateY(0px);
       }
     }
-    
+
     @keyframes pulse {
       0% {
         transform: scale(1);
@@ -79,7 +79,7 @@
         transform: scale(1);
       }
     }
-    
+
     /* Animation classes */
     .animate-fade-in {
       animation: fadeIn 0.8s ease-out forwards;
@@ -99,7 +99,7 @@
     .animate-pulse {
       animation: pulse 3s ease-in-out infinite;
     }
-    
+
     /* Delay classes */
     .delay-100 {
       animation-delay: 0.1s;
@@ -116,7 +116,7 @@
     .delay-500 {
       animation-delay: 0.5s;
     }
-    
+
     /* Reduce motion for accessibility */
     @media (prefers-reduced-motion: reduce) {
       .animate-fade-in,
@@ -130,17 +130,17 @@
         transform: none !important;
       }
     }
-    
+
     /* Optimize image loading */
     .lazy-image {
       transition: opacity 0.3s ease;
       opacity: 0;
     }
-    
+
     .lazy-image.loaded {
       opacity: 1;
     }
-    
+
     /* Custom styles */
     .hero-shape {
       position: absolute;
@@ -148,20 +148,20 @@
       background: rgba(255, 255, 255, 0.1);
       z-index: 0;
     }
-    
+
     .service-card:hover .service-icon {
       transform: translateY(-5px);
     }
-    
+
     .service-icon {
       transition: transform 0.3s ease;
     }
-    
+
     .stat-card {
       overflow: hidden;
       position: relative;
     }
-    
+
     .stat-card::before {
       content: '';
       position: absolute;
@@ -173,7 +173,7 @@
       opacity: 0;
       transition: opacity 0.5s ease;
     }
-    
+
     .stat-card:hover::before {
       opacity: 1;
     }
@@ -206,8 +206,8 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <div class="text-center md:text-left">
-          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-white animate-fade-in leading-tight">Welcome to <span class="text-yellow-300">ElogBook</span></h1>
-          <p class="mt-6 text-xl text-white opacity-90 animate-fade-in delay-100 leading-relaxed">Revolutionizing Medical Education at Arabian Gulf University through innovative technology and collaborative learning.</p>
+          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-white animate-fade-in leading-tight">Welcome to <span class="text-yellow-300">MedLogBook</span></h1>
+          <p class="mt-6 text-xl text-white opacity-90 animate-fade-in delay-100 leading-relaxed">Revolutionizing Medical Education at Medical University through innovative technology and collaborative learning.</p>
           <div class="mt-8 flex flex-wrap gap-4 justify-center md:justify-start animate-fade-in delay-200">
             <a href="{% url 'login' %}" class="px-8 py-4 bg-white text-blue-600 dark:bg-gray-900 dark:text-white font-medium rounded-lg shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-105"><i class="fas fa-sign-in-alt mr-2"></i> Get Started</a>
             <a href="#features" class="px-8 py-4 bg-transparent text-white border-2 border-white font-medium rounded-lg hover:bg-opacity-10 hover:shadow-xl transition duration-300 transform hover:scale-105"><i class="fas fa-info-circle mr-2"></i> Learn More</a>
@@ -325,7 +325,7 @@
             Our Services
             <span class="absolute -bottom-2 left-0 w-full h-1 bg-blue-500 rounded-full"></span>
           </h2>
-          <p class="mt-6 text-gray-600 dark:text-gray-300 max-w-3xl mx-auto animate-fade-in delay-100">Discover how ElogBook can transform your medical education experience with our comprehensive suite of tools and services.</p>
+          <p class="mt-6 text-gray-600 dark:text-gray-300 max-w-3xl mx-auto animate-fade-in delay-100">Discover how MedLogBook can transform your medical education experience with our comprehensive suite of tools and services.</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
@@ -570,7 +570,7 @@
                 </svg>
               </div>
             </div>
-            <p class="text-gray-700 dark:text-gray-300 italic mb-6">"ElogBook has transformed the way we manage medical records. It's a game-changer for our institution! The interface is intuitive and the reporting features save me hours each week."</p>
+            <p class="text-gray-700 dark:text-gray-300 italic mb-6">"MedLogBook has transformed the way we manage medical records. It's a game-changer for our institution! The interface is intuitive and the reporting features save me hours each week."</p>
             <div class="text-sm text-gray-500 dark:text-gray-400">
               <span class="font-medium">Arabian Gulf University</span> · <span>Using since 2021</span>
             </div>
@@ -642,7 +642,7 @@
                 </svg>
               </div>
             </div>
-            <p class="text-gray-700 dark:text-gray-300 italic mb-6">"As a student, ElogBook has made tracking my clinical experiences so much easier. The mobile interface lets me update logs right after patient interactions, and feedback from supervisors is quick and helpful."</p>
+            <p class="text-gray-700 dark:text-gray-300 italic mb-6">"As a student, MedLogBook has made tracking my clinical experiences so much easier. The mobile interface lets me update logs right after patient interactions, and feedback from supervisors is quick and helpful."</p>
             <div class="text-sm text-gray-500 dark:text-gray-400">
               <span class="font-medium">Medical Program</span> · <span>4th Year Student</span>
             </div>
@@ -673,7 +673,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           <div class="text-center md:text-left">
             <h2 class="text-3xl md:text-4xl font-bold text-white mb-6 animate-fade-in">Ready to Transform Your Medical Education?</h2>
-            <p class="text-white text-opacity-90 mb-8 text-lg max-w-xl animate-fade-in delay-100">Join thousands of medical professionals using ElogBook to streamline their education and practice. Get started today and experience the difference.</p>
+            <p class="text-white text-opacity-90 mb-8 text-lg max-w-xl animate-fade-in delay-100">Join thousands of medical professionals using MedLogBook to streamline their education and practice. Get started today and experience the difference.</p>
             <div class="flex flex-col sm:flex-row md:justify-start justify-center gap-4 animate-fade-in delay-200">
               <a href="{% url 'login' %}" class="px-8 py-4 bg-white text-blue-600 font-medium rounded-lg shadow-lg hover:shadow-xl transition duration-300 transform hover:scale-105"><i class="fas fa-sign-in-alt mr-2"></i> Sign In</a>
               <a href="#features" class="px-8 py-4 bg-transparent text-white border-2 border-white font-medium rounded-lg hover:bg-opacity-10 hover:shadow-xl transition duration-300 transform hover:scale-105"><i class="fas fa-info-circle mr-2"></i> Learn More</a>
@@ -743,7 +743,7 @@
           },
           { rootMargin: '50px 0px', threshold: 0.1 }
         )
-    
+
         // Observe all images with lazy-image class
         document.querySelectorAll('.lazy-image').forEach((img) => {
           imageObserver.observe(img)
