@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block extra_head %}
-  <!-- Additional styles for resources page -->
+  <!-- Enhanced styles for resources page -->
   <style>
     @keyframes float {
       0% { transform: translateY(0px); }
@@ -13,37 +13,77 @@
       100% { transform: translateY(0px); }
     }
 
+    @keyframes shimmer {
+      0% { background-position: -1000px 0; }
+      100% { background-position: 1000px 0; }
+    }
+
     .animate-float {
       animation: float 6s ease-in-out infinite;
     }
 
+    .resource-card {
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .resource-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
     .resource-card:hover .resource-icon {
-      transform: scale(1.1);
+      transform: scale(1.15) rotate(5deg);
     }
 
     .resource-icon {
-      transition: transform 0.3s ease;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .category-card {
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .category-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     }
 
     .category-card:hover .category-icon {
-      transform: scale(1.1) rotate(5deg);
+      transform: scale(1.15) rotate(10deg);
     }
 
     .category-icon {
-      transition: all 0.3s ease;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .search-input {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .search-input:focus {
+      transform: translateY(-2px);
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    }
+
+    .department-tab {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .department-tab.active {
       border-color: #3b82f6;
       color: #3b82f6;
+      background: linear-gradient(to right, rgba(59, 130, 246, 0.1), transparent);
     }
 
     .department-tab:not(.active):hover {
-      background-color: #f3f4f6;
+      background: linear-gradient(to right, rgba(59, 130, 246, 0.05), transparent);
+      transform: translateY(-1px);
+    }
+
+    .loading-shimmer {
+      background: linear-gradient(to right, #f6f7f8 8%, #edeef1 18%, #f6f7f8 33%);
+      background-size: 2000px 100%;
+      animation: shimmer 2s linear infinite;
     }
   </style>
 
