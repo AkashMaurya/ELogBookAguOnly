@@ -169,6 +169,12 @@ class CustomUserForm(UserCreationForm):
             'placeholder': 'Confirm password'
         })
 
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if CustomUser.objects.filter(username=username).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('A user with that username already exists.')
+        return username
+
 
 class CSVUploadForm(forms.Form):
     csv_file = forms.FileField(
@@ -217,6 +223,12 @@ class StudentForm(forms.ModelForm):
                 'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
             })
         }
+
+    def clean_student_id(self):
+        student_id = self.cleaned_data.get('student_id')
+        if Student.objects.filter(student_id=student_id).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('A student with this ID already exists.')
+        return student_id
 
 
 class StudentUserForm(UserCreationForm):
