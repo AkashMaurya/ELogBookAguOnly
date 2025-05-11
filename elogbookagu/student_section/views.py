@@ -723,3 +723,40 @@ def notifications(request):
     }
 
     return render(request, "student_notifications.html", context)
+
+
+@login_required
+def get_log_details(request, log_id):
+    """API endpoint to get details for a specific log entry"""
+    try:
+        # Get the log entry and verify it belongs to the current student
+        log = get_object_or_404(StudentLogFormModel, id=log_id, student=request.user.student)
+
+        # Format the data for the response
+        data = {
+            "basic_info": {
+                "date": log.date.strftime("%Y-%m-%d"),
+                "department": log.department.name,
+                "activity_type": log.activity_type.name,
+                "core_diagnosis": log.core_diagnosis.name,
+                "tutor": log.tutor.user.get_full_name(),
+                "training_site": log.training_site.name if hasattr(log, 'training_site') and log.training_site else "N/A",
+                "status": "Reviewed" if log.is_reviewed else "Pending",
+                "is_approved": not (log.reviewer_comments and log.reviewer_comments.startswith("REJECTED")) if log.is_reviewed else None,
+            },
+            "patient_info": {
+                "patient_id": log.patient_id if log.patient_id else "N/A",
+                "age": log.patient_age if hasattr(log, 'patient_age') and log.patient_age else "N/A",
+                "gender": log.patient_gender if hasattr(log, 'patient_gender') and log.patient_gender else "N/A",
+            },
+            "description": log.description if log.description else "",
+            "reviewer_comments": log.reviewer_comments if log.is_reviewed and log.reviewer_comments else "",
+            "created_at": log.created_at.strftime("%Y-%m-%d %H:%M:%S") if log.created_at else "",
+            "updated_at": log.updated_at.strftime("%Y-%m-%d %H:%M:%S") if log.updated_at else "",
+            "review_date": log.review_date.strftime("%Y-%m-%d %H:%M:%S") if log.review_date else None,
+        }
+        return JsonResponse(data)
+    except StudentLogFormModel.DoesNotExist:
+        return JsonResponse({"error": "Log entry not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)

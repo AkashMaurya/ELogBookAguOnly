@@ -36,4 +36,5 @@ urlpatterns = [
     path("generate-records-pdf/", views.generate_records_pdf, name="generate_records_pdf"),
     path("delete-support-ticket/<int:ticket_id>/", views.delete_support_ticket, name="delete_support_ticket"),
     path("notifications/", views.notifications, name="notifications"),
+    path("get-log-details/<int:log_id>/", views.get_log_details, name="get_log_details"),
 ]

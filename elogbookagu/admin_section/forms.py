@@ -503,3 +503,28 @@ class BulkDoctorUploadForm(forms.Form):
         }),
         help_text='Select the department to assign all doctors'
     )
+
+
+class TrainingSiteForm(forms.ModelForm):
+    class Meta:
+        model = TrainingSite
+        fields = ['name', 'log_year']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'placeholder': 'Enter training site name'
+            }),
+            'log_year': forms.Select(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+            })
+        }
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name')
+        # Check for duplicate training site names
+        existing_query = TrainingSite.objects.filter(name=name)
+        if self.instance.pk:
+            existing_query = existing_query.exclude(pk=self.instance.pk)
+        if existing_query.exists():
+            raise forms.ValidationError(f"A training site with the name '{name}' already exists.")
+        return name

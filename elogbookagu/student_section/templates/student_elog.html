@@ -5,6 +5,43 @@
   Student ELog
 {% endblock %}
 
+{% block extra_head %}
+<style>
+  /* Animations for toast notifications and loading overlays */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-20px); }
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+
+  .animate-fadeOut {
+    animation: fadeOut 0.3s ease-in forwards;
+  }
+
+  /* Optimize form inputs for faster rendering */
+  select, input, textarea {
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-font-smoothing: subpixel-antialiased;
+  }
+
+  /* Smooth transitions */
+  .transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+</style>
+{% endblock %}
+
 {% block navbar %}
   {% include './components/student_auth_navbar.html' %}
 {% endblock %}
@@ -99,8 +136,8 @@
             <div class="relativev cursor-pointer">
               {{ form.date }}
               <div class="absolute right-2 top-2 text-gray-400 ">
-                
-               
+
+
               </div>
             </div>
             <p class="text-gray-500 text-xs mt-1" id="date-restrictions-info">Loading date restrictions...</p>
@@ -109,6 +146,16 @@
           <div>
             <label for="{{ form.patient_id.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Patient ID</label>
             {{ form.patient_id }}
+          </div>
+
+          <div>
+            <label for="{{ form.patient_age.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Patient Age</label>
+            {{ form.patient_age }}
+          </div>
+
+          <div>
+            <label for="{{ form.patient_gender.id_for_label }}" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Patient Gender</label>
+            {{ form.patient_gender }}
           </div>
 
           <div>
@@ -143,6 +190,15 @@
       const tutorSelect = document.getElementById('id_tutor')
       const dateInput = document.getElementById('id_date')
       const dateRestrictionsInfo = document.getElementById('date-restrictions-info')
+
+      // Set today's date as default if not already set
+      if (!dateInput.value) {
+        const today = new Date()
+        const year = today.getFullYear()
+        const month = String(today.getMonth() + 1).padStart(2, '0')
+        const day = String(today.getDate()).padStart(2, '0')
+        dateInput.value = `${year}-${month}-${day}`
+      }
 
       // Reset dependent fields with a placeholder message
       const resetDependentFields = (exceptField = null) => {
@@ -304,6 +360,11 @@
         // Set min and max attributes
         dateInput.min = formatDate(earliestDate)
         dateInput.max = formatDate(latestDate)
+
+        // Set today's date as default value if empty
+        if (!dateInput.value) {
+          dateInput.value = formatDate(today)
+        }
       }
 
       // Function to update the date restrictions info text
@@ -381,24 +442,43 @@
         // Convert from Sunday=0 to Monday=0 format
         const adjustedDay = selectedDay === 0 ? 6 : selectedDay - 1
 
+        // Format date for setting value if needed
+        const formatDate = (date) => {
+          const year = date.getFullYear()
+          const month = String(date.getMonth() + 1).padStart(2, '0')
+          const day = String(date.getDate()).padStart(2, '0')
+          return `${year}-${month}-${day}`
+        }
+
         // Validate the selected date
         if (selectedDate < earliestDate) {
           alert(`Date cannot be more than ${dateSettings.pastDaysLimit} days in the past.`)
-          this.value = ''
+          this.value = formatDate(today) // Set to today's date instead of clearing
         } else if (selectedDate > today && !dateSettings.allowFutureDates) {
           alert('Future dates are not allowed.')
-          this.value = ''
+          this.value = formatDate(today) // Set to today's date instead of clearing
         } else if (selectedDate > latestDate) {
           alert(`Date cannot be more than ${dateSettings.futureDaysLimit} days in the future.`)
-          this.value = ''
+          this.value = formatDate(today) // Set to today's date instead of clearing
         } else if (!dateSettings.allowedDays.includes(adjustedDay)) {
           const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
           alert(`Logs cannot be submitted on ${dayNames[adjustedDay]}. Please select an allowed day.`)
-          this.value = ''
+
+          // Find the closest allowed day
+          let closestDate = new Date(today)
+          for (let i = 0; i < 7; i++) {
+            const checkDay = (today.getDay() + i) % 7
+            const adjustedCheckDay = checkDay === 0 ? 6 : checkDay - 1
+            if (dateSettings.allowedDays.includes(adjustedCheckDay)) {
+              closestDate.setDate(today.getDate() + i)
+              break
+            }
+          }
+          this.value = formatDate(closestDate)
         }
       })
 
-      // Form submission handler
+      // Form submission handler with loading indicator
       form.addEventListener('submit', function (e) {
         console.log('Form submission attempted')
 
@@ -426,14 +506,79 @@
 
         if (emptyFields.length > 0) {
           e.preventDefault()
-          e.stopPropagation() // किसी और हैंडलर को चलने से रोकें
+          e.stopPropagation()
           alert(`Please fill in the following fields: ${emptyFields.join(', ')}`)
           console.log('Form submission prevented due to empty fields:', emptyFields)
           return false
         }
 
+        // Show loading indicator
+        const submitBtn = form.querySelector('button[type="submit"]')
+        const originalBtnText = submitBtn.innerHTML
+        submitBtn.disabled = true
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Submitting...'
+
+        // Add a hidden loading overlay to the form
+        const loadingOverlay = document.createElement('div')
+        loadingOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'
+        loadingOverlay.innerHTML = `
+          <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p class="text-gray-700 dark:text-gray-300 font-medium">Submitting your log entry...</p>
+          </div>
+        `
+        document.body.appendChild(loadingOverlay)
+
+        // Set a timeout to remove the loading overlay if the form submission takes too long
+        setTimeout(() => {
+          if (document.body.contains(loadingOverlay)) {
+            document.body.removeChild(loadingOverlay)
+            submitBtn.disabled = false
+            submitBtn.innerHTML = originalBtnText
+          }
+        }, 10000) // 10 seconds timeout
+
         console.log('Form submission allowed - all fields filled')
-        //alert('Form submitted successfully!')
+      })
+
+      // Check for success message in URL parameters and show a toast notification
+      document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search)
+        if (urlParams.has('success')) {
+          // Create and show a success toast
+          const toast = document.createElement('div')
+          toast.className = 'fixed top-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md z-50 animate-fadeIn'
+          toast.innerHTML = `
+            <div class="flex items-center">
+              <div class="py-1"><i class="fas fa-check-circle text-green-500 mr-2"></i></div>
+              <div>
+                <p class="font-bold">Success!</p>
+                <p>Log entry created successfully.</p>
+              </div>
+              <button class="ml-4 text-green-500 hover:text-green-700" onclick="this.parentElement.parentElement.remove()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          `
+          document.body.appendChild(toast)
+
+          // Remove the toast after 5 seconds
+          setTimeout(() => {
+            if (document.body.contains(toast)) {
+              toast.classList.add('animate-fadeOut')
+              setTimeout(() => {
+                if (document.body.contains(toast)) {
+                  document.body.removeChild(toast)
+                }
+              }, 300)
+            }
+          }, 5000)
+
+          // Remove the success parameter from the URL without refreshing the page
+          const url = new URL(window.location.href)
+          url.searchParams.delete('success')
+          window.history.replaceState({}, document.title, url.toString())
+        }
       })
     })
   </script>

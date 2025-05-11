@@ -22,3 +22,4 @@ from .add_department import add_department
 from .add_group import add_group
 from .add_student import add_student
 from .add_doctor import add_doctor
+from .add_training_site import add_training_site, edit_training_site, delete_training_site

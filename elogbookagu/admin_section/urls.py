@@ -21,6 +21,7 @@ from .views_file.add_department import add_department, edit_department, delete_d
 from .views_file.add_group import add_group, edit_group, delete_group, get_year_sections as group_get_year_sections
 from .views_file.add_student import add_student, remove_from_group, download_sample_csv as student_download_sample_csv, search_students, edit_student, delete_student
 from .views_file.add_doctor import add_doctor, remove_from_department, download_sample_csv as doctor_download_sample_csv, edit_doctor, delete_doctor
+from .views_file.add_training_site import add_training_site, edit_training_site, delete_training_site
 
 
 app_name = "admin_section"
@@ -128,6 +129,11 @@ urlpatterns = [
     path("remove-doctor-from-department/<int:doctor_id>/<int:department_id>/", remove_from_department, name="remove_from_department"),
     path("download-doctor-sample-csv/", doctor_download_sample_csv, name="doctor_download_sample_csv"),
 
+    # Training Site Management URLs
+    path("add_training_site/", add_training_site, name="add_training_site"),
+    path("edit-training-site/<int:training_site_id>/", edit_training_site, name="edit_training_site"),
+    path("delete-training-site/<int:training_site_id>/", delete_training_site, name="delete_training_site"),
+
     # Bulk Add Users URLs
     path('bulk-add-users/', views.bulk_add_users, name='bulk_add_users'),
     path('download-user-template/', views.download_user_template, name='download_user_template'),
@@ -135,7 +141,4 @@ urlpatterns = [
     # AJAX endpoints
     path('api/get-user-data/', views.get_user_data, name='get_user_data'),
     path('api/search-students/', search_students, name='search_students'),
-
-    # Streamlit Dashboard
-    path('streamlit-dashboard/', views.streamlit_dashboard, name='streamlit_dashboard'),
 ]

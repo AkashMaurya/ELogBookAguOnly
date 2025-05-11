@@ -34,6 +34,9 @@ class StudentLogFormModel(models.Model):
 
     # Optional fields
     patient_id = models.CharField(max_length=4, blank=True)
+    patient_age = models.CharField(max_length=3, blank=True, null=True)
+    patient_gender = models.CharField(max_length=10, blank=True, null=True,
+                                     choices=[('Male', 'Male'), ('Female', 'Female')])
     description = models.TextField(blank=True)
 
     # Participation type

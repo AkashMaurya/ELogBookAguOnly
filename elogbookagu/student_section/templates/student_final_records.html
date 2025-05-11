@@ -4,6 +4,33 @@
   Student Records
 {% endblock %}
 
+{% block extra_head %}
+<style>
+  /* Optimize table rendering */
+  table {
+    contain: content;
+    will-change: transform;
+  }
+
+  /* Optimize modal animations */
+  .modal {
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    will-change: opacity, transform;
+  }
+
+  /* Optimize loading */
+  .loading-spinner {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+</style>
+{% endblock %}
+
 {% block navbar %}
   {% include './components/student_auth_navbar.html' %}
 {% endblock %}
@@ -556,78 +583,137 @@
       // Center the modal
       centerModal(logDetailsModal);
 
-      // Fetch log details (this would be implemented in a real application)
-      // For now, we'll simulate with a timeout
-      setTimeout(() => {
-        // This would be replaced with actual data from the server
-        logDetailsContent.innerHTML = `
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Basic Information</h4>
-              <div class="space-y-3">
-                <div>
-                  <span class="text-gray-500 dark:text-gray-400 block text-sm">Date</span>
-                  <span class="font-medium text-gray-800 dark:text-white">2023-05-15</span>
+      // Fetch log details from the API
+      fetch(`/student_section/get-log-details/${logId}/`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('Log details:', data); // Debug log
+
+          // Ensure data has the expected structure
+          if (!data || !data.basic_info) {
+            throw new Error('Invalid data format received from server');
+          }
+
+          // Render the log details with actual data
+          const statusClass = data.basic_info.status === 'Pending' ?
+            'border-yellow-400 text-yellow-800 dark:text-yellow-500' :
+            (data.basic_info.is_approved ?
+              'border-green-400 text-green-800 dark:text-green-500' :
+              'border-red-400 text-red-800 dark:text-red-500');
+
+          const statusIcon = data.basic_info.status === 'Pending' ?
+            'fas fa-clock' :
+            (data.basic_info.is_approved ? 'fas fa-check-circle' : 'fas fa-times-circle');
+
+          const statusText = data.basic_info.status === 'Pending' ?
+            'Pending' :
+            (data.basic_info.is_approved ? 'Approved' : 'Rejected');
+
+          // Helper function to safely get values
+          const safeGet = (obj, path, defaultValue = 'N/A') => {
+            try {
+              const parts = path.split('.');
+              let result = obj;
+              for (const part of parts) {
+                result = result[part];
+                if (result === undefined || result === null) return defaultValue;
+              }
+              return result;
+            } catch (e) {
+              return defaultValue;
+            }
+          };
+
+          logDetailsContent.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Basic Information</h4>
+                <div class="space-y-3">
+                  <div>
+                    <span class="text-gray-500 dark:text-gray-400 block text-sm">Date</span>
+                    <span class="font-medium text-gray-800 dark:text-white">${safeGet(data, 'basic_info.date')}</span>
+                  </div>
+                  <div>
+                    <span class="text-gray-500 dark:text-gray-400 block text-sm">Department</span>
+                    <span class="font-medium text-gray-800 dark:text-white">${safeGet(data, 'basic_info.department')}</span>
+                  </div>
+                  <div>
+                    <span class="text-gray-500 dark:text-gray-400 block text-sm">Activity Type</span>
+                    <span class="font-medium text-gray-800 dark:text-white">${safeGet(data, 'basic_info.activity_type')}</span>
+                  </div>
+                  <div>
+                    <span class="text-gray-500 dark:text-gray-400 block text-sm">Core Diagnosis</span>
+                    <span class="font-medium text-gray-800 dark:text-white">${safeGet(data, 'basic_info.core_diagnosis')}</span>
+                  </div>
+                  <div>
+                    <span class="text-gray-500 dark:text-gray-400 block text-sm">Tutor</span>
+                    <span class="font-medium text-gray-800 dark:text-white">${safeGet(data, 'basic_info.tutor')}</span>
+                  </div>
+                  <div>
+                    <span class="text-gray-500 dark:text-gray-400 block text-sm">Training Site</span>
+                    <span class="font-medium text-gray-800 dark:text-white">${safeGet(data, 'basic_info.training_site')}</span>
+                  </div>
+                  <div>
+                    <span class="text-gray-500 dark:text-gray-400 block text-sm">Status</span>
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white border ${statusClass}" style="text-shadow: 0px 0px 1px rgba(0,0,0,0.2);">
+                      <i class="${statusIcon} mr-1"></i> <strong>${statusText}</strong>
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <span class="text-gray-500 dark:text-gray-400 block text-sm">Department</span>
-                  <span class="font-medium text-gray-800 dark:text-white">Cardiology</span>
-                </div>
-                <div>
-                  <span class="text-gray-500 dark:text-gray-400 block text-sm">Activity Type</span>
-                  <span class="font-medium text-gray-800 dark:text-white">Clinical Observation</span>
-                </div>
-                <div>
-                  <span class="text-gray-500 dark:text-gray-400 block text-sm">Core Diagnosis</span>
-                  <span class="font-medium text-gray-800 dark:text-white">Hypertension</span>
-                </div>
-                <div>
-                  <span class="text-gray-500 dark:text-gray-400 block text-sm">Tutor</span>
-                  <span class="font-medium text-gray-800 dark:text-white">Dr. John Smith</span>
-                </div>
-                <div>
-                  <span class="text-gray-500 dark:text-gray-400 block text-sm">Status</span>
-                  <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                    <i class="fas fa-clock mr-1"></i> Pending
-                  </span>
+              </div>
+
+              <div>
+                <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Patient Information</h4>
+                <div class="space-y-3">
+                  <div>
+                    <span class="text-gray-500 dark:text-gray-400 block text-sm">Patient ID</span>
+                    <span class="font-medium text-gray-800 dark:text-white">${safeGet(data, 'patient_info.patient_id')}</span>
+                  </div>
+                  <div>
+                    <span class="text-gray-500 dark:text-gray-400 block text-sm">Age</span>
+                    <span class="font-medium text-gray-800 dark:text-white">${safeGet(data, 'patient_info.age')}</span>
+                  </div>
+                  <div>
+                    <span class="text-gray-500 dark:text-gray-400 block text-sm">Gender</span>
+                    <span class="font-medium text-gray-800 dark:text-white">${safeGet(data, 'patient_info.gender')}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div>
-              <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Patient Information</h4>
-              <div class="space-y-3">
-                <div>
-                  <span class="text-gray-500 dark:text-gray-400 block text-sm">Patient ID</span>
-                  <span class="font-medium text-gray-800 dark:text-white">P12345</span>
-                </div>
-                <div>
-                  <span class="text-gray-500 dark:text-gray-400 block text-sm">Age</span>
-                  <span class="font-medium text-gray-800 dark:text-white">45</span>
-                </div>
-                <div>
-                  <span class="text-gray-500 dark:text-gray-400 block text-sm">Gender</span>
-                  <span class="font-medium text-gray-800 dark:text-white">Male</span>
-                </div>
+            <div class="mt-6">
+              <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Description</h4>
+              <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <p class="text-gray-700 dark:text-gray-300">${safeGet(data, 'description', 'No description provided.')}</p>
               </div>
             </div>
-          </div>
 
-          <div class="mt-6">
-            <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Description</h4>
-            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-              <p class="text-gray-700 dark:text-gray-300">This is a sample description of the clinical activity. In a real implementation, this would show the actual log description from the database.</p>
+            <div class="mt-6">
+              <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Reviewer Comments</h4>
+              <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                ${safeGet(data, 'reviewer_comments') !== 'N/A' && safeGet(data, 'reviewer_comments') !== '' ?
+                  `<p class="text-gray-700 dark:text-gray-300">${safeGet(data, 'reviewer_comments')}</p>` :
+                  `<p class="text-gray-500 dark:text-gray-400 italic">No comments yet. This log is pending review.</p>`
+                }
+              </div>
             </div>
-          </div>
-
-          <div class="mt-6">
-            <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Reviewer Comments</h4>
-            <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-              <p class="text-gray-500 dark:text-gray-400 italic">No comments yet. This log is pending review.</p>
+          `;
+        })
+        .catch(error => {
+          console.error('Error fetching log details:', error);
+          logDetailsContent.innerHTML = `
+            <div class="p-6 text-center">
+              <div class="text-red-500 text-xl mb-4"><i class="fas fa-exclamation-circle"></i></div>
+              <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Error Loading Data</h4>
+              <p class="text-gray-600 dark:text-gray-400">There was a problem loading the log details. Please try again.</p>
             </div>
-          </div>
-        `;
-      }, 1000);
+          `;
+        });
     }
 
     // Function to close log details modal

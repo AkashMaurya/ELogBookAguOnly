@@ -218,6 +218,8 @@ class StudentLogFormModelForm(forms.ModelForm):
             "activity_type",
             "core_diagnosis",
             "patient_id",
+            "patient_age",
+            "patient_gender",
             "description",
             "participation_type",
         ]
@@ -232,6 +234,20 @@ class StudentLogFormModelForm(forms.ModelForm):
                 attrs={
                     "class": "w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white",
                     "placeholder": "Enter patient ID",
+                }
+            ),
+            "patient_age": forms.TextInput(
+                attrs={
+                    "class": "w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white",
+                    "placeholder": "Enter patient age",
+                    "type": "number",
+                    "min": "0",
+                    "max": "120",
+                }
+            ),
+            "patient_gender": forms.Select(
+                attrs={
+                    "class": "w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white",
                 }
             ),
             "description": forms.Textarea(
