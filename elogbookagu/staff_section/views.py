@@ -12,7 +12,7 @@ from threading import Thread
 from accounts.models import Staff, CustomUser
 from student_section.models import StudentLogFormModel
 from admin_section.models import Department, AdminNotification
-from .models import StaffSupportTicket
+from .models import StaffSupportTicket, StaffNotification
 from .forms import LogReviewForm, BatchReviewForm, ProfileUpdateForm, StaffSupportTicketForm
 
 # Staff Dashboard View
@@ -456,6 +456,46 @@ def get_monthly_trend_data(logs):
 
 
 @login_required
+def notifications(request):
+    if request.user.role != 'staff':
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('login')
+
+    staff = request.user.staff_profile
+
+    # Get all notifications for this staff
+    notifications_list = StaffNotification.objects.filter(recipient=staff).order_by('-created_at')
+
+    # Mark notifications as read if requested
+    if request.GET.get('mark_read'):
+        notification_id = request.GET.get('mark_read')
+        notification = get_object_or_404(StaffNotification, id=notification_id, recipient=staff)
+        notification.mark_as_read()
+        return redirect('staff_section:notifications')
+
+    # Mark all as read if requested
+    if request.GET.get('mark_all_read'):
+        notifications_list.filter(is_read=False).update(is_read=True)
+        messages.success(request, "All notifications marked as read.")
+        return redirect('staff_section:notifications')
+
+    # Get unread count (for display in the UI)
+    unread_count = StaffNotification.objects.filter(recipient=staff, is_read=False).count()
+
+    # Pagination
+    paginator = Paginator(notifications_list, 10)  # 10 items per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'notifications': page_obj,
+        'unread_count': unread_count,
+    }
+
+    return render(request, 'staff_section/staff_notifications.html', context)
+
+
+@login_required
 def review_log(request, log_id):
     if request.user.role != 'staff':
         messages.error(request, 'You do not have permission to access this page.')
@@ -492,6 +532,24 @@ def review_log(request, log_id):
             # Set review date
             log_entry.review_date = timezone.now()
             log_entry.save()
+
+            # Create notification for the student
+            staff_name = request.user.get_full_name() or request.user.username
+            is_approved_text = 'approved' if is_approved == 'True' else 'rejected'
+            notification_title = f"Your log entry has been {is_approved_text}"
+            notification_message = f"{staff_name} has {is_approved_text} your log entry for {log.department.name} department on {log.date}."
+
+            if log_entry.reviewer_comments:
+                notification_message += f" Comments: {log_entry.reviewer_comments}"
+
+            # Create notification in the database
+            from student_section.models import StudentNotification
+            StudentNotification.objects.create(
+                recipient=log.student,
+                log_entry=log,
+                title=notification_title,
+                message=notification_message
+            )
 
             messages.success(request, f"Log entry has been {'approved' if is_approved == 'True' else 'rejected'}.")
             return redirect('staff_section:staff_reviews')
@@ -557,6 +615,24 @@ def batch_review(request):
             # Set review date
             log.review_date = timezone.now()
             log.save()
+
+            # Create notification for the student
+            staff_name = request.user.get_full_name() or request.user.username
+            is_approved_text = 'approved' if action == 'approve' else 'rejected'
+            notification_title = f"Your log entry has been {is_approved_text}"
+            notification_message = f"{staff_name} has {is_approved_text} your log entry for {log.department.name} department on {log.date}."
+
+            if log.reviewer_comments:
+                notification_message += f" Comments: {log.reviewer_comments}"
+
+            # Create notification in the database
+            from student_section.models import StudentNotification
+            StudentNotification.objects.create(
+                recipient=log.student,
+                log_entry=log,
+                title=notification_title,
+                message=notification_message
+            )
 
     messages.success(request, f"{logs.count()} log entries have been {'approved' if action == 'approve' else 'rejected'}.")
     return redirect('staff_section:staff_reviews')

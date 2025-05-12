@@ -86,6 +86,7 @@ TEMPLATES = [
                 'doctor_section.context_processors.notification_count',
                 'student_section.context_processors.student_notification_count',
                 'admin_section.context_processors.admin_notification_count',
+                'staff_section.context_processors.staff_notification_count',
                 'elogbookagu.context_processors.user_data',
             ],
         },

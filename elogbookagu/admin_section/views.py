@@ -1306,3 +1306,30 @@ def download_sample_csv(request):
     # This function is kept for backward compatibility
     # Redirect to the download_user_template function with type=student
     return download_user_template(request)
+
+
+def send_admin_emails(admin_emails, subject, message):
+    """
+    Send email notifications to admin users
+
+    Args:
+        admin_emails (list): List of admin email addresses
+        subject (str): Email subject
+        message (str): Email message body
+    """
+    try:
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        # Send email to all admin users
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=admin_emails,
+            fail_silently=True,
+        )
+    except Exception as e:
+        # Log the error but don't raise it to prevent disrupting the user experience
+        print(f"Error sending admin emails: {str(e)}")
+        # In a production environment, you might want to log this to a file or monitoring service
