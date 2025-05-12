@@ -4,7 +4,7 @@ from django.contrib.auth.hashers import make_password
 import csv
 import io
 from accounts.models import CustomUser, Student, Doctor, Staff
-from .models import LogYear, LogYearSection, Department, Group, TrainingSite, ActivityType, CoreDiaProSession
+from .models import LogYear, LogYearSection, Department, Group, TrainingSite, ActivityType, CoreDiaProSession, Blog
 
 class LogYearForm(forms.ModelForm):
     class Meta:
@@ -528,3 +528,47 @@ class TrainingSiteForm(forms.ModelForm):
         if existing_query.exists():
             raise forms.ValidationError(f"A training site with the name '{name}' already exists.")
         return name
+
+
+class BlogForm(forms.ModelForm):
+    class Meta:
+        model = Blog
+        fields = ['title', 'summary', 'content', 'category', 'featured_image', 'attachment', 'attachment_name', 'is_published']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'placeholder': 'Enter blog title'
+            }),
+            'summary': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'placeholder': 'Enter a brief summary (max 300 characters)'
+            }),
+            'content': forms.Textarea(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'placeholder': 'Enter blog content',
+                'rows': 10
+            }),
+            'category': forms.Select(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+            }),
+            'featured_image': forms.FileInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'accept': 'image/*'
+            }),
+            'attachment': forms.FileInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+            }),
+            'attachment_name': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'placeholder': 'Enter a name for the attachment (optional)'
+            }),
+            'is_published': forms.CheckboxInput(attrs={
+                'class': 'h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600',
+            }),
+        }
+
+    def clean_summary(self):
+        summary = self.cleaned_data.get('summary')
+        if len(summary) > 300:
+            raise forms.ValidationError("Summary must be 300 characters or less.")
+        return summary

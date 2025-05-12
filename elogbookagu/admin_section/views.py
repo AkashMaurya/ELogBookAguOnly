@@ -18,7 +18,7 @@ from student_section.models import SupportTicket, StudentLogFormModel
 from doctor_section.models import DoctorSupportTicket
 
 # Forms
-from .forms import BulkUserUploadForm, CSVUploadForm
+from .forms import BulkUserUploadForm, CSVUploadForm, BlogForm
 from student_section.forms import AdminResponseForm
 from doctor_section.forms import AdminDoctorResponseForm, BatchReviewForm, LogReviewForm
 from django.core.paginator import Paginator
@@ -618,7 +618,156 @@ def download_user_template(request):
 
 @login_required
 def admin_blogs(request):
-    return render(request, "admin_section/admin_blogs.html")
+    """View for listing and managing blog posts"""
+    # Check if user is admin
+    if request.user.role != 'admin':
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('admin_section:admin_dash')
+
+    # Get filter parameters
+    category = request.GET.get('category', '')
+    search_query = request.GET.get('q', '').strip()
+
+    # Base queryset
+    blogs = Blog.objects.all()
+
+    # Apply filters
+    if category:
+        blogs = blogs.filter(category=category)
+
+    if search_query:
+        blogs = blogs.filter(
+            models.Q(title__icontains=search_query) |
+            models.Q(summary__icontains=search_query) |
+            models.Q(content__icontains=search_query)
+        )
+
+    # Order by most recent first
+    blogs = blogs.order_by('-created_at')
+
+    # Pagination
+    paginator = Paginator(blogs, 10)  # 10 items per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'blogs': page_obj,
+        'selected_category': category,
+        'search_query': search_query,
+        'categories': Blog.CATEGORY_CHOICES,
+    }
+
+    return render(request, "admin_section/admin_blogs.html", context)
+
+
+@login_required
+def blog_create(request):
+    """View for creating a new blog post"""
+    # Check if user is admin
+    if request.user.role != 'admin':
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('admin_section:admin_dash')
+
+    if request.method == 'POST':
+        form = BlogForm(request.POST, request.FILES)
+        if form.is_valid():
+            blog = form.save(commit=False)
+            blog.author = request.user
+            blog.save()
+            messages.success(request, "Blog post created successfully.")
+            return redirect('admin_section:admin_blogs')
+    else:
+        form = BlogForm()
+
+    context = {
+        'form': form,
+        'is_create': True,
+    }
+
+    return render(request, "admin_section/blog_form.html", context)
+
+
+@login_required
+def blog_edit(request, blog_id):
+    """View for editing an existing blog post"""
+    # Check if user is admin
+    if request.user.role != 'admin':
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('admin_section:admin_dash')
+
+    blog = get_object_or_404(Blog, id=blog_id)
+
+    if request.method == 'POST':
+        form = BlogForm(request.POST, request.FILES, instance=blog)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Blog post updated successfully.")
+            return redirect('admin_section:admin_blogs')
+    else:
+        form = BlogForm(instance=blog)
+
+    context = {
+        'form': form,
+        'blog': blog,
+        'is_create': False,
+    }
+
+    return render(request, "admin_section/blog_form.html", context)
+
+
+@login_required
+def blog_delete(request, blog_id):
+    """View for deleting a blog post"""
+    # Check if user is admin
+    if request.user.role != 'admin':
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('admin_section:admin_dash')
+
+    blog = get_object_or_404(Blog, id=blog_id)
+
+    if request.method == 'POST':
+        # Delete associated files
+        if blog.featured_image:
+            try:
+                if os.path.exists(blog.featured_image.path):
+                    os.remove(blog.featured_image.path)
+            except Exception as e:
+                print(f"Error deleting featured image: {e}")
+
+        if blog.attachment:
+            try:
+                if os.path.exists(blog.attachment.path):
+                    os.remove(blog.attachment.path)
+            except Exception as e:
+                print(f"Error deleting attachment: {e}")
+
+        # Delete the blog post
+        blog.delete()
+        messages.success(request, "Blog post deleted successfully.")
+        return redirect('admin_section:admin_blogs')
+
+    context = {
+        'blog': blog,
+    }
+
+    return render(request, "admin_section/blog_confirm_delete.html", context)
+
+
+@login_required
+def blog_detail(request, blog_id):
+    """View for viewing a blog post details"""
+    # Check if user is admin
+    if request.user.role != 'admin':
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('admin_section:admin_dash')
+
+    blog = get_object_or_404(Blog, id=blog_id)
+
+    context = {
+        'blog': blog,
+    }
+
+    return render(request, "admin_section/blog_detail.html", context)
 
 
 @login_required

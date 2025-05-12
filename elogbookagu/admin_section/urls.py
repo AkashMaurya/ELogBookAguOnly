@@ -30,7 +30,14 @@ urlpatterns = [
     # Other URLs
     path("", views.admin_dash, name="admin_dash"),
     path("date_restrictions/", views.date_restrictions, name="date_restrictions"),
+
+    # Blog URLs
     path("admin_blogs/", views.admin_blogs, name="admin_blogs"),
+    path("blog/create/", views.blog_create, name="blog_create"),
+    path("blog/<int:blog_id>/", views.blog_detail, name="blog_detail"),
+    path("blog/<int:blog_id>/edit/", views.blog_edit, name="blog_edit"),
+    path("blog/<int:blog_id>/delete/", views.blog_delete, name="blog_delete"),
+
     path("admin_support/", views.admin_support, name="admin_support"),
     path("admin_reviews/", views.admin_reviews, name="admin_reviews"),
     path("admin_profile/", views.admin_profile, name="admin_profile"),

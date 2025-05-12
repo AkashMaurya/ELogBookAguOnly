@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from django.urls import reverse
 from accounts.models import CustomUser
 
 # LogYear Model
@@ -212,3 +213,44 @@ class AdminNotification(models.Model):
     def mark_as_read(self):
         self.is_read = True
         self.save()
+
+
+# Blog Model
+class Blog(models.Model):
+    CATEGORY_CHOICES = [
+        ('news', 'News'),
+        ('announcement', 'Announcement'),
+        ('feature', 'Feature'),
+        ('update', 'Update'),
+    ]
+
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    summary = models.CharField(max_length=300, help_text="A brief summary of the blog post (max 300 characters)")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='news')
+    attachment = models.FileField(upload_to='blog_attachments/', null=True, blank=True)
+    attachment_name = models.CharField(max_length=100, blank=True, help_text="Name to display for the attachment")
+    featured_image = models.ImageField(upload_to='blog_images/', null=True, blank=True)
+    author = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='blogs')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_published = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Blog Post"
+        verbose_name_plural = "Blog Posts"
+
+    def __str__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        return reverse('admin_section:blog_detail', args=[str(self.id)])
+
+    def get_attachment_name(self):
+        """Returns the attachment name or the filename if no name is provided"""
+        if self.attachment_name:
+            return self.attachment_name
+        elif self.attachment:
+            return self.attachment.name.split('/')[-1]
+        return None

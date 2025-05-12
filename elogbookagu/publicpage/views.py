@@ -10,6 +10,8 @@ from accounts.models import CustomUser, Student, Staff, Doctor
 import os  # Moved os import here
 from django.http import FileResponse
 from django.conf import settings
+from django.db import models
+from django.core.paginator import Paginator
 
 # Create your views here.
 
@@ -27,7 +29,66 @@ def resources(request):
 
 
 def update(request):
-    return render(request, "update.html")
+    # Get filter parameters
+    category = request.GET.get('category', '')
+    search_query = request.GET.get('q', '').strip()
+
+    # Import the Blog model from admin_section
+    from admin_section.models import Blog
+
+    # Base queryset - only published blogs
+    blogs = Blog.objects.filter(is_published=True)
+
+    # Apply filters
+    if category:
+        blogs = blogs.filter(category=category)
+
+    if search_query:
+        blogs = blogs.filter(
+            models.Q(title__icontains=search_query) |
+            models.Q(summary__icontains=search_query) |
+            models.Q(content__icontains=search_query)
+        )
+
+    # Order by most recent first
+    blogs = blogs.order_by('-created_at')
+
+    # Pagination
+    paginator = Paginator(blogs, 9)  # 9 items per page for grid layout
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'blogs': page_obj,
+        'selected_category': category,
+        'search_query': search_query,
+        'categories': Blog.CATEGORY_CHOICES,
+    }
+
+    return render(request, "update.html", context)
+
+
+def blog_detail(request, blog_id):
+    """View for displaying a single blog post to the public"""
+    # Import the Blog model from admin_section
+    from admin_section.models import Blog
+
+    # Get the blog post - only published blogs are visible to the public
+    blog = get_object_or_404(Blog, id=blog_id, is_published=True)
+
+    # Get related blogs (same category, excluding current blog)
+    related_blogs = Blog.objects.filter(
+        category=blog.category,
+        is_published=True
+    ).exclude(id=blog.id).order_by('-created_at')[:3]
+
+    context = {
+        'blog': blog,
+        'related_blogs': related_blogs,
+        'categories': Blog.CATEGORY_CHOICES,
+    }
+
+    return render(request, "blog_detail.html", context)
 
 
 def ebookjournals(request, pdf_name=None):
