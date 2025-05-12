@@ -119,8 +119,19 @@ class DateRestrictionSettings(models.Model):
         related_name='date_restriction_updates'
     )
 
-    # New fields for extended functionality
-    # These will be added via migration
+    # Doctor review period settings
+    doctor_review_period = models.PositiveIntegerField(
+        default=30,
+        help_text="Number of days doctors have to review student logs"
+    )
+    doctor_review_enabled = models.BooleanField(
+        default=True,
+        help_text="Whether to enforce the review period deadline"
+    )
+    doctor_notification_days = models.PositiveIntegerField(
+        default=3,
+        help_text="Number of days before deadline to send notification to doctors"
+    )
 
     # Specific days of week settings (for reference)
     DAYS_OF_WEEK = [

@@ -42,6 +42,25 @@
       </div>
     {% endif %}
 
+    <!-- Review Period Information Banner -->
+    {% if review_period_enabled %}
+      <div class="mb-6 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+        <div class="flex items-start">
+          <div class="flex-shrink-0 mt-0.5">
+            <i class="fas fa-info-circle text-blue-500"></i>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-blue-800 dark:text-blue-300">Review Period Policy</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+              You have <strong>{{ review_period_days }} days</strong> from the date of submission to review student logs.
+              After this period, logs can no longer be reviewed. You will receive a notification
+              <strong>{{ notification_days }} days</strong> before a log's review deadline.
+            </p>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
     <!-- Filters Section -->
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
       <div class="flex items-center justify-between mb-4">
@@ -92,12 +111,12 @@
         <!-- Search Box -->
         <div>
           <label for="search-box" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            <i class="fas fa-search mr-1"> </i>Search  
+            <i class="fas fa-search mr-1"> </i>Search
           </label>
           <div class="relative">
             <input type="text" id="search-box" placeholder="Search by name, ID, etc." value="{{ search_query }}" class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-             
+
             </div>
             <button id="clear-search" class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" aria-label="Clear search">
               <i class="fas fa-times-circle"></i>
@@ -295,6 +314,21 @@
                       <span class="px-2 py-1 inline-flex items-center text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100">
                         <i class="fas fa-clock mr-1"></i>Pending
                       </span>
+                      {% if review_period_enabled and log.review_deadline %}
+                        {% if log.deadline_passed %}
+                          <div class="text-xs text-red-500 dark:text-red-400 mt-1">
+                            <i class="fas fa-exclamation-circle mr-1"></i>Deadline passed
+                          </div>
+                        {% elif log.deadline_warning %}
+                          <div class="text-xs text-orange-500 dark:text-orange-400 mt-1">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>{{ log.days_remaining }} days left
+                          </div>
+                        {% else %}
+                          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            <i class="fas fa-calendar-alt mr-1"></i>{{ log.days_remaining }} days left
+                          </div>
+                        {% endif %}
+                      {% endif %}
                     {% endif %}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">

@@ -1,7 +1,10 @@
 from django.db import models
 from django.utils import timezone
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from datetime import timedelta
 from accounts.models import Student, CustomUser, Doctor
-from admin_section.models import LogYear, LogYearSection, Group, Department, TrainingSite, ActivityType, CoreDiaProSession
+from admin_section.models import LogYear, LogYearSection, Group, Department, TrainingSite, ActivityType, CoreDiaProSession, DateRestrictionSettings
 
 # Create your models here.
 
@@ -57,6 +60,7 @@ class StudentLogFormModel(models.Model):
     is_reviewed = models.BooleanField(default=False)
     review_date = models.DateTimeField(null=True, blank=True)
     reviewer_comments = models.TextField(blank=True)
+    review_deadline = models.DateTimeField(null=True, blank=True, help_text="Deadline by which the doctor must review this log")
 
     class Meta:
         ordering = ['-date', '-created_at']
@@ -124,3 +128,28 @@ class StudentNotification(models.Model):
     def mark_as_read(self):
         self.is_read = True
         self.save()
+
+
+# Signal to set review_deadline when a log is created
+@receiver(post_save, sender=StudentLogFormModel)
+def set_review_deadline(sender, instance, created, **kwargs):
+    if created:
+        # Only set deadline for newly created logs
+        try:
+            # Get the review period from settings
+            settings = DateRestrictionSettings.objects.first()
+            if settings and settings.doctor_review_enabled:
+                # Calculate deadline based on creation date and review period
+                review_period = settings.doctor_review_period
+                instance.review_deadline = instance.created_at + timedelta(days=review_period)
+                # Save without triggering the signal again
+                StudentLogFormModel.objects.filter(pk=instance.pk).update(
+                    review_deadline=instance.review_deadline
+                )
+        except Exception as e:
+            print(f"Error setting review deadline: {e}")
+            # Use default 30 days if there's an error
+            instance.review_deadline = instance.created_at + timedelta(days=30)
+            StudentLogFormModel.objects.filter(pk=instance.pk).update(
+                review_deadline=instance.review_deadline
+            )

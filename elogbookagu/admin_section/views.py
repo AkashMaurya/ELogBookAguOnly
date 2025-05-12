@@ -185,6 +185,11 @@ def date_restrictions(request):
             settings.allow_future_dates = 'student_allow_future_dates' in request.POST
             settings.future_days_limit = int(request.POST.get('student_future_days_limit', 0))
 
+            # Doctor review period settings
+            settings.doctor_review_enabled = 'doctor_review_enabled' in request.POST
+            settings.doctor_review_period = int(request.POST.get('doctor_review_period', 30))
+            settings.doctor_notification_days = int(request.POST.get('doctor_notification_days', 3))
+
             # Store doctor settings and other fields in session for now
             # In a real implementation, these would be stored in the database
             request.session['doctor_past_days_limit'] = int(request.POST.get('doctor_past_days_limit', 30))
@@ -229,23 +234,28 @@ def date_restrictions(request):
         except Exception as e:
             messages.error(request, f"Error updating date restrictions: {str(e)}")
 
-    # Add virtual properties to settings object for template rendering
-    settings._doctor_past_days_limit = request.session.get('doctor_past_days_limit', 30)
-    settings._doctor_allow_future_dates = request.session.get('doctor_allow_future_dates', False)
-    settings._doctor_future_days_limit = request.session.get('doctor_future_days_limit', 0)
-    settings._allowed_days_for_students = request.session.get('allowed_days_for_students', '0,1,2,3,4,5,6')
-    settings._allowed_days_for_doctors = request.session.get('allowed_days_for_doctors', '0,1,2,3,4,5,6')
-    settings._is_active = request.session.get('date_restrictions_active', True)
-
     # Get unread notifications count for the admin
     unread_notifications_count = AdminNotification.objects.filter(recipient=request.user, is_read=False).count()
 
-    # Session variables are now handled by the context processor
+    # Get session values for template rendering
+    doctor_past_days_limit = request.session.get('doctor_past_days_limit', 30)
+    doctor_allow_future_dates = request.session.get('doctor_allow_future_dates', False)
+    doctor_future_days_limit = request.session.get('doctor_future_days_limit', 0)
+    allowed_days_for_students = request.session.get('allowed_days_for_students', '0,1,2,3,4,5,6')
+    allowed_days_for_doctors = request.session.get('allowed_days_for_doctors', '0,1,2,3,4,5,6')
+    date_restrictions_active = request.session.get('date_restrictions_active', True)
 
+    # Session variables are now handled by the context processor
     context = {
         'settings': settings,
         'unread_notifications_count': unread_notifications_count,
         'admin_unread_notifications_count': unread_notifications_count,
+        'doctor_past_days_limit': doctor_past_days_limit,
+        'doctor_allow_future_dates': doctor_allow_future_dates,
+        'doctor_future_days_limit': doctor_future_days_limit,
+        'allowed_days_for_students': allowed_days_for_students,
+        'allowed_days_for_doctors': allowed_days_for_doctors,
+        'date_restrictions_active': date_restrictions_active,
     }
 
     return render(request, 'admin_section/date_restrictions_simple.html', context)

@@ -630,6 +630,28 @@ def doctor_reviews(request):
     # Order by most recent first
     logs = logs.order_by('-date', '-created_at')
 
+    # Get settings for review deadline
+    settings = DateRestrictionSettings.objects.first()
+    review_period_enabled = settings and settings.doctor_review_enabled if settings else False
+
+    # Add deadline information to each log
+    for log in logs:
+        if review_period_enabled and log.review_deadline:
+            log.deadline_passed = timezone.now() > log.review_deadline
+            # Calculate days remaining
+            if not log.deadline_passed:
+                time_remaining = log.review_deadline - timezone.now()
+                log.days_remaining = time_remaining.days
+                # Add warning flag if deadline is approaching (3 days or less)
+                log.deadline_warning = log.days_remaining <= settings.doctor_notification_days
+            else:
+                log.days_remaining = 0
+                log.deadline_warning = False
+        else:
+            log.deadline_passed = False
+            log.days_remaining = None
+            log.deadline_warning = False
+
     # Pagination
     paginator = Paginator(logs, 10)  # 10 items per page
     page_number = request.GET.get('page')
@@ -645,6 +667,9 @@ def doctor_reviews(request):
         'selected_status': status,
         'search_query': search_query,
         'batch_form': batch_form,
+        'review_period_enabled': review_period_enabled,
+        'review_period_days': settings.doctor_review_period if settings else 30,
+        'notification_days': settings.doctor_notification_days if settings else 3,
     }
 
     return render(request, "doctor_reviews.html", context)
@@ -712,6 +737,13 @@ def review_log(request, log_id):
         messages.error(request, "You don't have permission to review this log.")
         return redirect('doctor_section:doctor_reviews')
 
+    # Check if review deadline has passed
+    settings = DateRestrictionSettings.objects.first()
+    if settings and settings.doctor_review_enabled and log.review_deadline:
+        if timezone.now() > log.review_deadline:
+            messages.error(request, f"The review period for this log has expired. Logs must be reviewed within {settings.doctor_review_period} days of submission.")
+            return redirect('doctor_section:doctor_reviews')
+
     if request.method == 'POST':
         form = LogReviewForm(request.POST, instance=log)
         if form.is_valid():
@@ -767,9 +799,18 @@ def review_log(request, log_id):
     else:
         form = LogReviewForm(instance=log)
 
+    # Add deadline information
+    now = timezone.now()
+    days_remaining = 0
+    if log.review_deadline:
+        time_remaining = log.review_deadline - now
+        days_remaining = max(0, time_remaining.days)
+
     context = {
         'form': form,
         'log': log,
+        'now': now,
+        'days_remaining': days_remaining,
     }
 
     return render(request, 'doctor_review_log.html', context)
@@ -799,6 +840,20 @@ def batch_review(request):
         id__in=log_ids,
         department__in=doctor_departments
     )
+
+    # Check for review deadline
+    settings = DateRestrictionSettings.objects.first()
+    if settings and settings.doctor_review_enabled:
+        # Filter out logs that have passed their review deadline
+        logs = logs.filter(
+            models.Q(review_deadline__isnull=True) |
+            models.Q(review_deadline__gt=timezone.now())
+        )
+
+        # If all logs were filtered out due to expired deadlines
+        if not logs.exists():
+            messages.error(request, f"Cannot review the selected logs as their review periods have expired. Logs must be reviewed within {settings.doctor_review_period} days of submission.")
+            return redirect('doctor_section:doctor_reviews')
 
     # Process each log
     with transaction.atomic():
