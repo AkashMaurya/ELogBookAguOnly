@@ -17,9 +17,10 @@ urlpatterns = [
     ),
     # ye django ka logout class based view jo apne aap logout karwa dega if user want to log out
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
-    # edit
+    # edit profile
     path("update-contact-info/", views.update_contact_info, name="update_contact_info"),
     path("update_biography/", views.update_biography, name="update_biography"),
+    path("update_profile_photo/", views.update_profile_photo, name="update_profile_photo"),
     path("get-student-info/", views.get_student_info, name="get_student_info"),
     path(
         "get-departments-by-year/",

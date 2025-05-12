@@ -14,6 +14,7 @@ import os
 import json
 import csv
 import io
+from threading import Thread
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib import colors
@@ -26,6 +27,35 @@ from student_section.models import StudentLogFormModel, StudentNotification
 from admin_section.models import AdminNotification, DateRestrictionSettings
 from django.db.models import Count
 from django.db.models.functions import TruncMonth
+
+
+# Helper functions for asynchronous email sending
+def send_admin_emails_doctor(admin_emails, subject, message):
+    """Send emails to admins in a separate thread"""
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=admin_emails,
+            fail_silently=True,
+        )
+    except Exception as e:
+        print(f"Error sending email: {e}")
+
+
+def send_student_email(student_email, subject, message):
+    """Send email to student in a separate thread"""
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[student_email],
+            fail_silently=True,
+        )
+    except Exception as e:
+        print(f"Error sending email: {e}")
 
 
 @login_required
@@ -346,84 +376,81 @@ def get_top_students_data(student_performance):
 @login_required
 def doctor_profile(request):
     # Get the currently logged-in user from the request
-    user = request.user  # ✅ Ensure user object is available
+    user = request.user
 
     # Get the profile photo URL correctly
-    if user.profile_photo:  # ✅ Check if user has a profile photo
+    if user.profile_photo:
         profile_photo = user.profile_photo.url
     else:
-        profile_photo = (
-            "/media/profiles/default.jpg"  # Default image if no profile photo
-        )
+        profile_photo = "/media/profiles/default.jpg"  # Default image if no profile photo
 
-    # get Doctor Profile
-    doctor = getattr(
-        user, "doctor_profile", None
-    )  # `related_name="doctor_profile"` से doctor प्राप्त करें
+    # Get Doctor Profile
+    doctor = getattr(user, "doctor_profile", None)
 
     # Get doctor's departments
     if doctor:
         # Get departments as a comma-separated string
-        doctor_departments = ", ".join(
-            dept.name for dept in doctor.departments.all()
-        )
+        doctor_departments = ", ".join(dept.name for dept in doctor.departments.all())
         # Get departments as a list for template iteration
         department_list = [dept.name for dept in doctor.departments.all()]
+
+        # Get activity statistics
+        # Get current date and start of month
+        today = timezone.now()
+        start_of_month = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        # Get logs for this doctor's departments
+        logs = StudentLogFormModel.objects.filter(department__in=doctor.departments.all())
+
+        # Calculate statistics
+        reviews_count = logs.filter(is_reviewed=True, reviewer=doctor).count()
+        monthly_reviews = logs.filter(is_reviewed=True, reviewer=doctor, review_date__gte=start_of_month).count()
+        pending_reviews = logs.filter(is_reviewed=False, department__in=doctor.departments.all()).count()
+
+        # Calculate approval rate
+        reviewed_logs = logs.filter(is_reviewed=True, reviewer=doctor)
+        total_reviewed = reviewed_logs.count()
+        if total_reviewed > 0:
+            rejected = reviewed_logs.filter(reviewer_comments__startswith='REJECTED').count()
+            approval_rate = round(((total_reviewed - rejected) / total_reviewed) * 100)
+        else:
+            approval_rate = 0
     else:
         doctor_departments = None
         department_list = []
+        reviews_count = 0
+        monthly_reviews = 0
+        pending_reviews = 0
+        approval_rate = 0
 
-    # Fetch other session data (making sure these values exist in session)
-    username = request.session.get("username", "Guest").upper()
-    first_name = request.session.get("first_name", "GuestFirstName").upper()
-    last_name = request.session.get("last_name", "GuestLastName").upper()
-    full_name = f"{first_name} {last_name}"  # Combine first and last name
-    user_role = request.session.get("role", "guest").upper()  # Get the user's role
-    user_city = request.session.get("city", "")  # User's city, default is empty
-    user_country = request.session.get(
-        "country", ""
-    )  # User's country, default is empty
-    user_phone = request.session.get("phone_no", "")  # User's phone, default is empty
-    user_bio = request.session.get("bio", "")  # User's bio, default is empty
-    user_speciality = request.session.get(
-        "speciality", ""
-    )  # User's speciality, default is empty
-    user_email = request.session.get("email", "abc@example.com")  # User's email
+    # Get user information
+    full_name = user.get_full_name() or user.username
+    user_role = user.role.upper() if hasattr(user, 'role') else "DOCTOR"
+    user_city = user.city or ""
+    user_country = user.country or ""
+    user_phone = user.phone_no or ""
+    user_speciality = user.speciality or ""
+    user_email = user.email
 
-    # List of editable fields, can be used for form rendering
-    editable_fields = [
-        "password",
-        "profile_photo",
-        "city",
-        "country",
-        "phone",
-        "bio",
-        "speciality",
-    ]
-
-    # Prepare the context dictionary with all the necessary data to render the template
+    # Prepare the context dictionary with all the necessary data
     data = {
-        "username": username,
         "full_name": full_name,
-        "profile_photo": profile_photo,  # ✅ Now using user.profile_photo.url
+        "profile_photo": profile_photo,
         "user_role": user_role,
-        "first_name": first_name,
-        "last_name": last_name,
         "user_city": user_city,
         "user_country": user_country,
         "user_phone": user_phone,
-        "user_bio": user_bio,
         "user_speciality": user_speciality,
         "user_email": user_email,
-        "editable_fields": editable_fields,  # List of fields that can be edited
         "doctor_departments": doctor_departments,
-        "department_list": department_list,  # List of department names for iteration
+        "department_list": department_list,
+        # Activity statistics
+        "reviews_count": reviews_count,
+        "monthly_reviews": monthly_reviews,
+        "pending_reviews": pending_reviews,
+        "approval_rate": approval_rate,
     }
 
-    # Debugging to check the profile photo URL
-    print(f"Profile Photo URL: {profile_photo}")  # For debugging, can be removed later
-    print(f"Doctor Departments: {doctor_departments}")
-    # Render the template with the context data
     return render(request, "doctor_profile.html", data)
 
 
@@ -540,40 +567,43 @@ def doctor_help(request):
     if request.method == "POST":
         form = DoctorSupportTicketForm(request.POST)
         if form.is_valid():
-            ticket = form.save(commit=False)
-            ticket.doctor = request.user.doctor_profile
-            ticket.save()
+            # Use transaction to ensure all database operations succeed or fail together
+            with transaction.atomic():
+                ticket = form.save(commit=False)
+                ticket.doctor = request.user.doctor_profile
+                ticket.save()
 
-            # Create notification for admins
-            doctor_name = request.user.get_full_name() or request.user.username
-            notification_title = f"New Doctor Support Ticket: {ticket.subject}"
-            notification_message = f"Dr. {doctor_name} has submitted a new support ticket: {ticket.subject}\n\n{ticket.description}"
+                # Create notification for admins
+                doctor_name = request.user.get_full_name() or request.user.username
+                notification_title = f"New Doctor Support Ticket: {ticket.subject}"
+                notification_message = f"Dr. {doctor_name} has submitted a new support ticket: {ticket.subject}\n\n{ticket.description}"
 
-            # Get all admin users
-            admin_users = CustomUser.objects.filter(role='admin')
+                # Get all admin users - use values_list for efficiency
+                admin_users = CustomUser.objects.filter(role='admin')
+                admin_emails = list(admin_users.values_list('email', flat=True))
 
-            # Create notification for each admin
-            for admin in admin_users:
-                AdminNotification.objects.create(
-                    recipient=admin,
-                    title=notification_title,
-                    message=notification_message,
-                    support_ticket_type='doctor',
-                    ticket_id=ticket.id
-                )
-
-                # Send email notification to admin
-                try:
-                    send_mail(
-                        subject=notification_title,
+                # Bulk create notifications for all admins at once
+                notifications = [
+                    AdminNotification(
+                        recipient=admin,
+                        title=notification_title,
                         message=notification_message,
-                        from_email=settings.EMAIL_HOST_USER,
-                        recipient_list=[admin.email],
-                        fail_silently=True,
+                        support_ticket_type='doctor',
+                        ticket_id=ticket.id
+                    ) for admin in admin_users
+                ]
+
+                if notifications:
+                    AdminNotification.objects.bulk_create(notifications)
+
+                # Start a separate thread to send emails
+                if admin_emails:
+                    email_thread = Thread(
+                        target=send_admin_emails_doctor,
+                        args=(admin_emails, notification_title, notification_message)
                     )
-                except Exception as e:
-                    # Log the error but don't stop the process
-                    print(f"Error sending email: {e}")
+                    email_thread.daemon = True
+                    email_thread.start()
 
             messages.success(request, "Support ticket submitted successfully. We will respond to your issue soon.")
             return redirect("doctor_section:doctor_help")
@@ -781,18 +811,14 @@ def review_log(request, log_id):
                 message=notification_message
             )
 
-            # Send email notification to the student
-            try:
-                send_mail(
-                    subject=notification_title,
-                    message=notification_message,
-                    from_email=settings.EMAIL_HOST_USER,
-                    recipient_list=[log.student.user.email],
-                    fail_silently=True,
+            # Send email notification to the student in a separate thread
+            if log.student.user.email:
+                email_thread = Thread(
+                    target=send_student_email,
+                    args=(log.student.user.email, notification_title, notification_message)
                 )
-            except Exception as e:
-                # Log the error but don't stop the process
-                print(f"Error sending email: {e}")
+                email_thread.daemon = True
+                email_thread.start()
 
             messages.success(request, f"Log entry has been {is_approved_text}.")
             return redirect('doctor_section:doctor_reviews')
@@ -887,18 +913,14 @@ def batch_review(request):
                 message=notification_message
             )
 
-            # Send email notification to the student
-            try:
-                send_mail(
-                    subject=notification_title,
-                    message=notification_message,
-                    from_email=settings.EMAIL_HOST_USER,
-                    recipient_list=[log.student.user.email],
-                    fail_silently=True,
+            # Send email notification to the student in a separate thread
+            if log.student.user.email:
+                email_thread = Thread(
+                    target=send_student_email,
+                    args=(log.student.user.email, notification_title, notification_message)
                 )
-            except Exception as e:
-                # Log the error but don't stop the process
-                print(f"Error sending email: {e}")
+                email_thread.daemon = True
+                email_thread.start()
 
     count = logs.count()
     messages.success(request, f"{count} log entries have been {'approved' if action == 'approve' else 'rejected'}.")

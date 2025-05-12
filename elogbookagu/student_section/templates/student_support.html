@@ -32,7 +32,7 @@
       <!-- Support Form -->
       <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
         <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Submit a Support Request</h3>
-        <form method="post" class="space-y-4">
+        <form method="post" class="space-y-4" id="supportForm">
           {% csrf_token %}
           <div>
             <label for="id_subject" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject</label>
@@ -43,9 +43,13 @@
             {{ form.description }}
           </div>
           <div class="pt-2">
-            <button type="submit" class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition-colors duration-200">
+            <button type="submit" id="submitButton" class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition-colors duration-200">
               Submit Request
             </button>
+            <div id="loadingIndicator" class="hidden mt-2 text-center">
+              <div class="inline-block animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
+              <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Processing your request...</span>
+            </div>
           </div>
         </form>
       </div>
@@ -118,5 +122,23 @@
         commentsRow.classList.add('hidden');
       }
     }
+
+    // Form submission handling with loading indicator
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('supportForm');
+      const submitButton = document.getElementById('submitButton');
+      const loadingIndicator = document.getElementById('loadingIndicator');
+
+      if (form) {
+        form.addEventListener('submit', function() {
+          // Disable the submit button to prevent multiple submissions
+          submitButton.disabled = true;
+          submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+          // Show the loading indicator
+          loadingIndicator.classList.remove('hidden');
+        });
+      }
+    });
   </script>
 {% endblock %}

@@ -57,45 +57,64 @@ def student_dash(request):
 
 
 
+from django.db import transaction
+from threading import Thread
+
+def send_admin_emails(admin_emails, subject, message):
+    """Send emails to admins in a separate thread"""
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=admin_emails,
+            fail_silently=True,
+        )
+    except Exception as e:
+        print(f"Error sending email: {e}")
+
 @login_required
 def student_support(request):
     if request.method == "POST":
         form = SupportTicketForm(request.POST)
         if form.is_valid():
-            ticket = form.save(commit=False)
-            ticket.student = request.user.student
-            ticket.save()
+            # Use transaction to ensure all database operations succeed or fail together
+            with transaction.atomic():
+                ticket = form.save(commit=False)
+                ticket.student = request.user.student
+                ticket.save()
 
-            # Create notification for admins
-            student_name = request.user.get_full_name() or request.user.username
-            notification_title = f"New Student Support Ticket: {ticket.subject}"
-            notification_message = f"{student_name} has submitted a new support ticket: {ticket.subject}\n\n{ticket.description}"
+                # Create notification for admins
+                student_name = request.user.get_full_name() or request.user.username
+                notification_title = f"New Student Support Ticket: {ticket.subject}"
+                notification_message = f"{student_name} has submitted a new support ticket: {ticket.subject}\n\n{ticket.description}"
 
-            # Get all admin users
-            admin_users = CustomUser.objects.filter(role='admin')
+                # Get all admin users - use values_list for efficiency
+                admin_users = CustomUser.objects.filter(role='admin')
+                admin_emails = list(admin_users.values_list('email', flat=True))
 
-            # Create notification for each admin
-            for admin in admin_users:
-                AdminNotification.objects.create(
-                    recipient=admin,
-                    title=notification_title,
-                    message=notification_message,
-                    support_ticket_type='student',
-                    ticket_id=ticket.id
-                )
-
-                # Send email notification to admin
-                try:
-                    send_mail(
-                        subject=notification_title,
+                # Bulk create notifications for all admins at once
+                notifications = [
+                    AdminNotification(
+                        recipient=admin,
+                        title=notification_title,
                         message=notification_message,
-                        from_email=settings.EMAIL_HOST_USER,
-                        recipient_list=[admin.email],
-                        fail_silently=True,
+                        support_ticket_type='student',
+                        ticket_id=ticket.id
+                    ) for admin in admin_users
+                ]
+
+                if notifications:
+                    AdminNotification.objects.bulk_create(notifications)
+
+                # Start a separate thread to send emails
+                if admin_emails:
+                    email_thread = Thread(
+                        target=send_admin_emails,
+                        args=(admin_emails, notification_title, notification_message)
                     )
-                except Exception as e:
-                    # Log the error but don't stop the process
-                    print(f"Error sending email: {e}")
+                    email_thread.daemon = True
+                    email_thread.start()
 
             messages.success(request, "Support ticket submitted successfully. We will respond to your issue soon.")
             return redirect("student_section:student_support")
@@ -112,47 +131,58 @@ def student_support(request):
     return render(request, "student_support.html", context)
 
 
+def send_tutor_email(tutor_email, subject, message):
+    """Send email to tutor in a separate thread"""
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[tutor_email],
+            fail_silently=True,
+        )
+    except Exception as e:
+        print(f"Error sending email: {e}")
+
 @login_required
 def student_elog(request):
     if request.method == "POST":
         form = StudentLogFormModelForm(request.POST, user=request.user)
         if form.is_valid():
-            log_entry = form.save(commit=False)
-            log_entry.student = request.user.student
-            log_entry.log_year = request.user.student.group.log_year
-            log_entry.log_year_section = request.user.student.group.log_year_section
-            log_entry.group = request.user.student.group
-            log_entry.save()
+            # Use transaction to ensure all database operations succeed or fail together
+            with transaction.atomic():
+                log_entry = form.save(commit=False)
+                log_entry.student = request.user.student
+                log_entry.log_year = request.user.student.group.log_year
+                log_entry.log_year_section = request.user.student.group.log_year_section
+                log_entry.group = request.user.student.group
+                log_entry.save()
 
-            # Get the department and tutor from the form
-            department = form.cleaned_data['department']
-            tutor = form.cleaned_data['tutor']
+                # Get the department and tutor from the form
+                department = form.cleaned_data['department']
+                tutor = form.cleaned_data['tutor']
 
-            # Create notification for the tutor
-            student_name = request.user.get_full_name() or request.user.username
-            notification_title = f"New Log Entry from {student_name}"
-            notification_message = f"{student_name} has submitted a new log entry for {department.name} department on {log_entry.date}."
+                # Create notification for the tutor
+                student_name = request.user.get_full_name() or request.user.username
+                notification_title = f"New Log Entry from {student_name}"
+                notification_message = f"{student_name} has submitted a new log entry for {department.name} department on {log_entry.date}."
 
-            # Create notification in the database
-            Notification.objects.create(
-                recipient=tutor,
-                log_entry=log_entry,
-                title=notification_title,
-                message=notification_message
-            )
-
-            # Send email notification to the tutor
-            try:
-                send_mail(
-                    subject=notification_title,
-                    message=notification_message,
-                    from_email=settings.EMAIL_HOST_USER,
-                    recipient_list=[tutor.user.email],
-                    fail_silently=True,
+                # Create notification in the database
+                Notification.objects.create(
+                    recipient=tutor,
+                    log_entry=log_entry,
+                    title=notification_title,
+                    message=notification_message
                 )
-            except Exception as e:
-                # Log the error but don't stop the process
-                print(f"Error sending email: {e}")
+
+                # Send email notification to the tutor in a separate thread
+                if tutor.user.email:
+                    email_thread = Thread(
+                        target=send_tutor_email,
+                        args=(tutor.user.email, notification_title, notification_message)
+                    )
+                    email_thread.daemon = True
+                    email_thread.start()
 
             messages.success(request, "Log entry created successfully.")
             return redirect("student_section:student_elog")
@@ -175,30 +205,21 @@ def student_elog(request):
 
 @login_required
 def student_profile(request):
-    # getting the User
+    # Get the current user
     user = request.user
-    print(
-        "Current User:", user.email, "Role:", getattr(user, "role", None)
-    )  # Debug print
 
-    # getting the user photo
-    if user.profile_photo:
-        profile_photo = user.profile_photo.url
-    else:
-        profile_photo = "/media/profiles/default.jpg"
+    # Get profile photo URL
+    profile_photo = user.profile_photo.url if user.profile_photo else "/media/profiles/default.jpg"
 
-    # get Student Profile with related group data using select_related
+    # Get student profile with related group data using select_related for efficiency
     try:
         student = Student.objects.select_related(
             "group", "group__log_year", "group__log_year_section"
         ).get(user=user)
-        print("Found student:", student)  # Debug print
-        print("Student Group:", getattr(student, "group", None))  # Debug print
     except Student.DoesNotExist:
         student = None
-        print("No student profile found for user:", user.email)
 
-    # Initialize variables
+    # Initialize group information variables
     group_info = None
     log_year = None
     log_year_section = None
@@ -207,45 +228,48 @@ def student_profile(request):
     # Get group information if student exists and has a group
     if student and student.group:
         group = student.group
-        print(
-            "Group details:",
-            {  # Debug print
-                "name": group.group_name,
-                "log_year": getattr(group.log_year, "year_name", None),
-                "section": getattr(group.log_year_section, "year_section_name", None),
-            },
-        )
-
         group_info = group.group_name
         log_year = group.log_year.year_name if group.log_year else None
-        log_year_section = (
-            group.log_year_section.year_section_name if group.log_year_section else None
-        )
+        log_year_section = group.log_year_section.year_section_name if group.log_year_section else None
         group_full_info = str(group)
 
+    # Get statistics for the dashboard
+    logs_count = 0
+    approved_count = 0
+    pending_count = 0
+    departments_count = 0
+
+    if student:
+        # Get log statistics
+        logs = StudentLogFormModel.objects.filter(student=student)
+        logs_count = logs.count()
+        approved_count = logs.filter(is_reviewed=True).exclude(
+            reviewer_comments__startswith='REJECTED'
+        ).count()
+        pending_count = logs.filter(is_reviewed=False).count()
+
+        # Get unique departments the student has submitted logs to
+        departments_count = logs.values('department').distinct().count()
+
+    # Prepare context data for the template
     data = {
         "profile_photo": profile_photo,
         "full_name": f"{user.first_name} {user.last_name}",
         "user_email": user.email,
-        "user_phone": user.phone_no,
-        "user_city": user.city,
-        "user_country": user.country,
-        "user_bio": user.bio if hasattr(user, "bio") else "",
+        "user_phone": user.phone_no or "",
+        "user_city": user.city or "",
+        "user_country": user.country or "",
+        "user_bio": user.bio or "",
         "group_name": group_info,
         "log_year": log_year,
         "log_year_section": log_year_section,
         "group_full_info": group_full_info,
+        # Statistics
+        "logs_count": logs_count,
+        "approved_count": approved_count,
+        "pending_count": pending_count,
+        "departments_count": departments_count,
     }
-
-    print(
-        "Final data being sent to template:",
-        {  # Debug print
-            "group_name": data["group_name"],
-            "log_year": data["log_year"],
-            "log_year_section": data["log_year_section"],
-            "group_full_info": data["group_full_info"],
-        },
-    )
 
     return render(request, "student_profile.html", data)
 
@@ -254,23 +278,24 @@ def student_profile(request):
 @login_required
 def update_contact_info(request):
     if request.method == "POST":
-        phone = request.POST.get("phone")
-        city = request.POST.get("city")
-        country = request.POST.get("country")
+        phone = request.POST.get("phone", "")
+        city = request.POST.get("city", "")
+        country = request.POST.get("country", "")
 
         try:
-            # Update user profile info
-            user = request.user
-            user.phone_no = phone
-            user.city = city
-            user.country = country
-            user.save()
+            # Update user profile info with transaction to ensure data consistency
+            with transaction.atomic():
+                user = request.user
+                user.phone_no = phone
+                user.city = city
+                user.country = country
+                user.save()
 
-            # Update session data
-            request.session["phone_no"] = phone
-            request.session["city"] = city
-            request.session["country"] = country
-            request.session.modified = True
+                # Update session data
+                request.session["phone_no"] = phone
+                request.session["city"] = city
+                request.session["country"] = country
+                request.session.modified = True
 
             return JsonResponse(
                 {
@@ -283,28 +308,57 @@ def update_contact_info(request):
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
 
-    return JsonResponse({"success": False, "error": "Invalid request"})
+    return JsonResponse({"success": False, "error": "Invalid request method"})
 
 
 # edit profile bio
 @login_required
 def update_biography(request):
     if request.method == "POST":
-        biography = request.POST.get("biography")
+        biography = request.POST.get("biography", "")
 
         try:
-            user = request.user
-            user.bio = biography
-            user.save()
+            # Update user biography with transaction to ensure data consistency
+            with transaction.atomic():
+                user = request.user
+                user.bio = biography
+                user.save()
 
-            # Update session data
-            request.session["bio"] = biography
-            request.session.modified = True
+                # Update session data
+                request.session["bio"] = biography
+                request.session.modified = True
 
             return JsonResponse({"success": True, "user_bio": biography})
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
     return JsonResponse({"success": False, "error": "Invalid request method"})
+
+
+# Update profile photo
+@login_required
+def update_profile_photo(request):
+    if request.method == "POST" and request.FILES.get("profile_photo"):
+        try:
+            with transaction.atomic():
+                user = request.user
+
+                # Delete old profile photo if it exists
+                if user.profile_photo and hasattr(user.profile_photo, "path"):
+                    try:
+                        if os.path.exists(user.profile_photo.path) and not user.profile_photo.path.endswith('default.jpg'):
+                            os.remove(user.profile_photo.path)
+                    except Exception as e:
+                        print(f"Error deleting old profile photo: {e}")
+
+                # Save new profile photo
+                user.profile_photo = request.FILES["profile_photo"]
+                user.save()
+
+                return JsonResponse({"success": True, "profile_photo": user.profile_photo.url})
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+
+    return JsonResponse({"success": False, "error": "No photo provided or invalid request"})
 
 
 @login_required
@@ -318,8 +372,10 @@ def student_final_records(request):
     review_status = request.GET.get('status', 'pending')
     search_query = request.GET.get('q', '').strip()
 
-    # Base queryset - filter by student
-    logs = StudentLogFormModel.objects.filter(student=student)
+    # Base queryset - filter by student and use select_related to reduce database queries
+    logs = StudentLogFormModel.objects.filter(student=student).select_related(
+        'department', 'activity_type', 'core_diagnosis', 'tutor', 'tutor__user'
+    )
 
     # Filter by review status if specified
     if review_status == 'pending':
@@ -350,14 +406,18 @@ def student_final_records(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # Get departments and activity types for filters
+    # Get departments and activity types for filters - use select_related to reduce queries
     departments = Department.objects.filter(
         log_year_section=student.group.log_year_section
     ).distinct().order_by('name')
 
-    activity_types = ActivityType.objects.all().order_by('name')
+    # Only fetch activity types if needed
     if department_id:
-        activity_types = activity_types.filter(department_id=department_id)
+        activity_types = ActivityType.objects.filter(
+            department_id=department_id
+        ).order_by('name')
+    else:
+        activity_types = ActivityType.objects.none()
 
     # Student info for PDF
     student_info = {

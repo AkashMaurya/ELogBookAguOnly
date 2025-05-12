@@ -8,10 +8,12 @@ from django.utils import timezone
 from django.db.models import Count
 from django.db.models.functions import TruncMonth
 from datetime import timedelta
-from accounts.models import Staff
+from threading import Thread
+from accounts.models import Staff, CustomUser
 from student_section.models import StudentLogFormModel
-from admin_section.models import Department
-from .forms import LogReviewForm, BatchReviewForm, ProfileUpdateForm
+from admin_section.models import Department, AdminNotification
+from .models import StaffSupportTicket
+from .forms import LogReviewForm, BatchReviewForm, ProfileUpdateForm, StaffSupportTicketForm
 
 # Staff Dashboard View
 
@@ -190,12 +192,78 @@ def staff_dash(request):
     return render(request, "staff_section/staff_dash.html", context)
 
 @login_required
-# Staff Support View
 def staff_support(request):
     if request.user.role != 'staff':
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('login')
-    return render(request, "staff_section/staff_support.html")
+
+    # Get the staff profile
+    try:
+        staff = request.user.staff_profile
+    except Staff.DoesNotExist:
+        staff = Staff.objects.create(user=request.user)
+        messages.info(request, 'Staff profile has been created.')
+
+    if request.method == "POST":
+        form = StaffSupportTicketForm(request.POST)
+        if form.is_valid():
+            # Use transaction to ensure all database operations succeed or fail together
+            with transaction.atomic():
+                ticket = form.save(commit=False)
+                ticket.staff = staff
+                ticket.save()
+
+                # Create notification for admins
+                staff_name = request.user.get_full_name() or request.user.username
+                notification_title = f"New Staff Support Ticket: {ticket.subject}"
+                notification_message = f"{staff_name} has submitted a new support ticket: {ticket.subject}\n\n{ticket.description}"
+
+                # Get all admin users - use values_list for efficiency
+                from accounts.models import CustomUser
+                from admin_section.models import AdminNotification
+                admin_users = CustomUser.objects.filter(role='admin')
+                admin_emails = list(admin_users.values_list('email', flat=True))
+
+                # Bulk create notifications for all admins at once
+                notifications = [
+                    AdminNotification(
+                        recipient=admin,
+                        title=notification_title,
+                        message=notification_message,
+                        support_ticket_type='staff',
+                        ticket_id=ticket.id
+                    ) for admin in admin_users
+                ]
+
+                if notifications:
+                    AdminNotification.objects.bulk_create(notifications)
+
+                # Start a separate thread to send emails
+                if admin_emails:
+                    from threading import Thread
+                    from admin_section.views import send_admin_emails
+
+                    email_thread = Thread(
+                        target=send_admin_emails,
+                        args=(admin_emails, notification_title, notification_message)
+                    )
+                    email_thread.daemon = True
+                    email_thread.start()
+
+            messages.success(request, "Support ticket submitted successfully. We will respond to your issue soon.")
+            return redirect("staff_section:staff_support")
+    else:
+        form = StaffSupportTicketForm()
+
+    # Get all tickets for the current staff
+    tickets = StaffSupportTicket.objects.filter(staff=staff).order_by('-date_created')
+
+    context = {
+        "form": form,
+        "tickets": tickets,
+        "now": timezone.now(),  # Add current date for the "New" badge
+    }
+    return render(request, "staff_section/staff_support.html", context)
 
 @login_required
 # Staff Reviews View
@@ -492,3 +560,18 @@ def batch_review(request):
 
     messages.success(request, f"{logs.count()} log entries have been {'approved' if action == 'approve' else 'rejected'}.")
     return redirect('staff_section:staff_reviews')
+
+
+@login_required
+def delete_support_ticket(request, ticket_id):
+    if request.user.role != 'staff':
+        messages.error(request, 'You do not have permission to access this page.')
+        return redirect('login')
+
+    ticket = get_object_or_404(StaffSupportTicket, id=ticket_id, staff=request.user.staff_profile)
+    if ticket.status == 'pending':  # Only allow deletion of pending tickets
+        ticket.delete()
+        messages.success(request, "Support ticket deleted successfully.")
+    else:
+        messages.error(request, "Cannot delete a ticket that has been resolved.")
+    return redirect('staff_section:staff_support')

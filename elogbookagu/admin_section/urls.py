@@ -21,6 +21,7 @@ from .views_file.add_department import add_department, edit_department, delete_d
 from .views_file.add_group import add_group, edit_group, delete_group, get_year_sections as group_get_year_sections
 from .views_file.add_student import add_student, remove_from_group, download_sample_csv as student_download_sample_csv, search_students, edit_student, delete_student
 from .views_file.add_doctor import add_doctor, remove_from_department, download_sample_csv as doctor_download_sample_csv, edit_doctor, delete_doctor
+from .views_file.add_staff import add_staff, remove_from_department as remove_staff_from_department, download_sample_csv as staff_download_sample_csv, edit_staff, delete_staff
 from .views_file.add_training_site import add_training_site, edit_training_site, delete_training_site
 
 
@@ -135,6 +136,13 @@ urlpatterns = [
     path("delete-doctor/<int:doctor_id>/", delete_doctor, name="delete_doctor"),
     path("remove-doctor-from-department/<int:doctor_id>/<int:department_id>/", remove_from_department, name="remove_from_department"),
     path("download-doctor-sample-csv/", doctor_download_sample_csv, name="doctor_download_sample_csv"),
+
+    # Staff Management URLs
+    path("add_staff/", add_staff, name="add_staff"),
+    path("edit-staff/<int:staff_id>/", edit_staff, name="edit_staff"),
+    path("delete-staff/<int:staff_id>/", delete_staff, name="delete_staff"),
+    path("remove-staff-from-department/<int:staff_id>/<int:department_id>/", remove_staff_from_department, name="remove_staff_from_department"),
+    path("download-staff-sample-csv/", staff_download_sample_csv, name="download_staff_sample_csv"),
 
     # Training Site Management URLs
     path("add_training_site/", add_training_site, name="add_training_site"),

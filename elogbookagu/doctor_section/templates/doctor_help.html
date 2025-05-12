@@ -193,6 +193,30 @@
       const submitText = document.getElementById('submitText');
       const loadingSpinner = document.getElementById('loadingSpinner');
 
+      // Preload form fields if they exist in localStorage
+      if (localStorage.getItem('doctor_support_subject')) {
+        subjectField.value = localStorage.getItem('doctor_support_subject');
+      }
+      if (localStorage.getItem('doctor_support_description')) {
+        descriptionField.value = localStorage.getItem('doctor_support_description');
+      }
+
+      // Save form fields to localStorage as the user types (debounced)
+      let subjectTimeout, descriptionTimeout;
+      subjectField.addEventListener('input', function() {
+        clearTimeout(subjectTimeout);
+        subjectTimeout = setTimeout(() => {
+          localStorage.setItem('doctor_support_subject', subjectField.value);
+        }, 500);
+      });
+
+      descriptionField.addEventListener('input', function() {
+        clearTimeout(descriptionTimeout);
+        descriptionTimeout = setTimeout(() => {
+          localStorage.setItem('doctor_support_description', descriptionField.value);
+        }, 500);
+      });
+
       if (form) {
         form.addEventListener('submit', function(e) {
           let isValid = true;
@@ -224,6 +248,12 @@
             submitText.textContent = 'Submitting...';
             loadingSpinner.classList.remove('hidden');
             submitBtn.disabled = true;
+
+            // Clear localStorage after successful submission
+            form.addEventListener('formdata', function() {
+              localStorage.removeItem('doctor_support_subject');
+              localStorage.removeItem('doctor_support_description');
+            });
           } else {
             e.preventDefault();
           }

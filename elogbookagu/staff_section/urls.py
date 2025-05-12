@@ -10,6 +10,7 @@ urlpatterns = [
     path("", views.staff_dash, name="staff_dash"),
 
     path("staff_support/", views.staff_support, name="staff_support"),
+    path("delete_support_ticket/<int:ticket_id>/", views.delete_support_ticket, name="delete_support_ticket"),
     path("staff_reviews/", views.staff_reviews, name="staff_reviews"),
     path("review_log/<int:log_id>/", views.review_log, name="review_log"),
     path("batch_review/", views.batch_review, name="batch_review"),
