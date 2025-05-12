@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from admin_section.models import Department
+from admin_section.models import Department, TrainingSite
 from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -12,16 +12,64 @@ from django.http import FileResponse
 from django.conf import settings
 from django.db import models
 from django.core.paginator import Paginator
+from django.db.models import Sum
+from student_section.models import StudentLogFormModel
+
+
+def get_site_statistics():
+    """
+    Helper function to calculate and format site statistics
+    Returns a dictionary with formatted statistics
+    """
+    # Count users by role
+    doctor_count = CustomUser.objects.filter(role='doctor').count()
+    staff_count = CustomUser.objects.filter(role='staff').count()
+    student_count = CustomUser.objects.filter(role='student').count()
+    admin_count = CustomUser.objects.filter(role='admin').count()
+
+    # Total active users
+    total_users = doctor_count + staff_count + student_count + admin_count
+
+    # Count institutions (training sites)
+    total_institutions = TrainingSite.objects.count()
+
+    # For resources accessed, use log entries + a multiplier to represent page views
+    log_entries = StudentLogFormModel.objects.count()
+    # Assuming each log entry represents multiple page views/resources
+    estimated_resources = log_entries * 10  # Multiplier to estimate total resources accessed
+
+    # Format numbers with commas for thousands
+    formatted_users = f"{total_users:,}+"
+    formatted_institutions = f"{total_institutions:,}+"
+    formatted_resources = f"{estimated_resources:,}+"
+
+    # Use actual numbers, don't override with minimums
+
+    return {
+        'active_users': formatted_users,
+        'institutions': formatted_institutions,
+        'resources_accessed': formatted_resources,
+        'support_available': '24/7',  # This is a static value
+        'doctor_count': f"{doctor_count:,}",
+        'staff_count': f"{staff_count:,}",
+        'student_count': f"{student_count:,}",
+        'admin_count': f"{admin_count:,}",
+        'total_users': f"{total_users:,}"
+    }
 
 # Create your views here.
 
 
 def home(request):
-    return render(request, "home.html")
+    # Get statistics from helper function
+    context = get_site_statistics()
+    return render(request, "home.html", context)
 
 
 def about(request):
-    return render(request, "about.html")
+    # Get statistics from helper function
+    context = get_site_statistics()
+    return render(request, "about.html", context)
 
 
 def resources(request):

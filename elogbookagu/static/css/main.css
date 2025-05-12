@@ -775,6 +775,9 @@
   .mt-1 {
     margin-top: calc(var(--spacing) * 1);
   }
+  .mt-1\.5 {
+    margin-top: calc(var(--spacing) * 1.5);
+  }
   .mt-2 {
     margin-top: calc(var(--spacing) * 2);
   }
@@ -1740,6 +1743,9 @@
   .bg-orange-100 {
     background-color: var(--color-orange-100);
   }
+  .bg-orange-500 {
+    background-color: var(--color-orange-500);
+  }
   .bg-orange-600 {
     background-color: var(--color-orange-600);
   }
@@ -2493,6 +2499,9 @@
   .text-white {
     color: var(--color-white);
   }
+  .text-white\/80 {
+    color: color-mix(in oklab, var(--color-white) 80%, transparent);
+  }
   .text-yellow-300 {
     color: var(--color-yellow-300);
   }
@@ -2513,6 +2522,9 @@
   }
   .capitalize {
     text-transform: capitalize;
+  }
+  .lowercase {
+    text-transform: lowercase;
   }
   .uppercase {
     text-transform: uppercase;
@@ -2550,14 +2562,8 @@
   .opacity-10 {
     opacity: 10%;
   }
-  .opacity-15 {
-    opacity: 15%;
-  }
   .opacity-20 {
     opacity: 20%;
-  }
-  .opacity-25 {
-    opacity: 25%;
   }
   .opacity-30 {
     opacity: 30%;
@@ -2576,6 +2582,12 @@
   }
   .opacity-100 {
     opacity: 100%;
+  }
+  .opacity-15 {
+    opacity: 15%;
+  }
+  .opacity-25 {
+    opacity: 25%;
   }
   .ring-1 {
     --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentColor);
@@ -3031,6 +3043,14 @@
     &:hover {
       @media (hover: hover) {
         --tw-translate-y: calc(var(--spacing) * -2);
+        translate: var(--tw-translate-x) var(--tw-translate-y);
+      }
+    }
+  }
+  .hover\:translate-y-\[-1px\] {
+    &:hover {
+      @media (hover: hover) {
+        --tw-translate-y: -1px;
         translate: var(--tw-translate-x) var(--tw-translate-y);
       }
     }
@@ -3563,6 +3583,13 @@
     &:hover {
       @media (hover: hover) {
         color: var(--color-white);
+      }
+    }
+  }
+  .hover\:text-white\/90 {
+    &:hover {
+      @media (hover: hover) {
+        color: color-mix(in oklab, var(--color-white) 90%, transparent);
       }
     }
   }
@@ -5627,6 +5654,13 @@
             background-color: var(--color-blue-800);
           }
         }
+      }
+    }
+  }
+  .dark\:focus\:border-blue-500 {
+    &:where(.dark, .dark *) {
+      &:focus {
+        border-color: var(--color-blue-500);
       }
     }
   }
