@@ -4,7 +4,7 @@ from django.contrib.auth.hashers import make_password
 import csv
 import io
 from accounts.models import CustomUser, Student, Doctor, Staff
-from .models import LogYear, LogYearSection, Department, Group, TrainingSite, ActivityType, CoreDiaProSession, Blog
+from .models import LogYear, LogYearSection, Department, Group, TrainingSite, ActivityType, CoreDiaProSession, Blog, MappedAttendance
 
 class LogYearForm(forms.ModelForm):
     class Meta:
@@ -701,3 +701,71 @@ class BlogForm(forms.ModelForm):
         if len(summary) > 300:
             raise forms.ValidationError("Summary must be 300 characters or less.")
         return summary
+
+
+class MappedAttendanceForm(forms.ModelForm):
+    class Meta:
+        model = MappedAttendance
+        fields = ['name', 'training_site', 'log_year', 'log_year_section', 'doctors', 'groups', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'placeholder': 'Enter mapping name'
+            }),
+            'training_site': forms.Select(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+            }),
+            'log_year': forms.Select(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+            }),
+            'log_year_section': forms.Select(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+            }),
+            'doctors': forms.CheckboxSelectMultiple(attrs={
+                'class': 'space-y-2',
+            }),
+            'groups': forms.CheckboxSelectMultiple(attrs={
+                'class': 'space-y-2',
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filter doctors and groups based on selected log_year if available
+        if 'log_year' in self.data:
+            try:
+                log_year_id = int(self.data.get('log_year'))
+                self.fields['groups'].queryset = Group.objects.filter(log_year_id=log_year_id)
+                # Filter training sites by log year
+                self.fields['training_site'].queryset = TrainingSite.objects.filter(log_year_id=log_year_id)
+            except (ValueError, TypeError):
+                pass
+        elif self.instance.pk:
+            # If editing existing instance, filter based on instance's log_year
+            self.fields['groups'].queryset = Group.objects.filter(log_year=self.instance.log_year)
+            self.fields['training_site'].queryset = TrainingSite.objects.filter(log_year=self.instance.log_year)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        name = cleaned_data.get('name')
+        training_site = cleaned_data.get('training_site')
+        log_year = cleaned_data.get('log_year')
+
+        if name and training_site and log_year:
+            # Check for duplicate mapping names within the same training site and log year
+            existing_query = MappedAttendance.objects.filter(
+                name=name,
+                training_site=training_site,
+                log_year=log_year
+            )
+            if self.instance.pk:
+                existing_query = existing_query.exclude(pk=self.instance.pk)
+            if existing_query.exists():
+                raise forms.ValidationError(
+                    f"A mapping with the name '{name}' already exists for {training_site.name} in {log_year.year_name}."
+                )
+
+        return cleaned_data

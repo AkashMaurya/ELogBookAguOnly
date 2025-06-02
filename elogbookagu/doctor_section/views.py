@@ -403,12 +403,12 @@ def doctor_profile(request):
         logs = StudentLogFormModel.objects.filter(department__in=doctor.departments.all())
 
         # Calculate statistics
-        reviews_count = logs.filter(is_reviewed=True, reviewer=doctor).count()
-        monthly_reviews = logs.filter(is_reviewed=True, reviewer=doctor, review_date__gte=start_of_month).count()
+        reviews_count = logs.filter(is_reviewed=True).count()
+        monthly_reviews = logs.filter(is_reviewed=True, review_date__gte=start_of_month).count()
         pending_reviews = logs.filter(is_reviewed=False, department__in=doctor.departments.all()).count()
 
         # Calculate approval rate
-        reviewed_logs = logs.filter(is_reviewed=True, reviewer=doctor)
+        reviewed_logs = logs.filter(is_reviewed=True)
         total_reviewed = reviewed_logs.count()
         if total_reviewed > 0:
             rejected = reviewed_logs.filter(reviewer_comments__startswith='REJECTED').count()

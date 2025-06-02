@@ -126,15 +126,15 @@ class StudentLogFormModelForm(forms.ModelForm):
             tutors = Doctor.objects.filter(departments=department).distinct()
 
             if activity_type and activity_type not in activity_types:
-                self.add_error("activity_type", "एक सही विकल्प चुनें। वह विकल्प उपलब्ध विकल्पों में से एक नहीं है।")
+                self.add_error("activity_type", "Choose the correct option. That option is not one of the available choices")
 
             if activity_type:
                 core_diagnoses = CoreDiaProSession.objects.filter(activity_type=activity_type)
                 if core_diagnosis and core_diagnosis not in core_diagnoses:
-                    self.add_error("core_diagnosis", "एक सही विकल्प चुनें। वह विकल्प उपलब्ध विकल्पों में से एक नहीं है।")
+                    self.add_error("core_diagnosis", "Choose the correct option. That option is not one of the available choices")
 
             if tutor and tutor not in tutors:
-                self.add_error("tutor", "एक सही विकल्प चुनें। वह विकल्प उपलब्ध विकल्पों में से एक नहीं है।")
+                self.add_error("tutor", "Choose the correct option. That option is not one of the available choices")
 
         # Validate date based on date restriction settings
         if date:
@@ -206,6 +206,36 @@ class StudentLogFormModelForm(forms.ModelForm):
                 latest_allowed_date = today + timedelta(days=future_days_limit)
                 if date > latest_allowed_date:
                     self.add_error("date", f"Date cannot be more than {future_days_limit} days in the future.")
+
+        # Check attendance validation
+        if date and self.user and hasattr(self.user, 'student'):
+            student = self.user.student
+            training_site = cleaned_data.get('training_site')
+
+            if training_site:
+                # Import here to avoid circular imports
+                from doctor_section.models import StudentAttendance
+
+                # Check if student was marked present for this date and training site
+                attendance = StudentAttendance.objects.filter(
+                    student=student,
+                    training_site=training_site,
+                    date=date,
+                    status='present'
+                ).first()
+
+                if not attendance:
+                    # Check if any attendance was marked for this date and training site
+                    any_attendance = StudentAttendance.objects.filter(
+                        student=student,
+                        training_site=training_site,
+                        date=date
+                    ).first()
+
+                    if any_attendance and any_attendance.status == 'absent':
+                        self.add_error("date", f"You were marked absent on {date.strftime('%B %d, %Y')} at {training_site.name}. You cannot submit logs for days when you were absent.")
+                    else:
+                        self.add_error("date", f"No attendance record found for {date.strftime('%B %d, %Y')} at {training_site.name}. Please ensure your attendance was marked as present before submitting logs by your Tutor Or Arabian Gulf University.")
 
         return cleaned_data
     class Meta:

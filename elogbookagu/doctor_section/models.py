@@ -1,7 +1,8 @@
 from django.db import models
 from django.utils import timezone
-from accounts.models import Doctor, CustomUser
+from accounts.models import Doctor, CustomUser, Student
 from student_section.models import StudentLogFormModel
+from admin_section.models import TrainingSite, Group
 
 # Create your models here.
 
@@ -59,3 +60,38 @@ class Notification(models.Model):
     def mark_as_read(self):
         self.is_read = True
         self.save()
+
+
+# Student Attendance Model
+class StudentAttendance(models.Model):
+    ATTENDANCE_CHOICES = [
+        ('present', 'Present'),
+        ('absent', 'Absent'),
+    ]
+
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='attendances')
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE, related_name='marked_attendances')
+    training_site = models.ForeignKey(TrainingSite, on_delete=models.CASCADE, related_name='attendances')
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='attendances')
+    date = models.DateField()
+    status = models.CharField(max_length=10, choices=ATTENDANCE_CHOICES)
+    marked_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    notes = models.TextField(blank=True, help_text="Optional notes about attendance")
+
+    class Meta:
+        ordering = ['-date', '-marked_at']
+        verbose_name = "Student Attendance"
+        verbose_name_plural = "Student Attendances"
+        unique_together = ['student', 'date', 'training_site']  # One attendance record per student per day per training site
+
+    def __str__(self):
+        return f"{self.student.user.get_full_name()} - {self.date} - {self.status}"
+
+    @property
+    def is_present(self):
+        return self.status == 'present'
+
+    @property
+    def is_absent(self):
+        return self.status == 'absent'

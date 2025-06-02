@@ -12,7 +12,8 @@ from .models import (
     ActivityType,
     CoreDiaProSession,
     DateRestrictionSettings,
-    AdminNotification
+    AdminNotification,
+    MappedAttendance
 )
 
 
@@ -163,3 +164,36 @@ class AdminNotificationAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+# Admin configuration for MappedAttendance
+@admin.register(MappedAttendance)
+class MappedAttendanceAdmin(admin.ModelAdmin):
+    list_display = ('name', 'training_site', 'log_year', 'log_year_section', 'get_doctors_count', 'get_groups_count', 'is_active', 'created_at')
+    list_filter = ('is_active', 'log_year', 'log_year_section', 'training_site')
+    search_fields = ('name', 'training_site__name', 'log_year__year_name')
+    filter_horizontal = ('doctors', 'groups')
+    readonly_fields = ('created_at', 'updated_at')
+    date_hierarchy = 'created_at'
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('name', 'training_site', 'log_year', 'log_year_section', 'is_active')
+        }),
+        ('Mappings', {
+            'fields': ('doctors', 'groups'),
+            'description': 'Select doctors and groups to map to this training site'
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def get_doctors_count(self, obj):
+        return obj.doctors.count()
+    get_doctors_count.short_description = 'Doctors Count'
+
+    def get_groups_count(self, obj):
+        return obj.groups.count()
+    get_groups_count.short_description = 'Groups Count'

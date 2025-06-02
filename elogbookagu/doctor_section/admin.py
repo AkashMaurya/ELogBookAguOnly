@@ -1,6 +1,6 @@
 from django.contrib import admin
 from import_export.admin import ImportExportModelAdmin
-from .models import DoctorSupportTicket, Notification
+from .models import DoctorSupportTicket, Notification, StudentAttendance
 
 # Register your models here.
 
@@ -45,3 +45,28 @@ class NotificationAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+
+@admin.register(StudentAttendance)
+class StudentAttendanceAdmin(ImportExportModelAdmin):
+    list_display = ('student', 'doctor', 'training_site', 'group', 'date', 'status', 'marked_at')
+    list_filter = ('status', 'date', 'training_site', 'group')
+    search_fields = ('student__user__username', 'student__user__first_name', 'student__student_id', 'doctor__user__username')
+    readonly_fields = ('marked_at', 'updated_at')
+    date_hierarchy = 'date'
+
+    fieldsets = (
+        ('Attendance Information', {
+            'fields': ('student', 'doctor', 'training_site', 'group', 'date', 'status')
+        }),
+        ('Additional Information', {
+            'fields': ('notes',)
+        }),
+        ('Timestamps', {
+            'fields': ('marked_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('student__user', 'doctor__user', 'training_site', 'group')

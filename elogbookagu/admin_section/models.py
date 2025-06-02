@@ -265,3 +265,46 @@ class Blog(models.Model):
         elif self.attachment:
             return self.attachment.name.split('/')[-1]
         return None
+
+
+# Mapped Attendance Model
+class MappedAttendance(models.Model):
+    name = models.CharField(max_length=100, help_text="Name for this attendance mapping")
+    training_site = models.ForeignKey(TrainingSite, on_delete=models.CASCADE, related_name='mapped_attendances')
+    doctors = models.ManyToManyField('accounts.Doctor', blank=True, related_name='mapped_attendances')
+    groups = models.ManyToManyField(Group, blank=True, related_name='mapped_attendances')
+    log_year = models.ForeignKey(LogYear, on_delete=models.CASCADE, related_name='mapped_attendances')
+    log_year_section = models.ForeignKey(
+        LogYearSection,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='mapped_attendances'
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Mapped Attendance"
+        verbose_name_plural = "Mapped Attendances"
+        unique_together = ['name', 'training_site', 'log_year']
+
+    def __str__(self):
+        return f"{self.name} - {self.training_site.name} ({self.log_year.year_name})"
+
+    def get_doctors_list(self):
+        """Get comma-separated list of mapped doctors"""
+        doctors = [doctor.user.get_full_name() or doctor.user.username for doctor in self.doctors.all()]
+        return ", ".join(doctors) if doctors else "No Doctors Mapped"
+
+    def get_groups_list(self):
+        """Get comma-separated list of mapped groups"""
+        groups = [group.group_name for group in self.groups.all()]
+        return ", ".join(groups) if groups else "No Groups Mapped"
+
+    def get_students_count(self):
+        """Get total count of students in mapped groups"""
+        from accounts.models import Student
+        return Student.objects.filter(group__in=self.groups.all()).count()

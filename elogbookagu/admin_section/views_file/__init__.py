@@ -23,3 +23,12 @@ from .add_group import add_group
 from .add_student import add_student
 from .add_doctor import add_doctor
 from .add_training_site import add_training_site, edit_training_site, delete_training_site
+from .mapped_attendance_views import (
+    mapped_attendance_list,
+    mapped_attendance_create,
+    mapped_attendance_edit,
+    mapped_attendance_delete,
+    mapped_attendance_detail,
+    get_groups_by_year,
+    get_training_sites_by_year,
+)

@@ -1,7 +1,10 @@
 from django import forms
+from django.utils import timezone
+from datetime import date, timedelta
 from student_section.models import StudentLogFormModel, SupportTicket
-from accounts.models import CustomUser
-from .models import StaffSupportTicket
+from accounts.models import CustomUser, Student
+from .models import StaffSupportTicket, StaffEmergencyAttendance
+from admin_section.models import Department, TrainingSite, Group
 
 class StaffSupportTicketForm(forms.ModelForm):
     class Meta:
@@ -125,4 +128,76 @@ class ProfileUpdateForm(forms.ModelForm):
                     'id': 'profile-photo-input',
                 }
             ),
+        }
+
+
+class EmergencyAttendanceForm(forms.Form):
+    """Form for taking emergency attendance of students"""
+    department = forms.ModelChoiceField(
+        queryset=None,  # Will be set in __init__
+        empty_label="Select Department",
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+        })
+    )
+
+    training_site = forms.ModelChoiceField(
+        queryset=TrainingSite.objects.all(),
+        empty_label="Select Training Site (Optional)",
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+        })
+    )
+
+    attendance_date = forms.DateField(
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+        })
+    )
+
+    def __init__(self, staff=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if staff:
+            # Get departments where this staff is mapped
+            self.fields['department'].queryset = staff.departments.all()
+
+            # If only one department, select it by default
+            if staff.departments.count() == 1:
+                self.fields['department'].initial = staff.departments.first()
+
+    def clean_attendance_date(self):
+        attendance_date = self.cleaned_data.get('attendance_date')
+        today = date.today()
+
+        # Allow any date for emergency attendance (past, present, or future)
+        # But add validation for reasonable date range
+        if attendance_date:
+            # Don't allow dates more than 1 year in the past or future
+            one_year_ago = today - timedelta(days=365)
+            one_year_future = today + timedelta(days=365)
+
+            if attendance_date < one_year_ago:
+                raise forms.ValidationError("Date cannot be more than 1 year in the past.")
+            if attendance_date > one_year_future:
+                raise forms.ValidationError("Date cannot be more than 1 year in the future.")
+
+        return attendance_date
+
+
+class StudentEmergencyAttendanceForm(forms.ModelForm):
+    """Form for individual student emergency attendance"""
+    class Meta:
+        model = StaffEmergencyAttendance
+        fields = ['status', 'notes']
+        widgets = {
+            'status': forms.RadioSelect(attrs={
+                'class': 'mr-2'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'rows': 2,
+                'placeholder': 'Optional notes'
+            })
         }

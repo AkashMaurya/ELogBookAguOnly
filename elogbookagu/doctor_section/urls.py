@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import attendance_views
 from django.contrib.auth import views as auth_views
 
 
@@ -22,6 +23,12 @@ urlpatterns = [
     path("batch-review/", views.batch_review, name="batch_review"),
     path("notifications/", views.notifications, name="notifications"),
     path("export-logs/", views.export_logs, name="export_logs"),
+
+    # Attendance URLs
+    path("take-attendance/", attendance_views.take_attendance, name="take_attendance"),
+    path("attendance-history/", attendance_views.attendance_history, name="attendance_history"),
+    path("attendance-summary/", attendance_views.attendance_summary, name="attendance_summary"),
+    path("api/get-students-for-site/", attendance_views.get_students_for_site, name="get_students_for_site"),
 ]
 
 

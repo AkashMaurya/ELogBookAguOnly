@@ -1,6 +1,7 @@
 # staff_section/urls.py
 from django.urls import path
 from . import views
+from . import emergency_attendance_views
 from django.contrib.auth import views as auth_views
 
 
@@ -16,6 +17,13 @@ urlpatterns = [
     path("batch_review/", views.batch_review, name="batch_review"),
     path("staff_profile/", views.staff_profile, name="staff_profile"),
     path("notifications/", views.notifications, name="notifications"),
+
+    # Emergency Attendance URLs
+    path("emergency-attendance/", emergency_attendance_views.emergency_attendance, name="emergency_attendance"),
+    path("emergency-attendance-history/", emergency_attendance_views.emergency_attendance_history, name="emergency_attendance_history"),
+    path("emergency-attendance-summary/", emergency_attendance_views.emergency_attendance_summary, name="emergency_attendance_summary"),
+    path("api/get-students-for-department/", emergency_attendance_views.get_students_for_department, name="get_students_for_department"),
+
     # ye django ka logout class based view jo apne aap logout karwa dega if user want to log out
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
 ]

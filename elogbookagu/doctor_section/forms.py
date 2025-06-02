@@ -1,6 +1,10 @@
 from django import forms
-from .models import DoctorSupportTicket
+from django.utils import timezone
+from datetime import date
+from .models import DoctorSupportTicket, StudentAttendance
 from student_section.models import StudentLogFormModel
+from accounts.models import Student
+from admin_section.models import MappedAttendance, TrainingSite
 
 class DoctorSupportTicketForm(forms.ModelForm):
     class Meta:
@@ -86,3 +90,75 @@ class BatchReviewForm(forms.Form):
             }
         )
     )
+
+
+class AttendanceForm(forms.Form):
+    """Form for taking attendance of multiple students"""
+    training_site = forms.ModelChoiceField(
+        queryset=None,  # Will be set in __init__
+        empty_label="Select Training Site",
+        widget=forms.Select(attrs={
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+        })
+    )
+
+    attendance_date = forms.DateField(
+        initial=date.today,
+        widget=forms.DateInput(attrs={
+            'type': 'date',
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+            'max': date.today().isoformat(),  # Disable future dates
+            'min': date.today().isoformat(),  # Only allow today
+        })
+    )
+
+    notes = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white h-24',
+            'placeholder': 'Optional notes about today\'s attendance',
+            'rows': 3
+        })
+    )
+
+    def __init__(self, doctor=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if doctor:
+            # Get training sites where this doctor is mapped
+            mapped_attendances = MappedAttendance.objects.filter(
+                doctors=doctor,
+                is_active=True
+            ).select_related('training_site')
+
+            training_site_ids = [ma.training_site.id for ma in mapped_attendances]
+            self.fields['training_site'].queryset = TrainingSite.objects.filter(id__in=training_site_ids)
+
+            # If only one training site, select it by default
+            if len(training_site_ids) == 1:
+                self.fields['training_site'].initial = training_site_ids[0]
+
+    def clean_attendance_date(self):
+        attendance_date = self.cleaned_data.get('attendance_date')
+        today = date.today()
+
+        if attendance_date != today:
+            raise forms.ValidationError("You can only take attendance for today.")
+
+        return attendance_date
+
+
+class StudentAttendanceForm(forms.ModelForm):
+    """Form for individual student attendance"""
+    class Meta:
+        model = StudentAttendance
+        fields = ['status', 'notes']
+        widgets = {
+            'status': forms.RadioSelect(attrs={
+                'class': 'mr-2'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
+                'rows': 2,
+                'placeholder': 'Optional notes'
+            })
+        }

@@ -23,6 +23,15 @@ from .views_file.add_student import add_student, remove_from_group, download_sam
 from .views_file.add_doctor import add_doctor, remove_from_department, download_sample_csv as doctor_download_sample_csv, edit_doctor, delete_doctor
 from .views_file.add_staff import add_staff, remove_from_department as remove_staff_from_department, download_sample_csv as staff_download_sample_csv, edit_staff, delete_staff
 from .views_file.add_training_site import add_training_site, edit_training_site, delete_training_site
+from .views_file.mapped_attendance_views import (
+    mapped_attendance_list,
+    mapped_attendance_create,
+    mapped_attendance_edit,
+    mapped_attendance_delete,
+    mapped_attendance_detail,
+    get_groups_by_year,
+    get_training_sites_by_year,
+)
 
 
 app_name = "admin_section"
@@ -149,6 +158,13 @@ urlpatterns = [
     path("edit-training-site/<int:training_site_id>/", edit_training_site, name="edit_training_site"),
     path("delete-training-site/<int:training_site_id>/", delete_training_site, name="delete_training_site"),
 
+    # Mapped Attendance URLs
+    path("mapped-attendance/", mapped_attendance_list, name="mapped_attendance_list"),
+    path("mapped-attendance/create/", mapped_attendance_create, name="mapped_attendance_create"),
+    path("mapped-attendance/<int:pk>/", mapped_attendance_detail, name="mapped_attendance_detail"),
+    path("mapped-attendance/<int:pk>/edit/", mapped_attendance_edit, name="mapped_attendance_edit"),
+    path("mapped-attendance/<int:pk>/delete/", mapped_attendance_delete, name="mapped_attendance_delete"),
+
     # Bulk Add Users URLs
     path('bulk-add-users/', views.bulk_add_users, name='bulk_add_users'),
     path('download-user-template/', views.download_user_template, name='download_user_template'),
@@ -156,4 +172,6 @@ urlpatterns = [
     # AJAX endpoints
     path('api/get-user-data/', views.get_user_data, name='get_user_data'),
     path('api/search-students/', search_students, name='search_students'),
+    path('api/groups-by-year/', get_groups_by_year, name='get_groups_by_year'),
+    path('api/training-sites-by-year/', get_training_sites_by_year, name='get_training_sites_by_year'),
 ]
