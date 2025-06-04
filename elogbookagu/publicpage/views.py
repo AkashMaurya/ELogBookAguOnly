@@ -121,21 +121,21 @@ def home(request):
     return render(request, "home.html", context)
 
 
-def about(request):
-    # Track page visit
-    try:
-        from .models import PageVisit
-        PageVisit.record_visit('about', request)
-    except Exception:
-        pass  # Silently fail if tracking doesn't work
+# def about(request):
+#     # Track page visit
+#     try:
+#         from .models import PageVisit
+#         PageVisit.record_visit('about', request)
+#     except Exception:
+#         pass  # Silently fail if tracking doesn't work
 
-    # Get statistics from helper function
-    context = get_site_statistics()
-    return render(request, "about.html", context)
+#     # Get statistics from helper function
+#     context = get_site_statistics()
+#     return render(request, "about.html", context)
 
 
-def resources(request):
-    return render(request, "resources.html")
+# def resources(request):
+#     return render(request, "resources.html")
 
 
 def update(request):
