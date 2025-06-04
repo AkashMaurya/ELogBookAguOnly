@@ -2,7 +2,7 @@ from django import forms
 from django.utils import timezone
 from datetime import timedelta
 from .models import StudentLogFormModel, SupportTicket
-from admin_section.models import Department, ActivityType, CoreDiaProSession, DateRestrictionSettings
+from admin_section.models import Department, ActivityType, CoreDiaProSession, DateRestrictionSettings, TrainingSite, MappedAttendance
 from accounts.models import Doctor, Student
 
 
@@ -51,6 +51,17 @@ class StudentLogFormModelForm(forms.ModelForm):
         empty_label="Select Tutor",
     )
 
+    training_site = forms.ModelChoiceField(
+        queryset=TrainingSite.objects.none(),
+        widget=forms.Select(
+            attrs={
+                "class": "w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white",
+                "id": "id_training_site",
+            }
+        ),
+        empty_label="Select Training Site",
+    )
+
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
@@ -65,6 +76,20 @@ class StudentLogFormModelForm(forms.ModelForm):
                 self.fields["department"].queryset = Department.objects.filter(
                     log_year_section=log_year_section
                 )
+
+                # Training Site की queryset सेट करें - केवल वे training sites जहाँ student का group mapped है
+                if student.group:
+                    # Get training sites where the student's group is mapped
+                    mapped_training_sites = MappedAttendance.objects.filter(
+                        groups=student.group,
+                        is_active=True
+                    ).values_list('training_site', flat=True).distinct()
+
+                    self.fields["training_site"].queryset = TrainingSite.objects.filter(
+                        id__in=mapped_training_sites
+                    ).order_by('name')
+                else:
+                    self.fields["training_site"].queryset = TrainingSite.objects.none()
 
                 # अगर फॉर्म में पहले से डेटा है (जैसे एडिटिंग के दौरान) या POST डेटा में department चुना गया है
                 department = None
@@ -112,6 +137,7 @@ class StudentLogFormModelForm(forms.ModelForm):
                 self.fields["activity_type"].queryset = ActivityType.objects.none()
                 self.fields["core_diagnosis"].queryset = CoreDiaProSession.objects.none()
                 self.fields["tutor"].queryset = Doctor.objects.none()
+                self.fields["training_site"].queryset = TrainingSite.objects.none()
     def clean(self):
         cleaned_data = super().clean()
         department = cleaned_data.get("department")
@@ -287,11 +313,6 @@ class StudentLogFormModelForm(forms.ModelForm):
                 }
             ),
             "participation_type": forms.Select(
-                attrs={
-                    "class": "w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                }
-            ),
-            "training_site": forms.Select(
                 attrs={
                     "class": "w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 }

@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.db import transaction, models
+from django.views.decorators.http import require_POST
 import os
 import csv
 import io
@@ -1153,6 +1154,47 @@ def notifications(request):
     }
 
     return render(request, 'admin_section/notifications.html', context)
+
+
+@require_POST
+@login_required
+def delete_all_notifications(request):
+    """Handle deletion of all notifications for the current admin"""
+    # Check if user is admin
+    if request.user.role != 'admin':
+        return JsonResponse({
+            'success': False,
+            'message': 'You do not have permission to perform this action.'
+        }, status=403)
+
+    try:
+        # Get all notifications for this admin
+        notifications = AdminNotification.objects.filter(recipient=request.user)
+
+        if not notifications.exists():
+            return JsonResponse({
+                'success': False,
+                'message': 'No notifications found to delete.'
+            })
+
+        # Count notifications before deletion
+        notification_count = notifications.count()
+
+        # Perform bulk deletion
+        with transaction.atomic():
+            notifications.delete()
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Successfully deleted {notification_count} notification(s).',
+            'deleted_count': notification_count
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error occurred during deletion: {str(e)}'
+        }, status=500)
 
 
 @login_required

@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.db.models import Q
-from ..models import MappedAttendance, TrainingSite, Group, LogYear, LogYearSection
+from ..models import MappedAttendance, TrainingSite, Group, LogYear, LogYearSection, Department
 from ..forms import MappedAttendanceForm
 from accounts.models import Doctor
 
@@ -74,8 +74,12 @@ def mapped_attendance_create(request):
     else:
         form = MappedAttendanceForm()
 
+    # Get all departments for the filter dropdown
+    departments = Department.objects.all().order_by('name')
+
     context = {
         'form': form,
+        'departments': departments,
         'title': 'Create Mapped Attendance',
         'submit_text': 'Create Mapping'
     }
@@ -99,9 +103,13 @@ def mapped_attendance_edit(request, pk):
     else:
         form = MappedAttendanceForm(instance=mapping)
 
+    # Get all departments for the filter dropdown
+    departments = Department.objects.all().order_by('name')
+
     context = {
         'form': form,
         'mapping': mapping,
+        'departments': departments,
         'title': f'Edit Mapped Attendance: {mapping.name}',
         'submit_text': 'Update Mapping'
     }
@@ -177,3 +185,40 @@ def get_training_sites_by_year(request):
         training_sites = [{'id': site.id, 'name': site.name} for site in sites_queryset]
 
     return JsonResponse({'training_sites': training_sites})
+
+
+@login_required
+def get_doctors_by_department(request):
+    """AJAX endpoint to get doctors filtered by department"""
+    department_id = request.GET.get('department_id')
+    doctors = []
+
+    if department_id:
+        # Get doctors mapped to the selected department
+        doctors_queryset = Doctor.objects.filter(
+            departments__id=department_id
+        ).select_related('user').order_by('user__first_name', 'user__last_name')
+
+        doctors = [
+            {
+                'id': doctor.id,
+                'name': doctor.user.get_full_name() or doctor.user.username,
+                'username': doctor.user.username,
+                'email': doctor.user.email
+            }
+            for doctor in doctors_queryset
+        ]
+    else:
+        # If no department selected, return all doctors
+        doctors_queryset = Doctor.objects.select_related('user').order_by('user__first_name', 'user__last_name')
+        doctors = [
+            {
+                'id': doctor.id,
+                'name': doctor.user.get_full_name() or doctor.user.username,
+                'username': doctor.user.username,
+                'email': doctor.user.email
+            }
+            for doctor in doctors_queryset
+        ]
+
+    return JsonResponse({'doctors': doctors})

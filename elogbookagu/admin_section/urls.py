@@ -14,7 +14,7 @@ from .views_file.CoreDiaProSession_views import (
     get_activity_types_by_department,
 )
 
-from .views_file.add_user import add_user, edit_user, delete_user
+from .views_file.add_user import add_user, edit_user, delete_user, bulk_delete_users
 from .views_file.add_year import add_year, edit_year, delete_year
 from .views_file.add_elogyear import add_elogyear, edit_elogyear, delete_elogyear
 from .views_file.add_department import add_department, edit_department, delete_department, get_year_sections
@@ -31,6 +31,7 @@ from .views_file.mapped_attendance_views import (
     mapped_attendance_detail,
     get_groups_by_year,
     get_training_sites_by_year,
+    get_doctors_by_department,
 )
 
 
@@ -107,6 +108,7 @@ urlpatterns = [
     path("review-log/<int:log_id>/", views.review_log, name="review_log"),
     path("batch-review/", views.batch_review, name="batch_review"),
     path("notifications/", views.notifications, name="notifications"),
+    path("delete-all-notifications/", views.delete_all_notifications, name="delete_all_notifications"),
 
     # Bulk Import URLs
     path("bulk-import-users/", views.bulk_import_users, name="bulk_import_users"),
@@ -119,6 +121,7 @@ urlpatterns = [
     # User Management URLs
     path("edit-user/<int:user_id>/", edit_user, name="edit_user"),
     path("delete-user/<int:user_id>/", delete_user, name="delete_user"),
+    path("bulk-delete-users/", bulk_delete_users, name="bulk_delete_users"),
 
     # Year Section Management URLs
     path("edit-elogyear/<int:section_id>/", edit_elogyear, name="edit_elogyear"),
@@ -164,6 +167,7 @@ urlpatterns = [
     path("mapped-attendance/<int:pk>/", mapped_attendance_detail, name="mapped_attendance_detail"),
     path("mapped-attendance/<int:pk>/edit/", mapped_attendance_edit, name="mapped_attendance_edit"),
     path("mapped-attendance/<int:pk>/delete/", mapped_attendance_delete, name="mapped_attendance_delete"),
+    path("api/doctors-by-department/", get_doctors_by_department, name="get_doctors_by_department"),
 
     # Bulk Add Users URLs
     path('bulk-add-users/', views.bulk_add_users, name='bulk_add_users'),

@@ -4,8 +4,11 @@ from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.db import transaction
 from django.db.models import Q
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 from accounts.models import CustomUser, Student, Doctor, Staff
 from admin_section.forms import CustomUserForm
+import json
 
 
 def add_user(request):
@@ -130,3 +133,59 @@ def delete_user(request, user_id):
 
     # Otherwise, redirect to the user list
     return redirect('admin_section:add_user')
+
+
+@require_POST
+@login_required
+def bulk_delete_users(request):
+    """Handle bulk deletion of users"""
+    try:
+        # Get the list of user IDs from the request
+        user_ids = request.POST.getlist('user_ids[]')
+
+        if not user_ids:
+            return JsonResponse({
+                'success': False,
+                'message': 'No users selected for deletion.'
+            })
+
+        # Convert to integers and validate
+        try:
+            user_ids = [int(uid) for uid in user_ids]
+        except ValueError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid user IDs provided.'
+            })
+
+        # Get users to delete (excluding superusers for safety)
+        users_to_delete = CustomUser.objects.filter(
+            id__in=user_ids,
+            is_superuser=False
+        )
+
+        if not users_to_delete.exists():
+            return JsonResponse({
+                'success': False,
+                'message': 'No valid users found for deletion.'
+            })
+
+        # Count users and get their usernames for the response
+        deleted_count = users_to_delete.count()
+        deleted_usernames = list(users_to_delete.values_list('username', flat=True))
+
+        # Perform bulk deletion
+        with transaction.atomic():
+            users_to_delete.delete()
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Successfully deleted {deleted_count} user(s): {", ".join(deleted_usernames)}',
+            'deleted_count': deleted_count
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error occurred during bulk deletion: {str(e)}'
+        })

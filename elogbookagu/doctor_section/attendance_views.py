@@ -14,10 +14,16 @@ from admin_section.models import MappedAttendance, TrainingSite, Group
 @login_required
 def take_attendance(request):
     """Main attendance taking view"""
+    # Check if user has doctor role
+    if not hasattr(request.user, 'role') or request.user.role != 'doctor':
+        messages.error(request, "You must be a doctor to access this page.")
+        return redirect('doctor_section:doctor_dash')
+
+    # Check if doctor profile exists
     try:
         doctor = request.user.doctor_profile
-    except Doctor.DoesNotExist:
-        messages.error(request, "You must be a doctor to access this page.")
+    except (Doctor.DoesNotExist, AttributeError):
+        messages.error(request, "Doctor profile not found. Please contact the administrator to create your doctor profile.")
         return redirect('doctor_section:doctor_dash')
 
     # Get mapped training sites for this doctor
@@ -27,13 +33,25 @@ def take_attendance(request):
     ).select_related('training_site').prefetch_related('groups')
 
     if not mapped_attendances.exists():
-        messages.warning(request, "You are not mapped to any training sites. Please contact the administrator.")
+        # Check if doctor exists in any mappings (active or inactive)
+        all_mappings = MappedAttendance.objects.filter(doctors=doctor)
+
+        if all_mappings.exists():
+            inactive_count = all_mappings.filter(is_active=False).count()
+            if inactive_count > 0:
+                messages.warning(request, f"You have {inactive_count} inactive training site mapping(s). Please contact the administrator to activate them.")
+            else:
+                messages.warning(request, "Your training site mappings are not active. Please contact the administrator.")
+        else:
+            messages.warning(request, "You are not mapped to any training sites. Please contact the administrator to create attendance mappings for you.")
+
         return redirect('doctor_section:doctor_dash')
 
     selected_training_site = None
     students_data = []
     today = date.today()
 
+    # Handle form processing
     if request.method == 'POST':
         form = AttendanceForm(doctor=doctor, data=request.POST)
         if form.is_valid():
@@ -48,7 +66,11 @@ def take_attendance(request):
             # Process attendance if submitted
             if 'submit_attendance' in request.POST:
                 return process_attendance_submission(request, doctor, training_site, attendance_date, general_notes)
-
+        else:
+            # Form has validation errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
         form = AttendanceForm(doctor=doctor)
 
@@ -275,3 +297,61 @@ def attendance_summary(request):
     }
 
     return render(request, 'doctor_section/attendance_summary.html', context)
+
+
+@login_required
+def debug_doctor_status(request):
+    """Debug view to check doctor status and mappings"""
+    debug_info = {
+        'user_authenticated': request.user.is_authenticated,
+        'user_role': getattr(request.user, 'role', 'No role attribute'),
+        'username': request.user.username,
+        'user_id': request.user.id,
+    }
+
+    # Check doctor profile
+    try:
+        doctor = request.user.doctor_profile
+        debug_info['doctor_profile_exists'] = True
+        debug_info['doctor_id'] = doctor.id
+        debug_info['doctor_departments'] = [dept.name for dept in doctor.departments.all()]
+
+        # Check mapped attendances
+        mapped_attendances = MappedAttendance.objects.filter(doctors=doctor)
+        active_mappings = mapped_attendances.filter(is_active=True)
+
+        debug_info['total_mappings'] = mapped_attendances.count()
+        debug_info['active_mappings'] = active_mappings.count()
+        debug_info['mapping_details'] = [
+            {
+                'id': ma.id,
+                'name': ma.name,
+                'training_site': ma.training_site.name,
+                'is_active': ma.is_active,
+                'groups_count': ma.groups.count(),
+                'groups': [group.group_name for group in ma.groups.all()]
+            }
+            for ma in mapped_attendances
+        ]
+
+        # Check all mapped attendances in system
+        all_mappings = MappedAttendance.objects.all()
+        debug_info['total_system_mappings'] = all_mappings.count()
+        debug_info['all_doctors_in_mappings'] = list(set([
+            doctor.user.username for mapping in all_mappings for doctor in mapping.doctors.all()
+        ]))
+
+    except Doctor.DoesNotExist:
+        debug_info['doctor_profile_exists'] = False
+        debug_info['doctor_error'] = 'Doctor profile does not exist'
+
+        # Check if any doctor profiles exist
+        all_doctors = Doctor.objects.all()
+        debug_info['total_doctors_in_system'] = all_doctors.count()
+        debug_info['all_doctor_usernames'] = [d.user.username for d in all_doctors]
+
+    except AttributeError as e:
+        debug_info['doctor_profile_exists'] = False
+        debug_info['doctor_error'] = f'AttributeError: {str(e)}'
+
+    return JsonResponse(debug_info, indent=2)

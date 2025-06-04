@@ -6,8 +6,10 @@ from django.db import models
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
 from django.conf import settings
+from django.utils import timezone
 from datetime import datetime
 from xhtml2pdf import pisa
+import os
 from .forms import StudentLogFormModelForm, SupportTicketForm
 from .models import StudentLogFormModel, SupportTicket, StudentNotification
 from admin_section.models import ActivityType, CoreDiaProSession, LogYear, Department, AdminNotification, DateRestrictionSettings

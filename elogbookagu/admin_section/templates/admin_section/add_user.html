@@ -181,10 +181,33 @@
       </div>
 
       {% if users %}
+        <!-- Bulk Actions Bar -->
+        <div id="bulkActionsBar" class="hidden bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-4 mb-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <span id="selectedCount" class="text-sm font-medium text-blue-800 dark:text-blue-200">0 users selected</span>
+            </div>
+            <div class="flex space-x-2">
+              <button id="bulkDeleteBtn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200">
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H9a1 1 0 00-1 1v1M4 7h16"></path>
+                </svg>
+                Delete Selected
+              </button>
+              <button id="clearSelection" class="px-4 py-2 bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
+                Clear Selection
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-700">
               <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <input type="checkbox" id="selectAll" class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">User</th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Role</th>
@@ -195,6 +218,11 @@
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {% for user in users %}
                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    {% if not user.is_superuser %}
+                      <input type="checkbox" class="user-checkbox rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50" value="{{ user.id }}" data-username="{{ user.username }}">
+                    {% endif %}
+                  </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center">
                       <div class="flex-shrink-0 h-10 w-10">
@@ -293,15 +321,47 @@
     </div>
   </div>
 
-  <!-- JavaScript for delete confirmation -->
+  <!-- Bulk Delete Confirmation Modal -->
+  <div id="bulkDeleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+    <div class="flex items-center justify-center min-h-screen px-4">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Confirm Bulk Deletion</h3>
+        <p class="text-gray-700 dark:text-gray-300 mb-4">Are you sure you want to delete the following <span id="bulkDeleteCount" class="font-semibold"></span> user(s)? This action cannot be undone.</p>
+        <div class="max-h-32 overflow-y-auto mb-6">
+          <ul id="bulkDeleteUserList" class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+            <!-- User list will be populated by JavaScript -->
+          </ul>
+        </div>
+        <div class="flex justify-end space-x-3">
+          <button id="cancelBulkDelete" class="px-4 py-2 bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">Cancel</button>
+          <button id="confirmBulkDelete" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">Delete All</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript for delete confirmation and bulk operations -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      // Elements
       const deleteModal = document.getElementById('deleteModal');
       const usernameToDelete = document.getElementById('usernameToDelete');
       const deleteForm = document.getElementById('deleteForm');
       const cancelDelete = document.getElementById('cancelDelete');
 
-      // Show delete confirmation modal
+      const bulkDeleteModal = document.getElementById('bulkDeleteModal');
+      const bulkActionsBar = document.getElementById('bulkActionsBar');
+      const selectAllCheckbox = document.getElementById('selectAll');
+      const userCheckboxes = document.querySelectorAll('.user-checkbox');
+      const selectedCount = document.getElementById('selectedCount');
+      const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+      const clearSelectionBtn = document.getElementById('clearSelection');
+      const cancelBulkDelete = document.getElementById('cancelBulkDelete');
+      const confirmBulkDelete = document.getElementById('confirmBulkDelete');
+      const bulkDeleteCount = document.getElementById('bulkDeleteCount');
+      const bulkDeleteUserList = document.getElementById('bulkDeleteUserList');
+
+      // Single user delete functionality
       document.querySelectorAll('.delete-user-btn').forEach(button => {
         button.addEventListener('click', function() {
           const userId = this.getAttribute('data-user-id');
@@ -313,15 +373,153 @@
         });
       });
 
-      // Hide delete confirmation modal
       cancelDelete.addEventListener('click', function() {
         deleteModal.classList.add('hidden');
       });
 
-      // Close modal when clicking outside
       deleteModal.addEventListener('click', function(event) {
         if (event.target === deleteModal) {
           deleteModal.classList.add('hidden');
+        }
+      });
+
+      // Bulk selection functionality
+      function updateBulkActionsBar() {
+        const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+        const count = checkedBoxes.length;
+
+        if (count > 0) {
+          bulkActionsBar.classList.remove('hidden');
+          selectedCount.textContent = `${count} user${count > 1 ? 's' : ''} selected`;
+        } else {
+          bulkActionsBar.classList.add('hidden');
+        }
+
+        // Update select all checkbox state
+        if (count === 0) {
+          selectAllCheckbox.indeterminate = false;
+          selectAllCheckbox.checked = false;
+        } else if (count === userCheckboxes.length) {
+          selectAllCheckbox.indeterminate = false;
+          selectAllCheckbox.checked = true;
+        } else {
+          selectAllCheckbox.indeterminate = true;
+        }
+      }
+
+      // Select all functionality
+      selectAllCheckbox.addEventListener('change', function() {
+        const isChecked = this.checked;
+        userCheckboxes.forEach(checkbox => {
+          checkbox.checked = isChecked;
+        });
+        updateBulkActionsBar();
+      });
+
+      // Individual checkbox functionality
+      userCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkActionsBar);
+      });
+
+      // Clear selection
+      clearSelectionBtn.addEventListener('click', function() {
+        userCheckboxes.forEach(checkbox => {
+          checkbox.checked = false;
+        });
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+        updateBulkActionsBar();
+      });
+
+      // Bulk delete functionality
+      bulkDeleteBtn.addEventListener('click', function() {
+        const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+        const selectedUsers = Array.from(checkedBoxes).map(checkbox => ({
+          id: checkbox.value,
+          username: checkbox.getAttribute('data-username')
+        }));
+
+        if (selectedUsers.length === 0) {
+          alert('Please select users to delete.');
+          return;
+        }
+
+        // Populate bulk delete modal
+        bulkDeleteCount.textContent = selectedUsers.length;
+        bulkDeleteUserList.innerHTML = '';
+        selectedUsers.forEach(user => {
+          const li = document.createElement('li');
+          li.textContent = `• ${user.username}`;
+          bulkDeleteUserList.appendChild(li);
+        });
+
+        bulkDeleteModal.classList.remove('hidden');
+      });
+
+      // Confirm bulk delete
+      confirmBulkDelete.addEventListener('click', function() {
+        const checkedBoxes = document.querySelectorAll('.user-checkbox:checked');
+        const userIds = Array.from(checkedBoxes).map(checkbox => checkbox.value);
+
+        if (userIds.length === 0) {
+          alert('No users selected.');
+          return;
+        }
+
+        // Show loading state
+        confirmBulkDelete.disabled = true;
+        confirmBulkDelete.innerHTML = 'Deleting...';
+
+        // Prepare form data
+        const formData = new FormData();
+        userIds.forEach(id => {
+          formData.append('user_ids[]', id);
+        });
+
+        // Add CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        formData.append('csrfmiddlewaretoken', csrfToken);
+
+        // Send bulk delete request
+        fetch('{% url "admin_section:bulk_delete_users" %}', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Show success message
+            alert(data.message);
+            // Reload the page to refresh the user list
+            window.location.reload();
+          } else {
+            alert('Error: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while deleting users.');
+        })
+        .finally(() => {
+          // Reset button state
+          confirmBulkDelete.disabled = false;
+          confirmBulkDelete.innerHTML = 'Delete All';
+          bulkDeleteModal.classList.add('hidden');
+        });
+      });
+
+      // Cancel bulk delete
+      cancelBulkDelete.addEventListener('click', function() {
+        bulkDeleteModal.classList.add('hidden');
+      });
+
+      // Close bulk delete modal when clicking outside
+      bulkDeleteModal.addEventListener('click', function(event) {
+        if (event.target === bulkDeleteModal) {
+          bulkDeleteModal.classList.add('hidden');
         }
       });
     });

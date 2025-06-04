@@ -176,6 +176,20 @@
           <p class="mt-1 text-sm text-gray-500">Uncheck to deactivate this mapping</p>
         </div>
 
+        <!-- Department Filter for Doctors -->
+        <div>
+          <label for="departmentFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Filter Doctors by Department (Optional)
+          </label>
+          <select id="departmentFilter" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            <option value="">All Departments</option>
+            {% for department in departments %}
+              <option value="{{ department.id }}">{{ department.name }}</option>
+            {% endfor %}
+          </select>
+          <p class="mt-1 text-sm text-gray-500">Filter doctors by their assigned department to make selection easier</p>
+        </div>
+
         <!-- Doctors Selection -->
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -184,7 +198,7 @@
           {% if form.doctors.errors %}
             <p class="mb-2 text-sm text-red-600">{{ form.doctors.errors.0 }}</p>
           {% endif %}
-          <div class="checkbox-grid">
+          <div id="doctorsContainer" class="checkbox-grid">
             {% for choice in form.doctors %}
               <div class="checkbox-item">
                 {{ choice.tag }}
@@ -248,11 +262,112 @@ document.addEventListener('DOMContentLoaded', function() {
     const logYearSelect = document.getElementById('{{ form.log_year.id_for_label }}');
     const trainingSelect = document.getElementById('{{ form.training_site.id_for_label }}');
     const groupsContainer = document.querySelector('.checkbox-grid');
-    
+    const departmentFilter = document.getElementById('departmentFilter');
+    const doctorsContainer = document.getElementById('doctorsContainer');
+
+    // Store original doctors for filtering
+    let allDoctors = [];
+    let selectedDoctorIds = [];
+
+    // Initialize doctors data
+    function initializeDoctors() {
+        const checkboxes = doctorsContainer.querySelectorAll('input[type="checkbox"]');
+        allDoctors = Array.from(checkboxes).map(checkbox => {
+            const label = checkbox.nextElementSibling;
+            return {
+                id: checkbox.value,
+                name: label.textContent.trim(),
+                checked: checkbox.checked,
+                element: checkbox.closest('.checkbox-item')
+            };
+        });
+
+        // Store initially selected doctors
+        selectedDoctorIds = allDoctors.filter(doctor => doctor.checked).map(doctor => doctor.id);
+    }
+
+    // Update doctors display based on department filter
+    function updateDoctorsDisplay(doctors) {
+        doctorsContainer.innerHTML = '';
+
+        if (doctors.length === 0) {
+            doctorsContainer.innerHTML = '<div class="col-span-full text-center text-gray-500 py-4">No doctors available for the selected department.</div>';
+            return;
+        }
+
+        doctors.forEach(doctor => {
+            const checkboxItem = document.createElement('div');
+            checkboxItem.className = 'checkbox-item';
+
+            const isChecked = selectedDoctorIds.includes(doctor.id.toString());
+
+            checkboxItem.innerHTML = `
+                <input type="checkbox"
+                       name="doctors"
+                       value="${doctor.id}"
+                       id="id_doctors_${doctor.id}"
+                       ${isChecked ? 'checked' : ''}
+                       class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                <label for="id_doctors_${doctor.id}" class="text-sm font-medium cursor-pointer">
+                    ${doctor.name}
+                </label>
+            `;
+
+            doctorsContainer.appendChild(checkboxItem);
+
+            // Add event listener to track selections
+            const checkbox = checkboxItem.querySelector('input[type="checkbox"]');
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    if (!selectedDoctorIds.includes(this.value)) {
+                        selectedDoctorIds.push(this.value);
+                    }
+                } else {
+                    selectedDoctorIds = selectedDoctorIds.filter(id => id !== this.value);
+                }
+            });
+        });
+    }
+
+    // Department filter functionality
+    if (departmentFilter) {
+        // Initialize doctors on page load
+        initializeDoctors();
+
+        departmentFilter.addEventListener('change', function() {
+            const departmentId = this.value;
+
+            if (departmentId) {
+                // Fetch doctors for selected department
+                fetch(`{% url 'admin_section:get_doctors_by_department' %}?department_id=${departmentId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        updateDoctorsDisplay(data.doctors);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching doctors:', error);
+                        doctorsContainer.innerHTML = '<div class="col-span-full text-center text-red-500 py-4">Error loading doctors. Please try again.</div>';
+                    });
+            } else {
+                // Show all doctors
+                fetch(`{% url 'admin_section:get_doctors_by_department' %}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        updateDoctorsDisplay(data.doctors);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching doctors:', error);
+                        doctorsContainer.innerHTML = '<div class="col-span-full text-center text-red-500 py-4">Error loading doctors. Please try again.</div>';
+                    });
+            }
+        });
+    }
+
+    // Log Year functionality (existing)
     if (logYearSelect) {
         logYearSelect.addEventListener('change', function() {
             const logYearId = this.value;
-            
+
             // Update training sites
             if (logYearId) {
                 fetch(`{% url 'admin_section:get_training_sites_by_year' %}?log_year_id=${logYearId}`)
@@ -267,7 +382,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                     })
                     .catch(error => console.error('Error fetching training sites:', error));
-                
+
                 // Update groups
                 fetch(`{% url 'admin_section:get_groups_by_year' %}?log_year_id=${logYearId}`)
                     .then(response => response.json())
