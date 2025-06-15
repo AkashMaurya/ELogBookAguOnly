@@ -1,8 +1,13 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
+{% load static %}
 
 {% block title %}
   Doctor Dashboard
+{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/doctor_dash.css' %}">
 {% endblock %}
 
 {% block navbar %}
@@ -505,8 +510,6 @@
 
   <!-- Chart.js Script -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
-  <!-- Fallback Chart.js source -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js" defer></script>
   <script>
     // Function to show fallbacks for all charts
     function showChartFallbacks() {

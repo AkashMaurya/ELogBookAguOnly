@@ -1,7 +1,11 @@
-{% extends 'doctor_base.html' %}
+{% extends 'base.html' %}
 
 {% block title %}
-  Student Log Reviews
+  Doctor Help & Support
+{% endblock %}
+
+{% block navbar %}
+  {% include './components/doc_auth_navbar.html' %}
 {% endblock %}
 
 {% block extra_head %}
