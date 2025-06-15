@@ -27,6 +27,7 @@ from django.core.paginator import Paginator
 # Django predefined models
 from django.db.models import Count, Q
 from django.db.models.functions import TruncMonth
+from datetime import datetime
 
 @login_required
 def bulk_add_users(request):
@@ -1375,3 +1376,153 @@ def send_admin_emails(admin_emails, subject, message):
         # Log the error but don't raise it to prevent disrupting the user experience
         print(f"Error sending admin emails: {str(e)}")
         # In a production environment, you might want to log this to a file or monitoring service
+
+
+@login_required
+def export_users(request):
+    """Export users in CSV format based on user type"""
+    if request.user.role != 'admin':
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('login')
+
+    user_type = request.GET.get('type', 'all')
+    today = datetime.now().strftime('%Y-%m-%d')
+
+    # Create HTTP response with CSV content type
+    response = HttpResponse(content_type='text/csv')
+
+    # Set filename based on user type
+    if user_type == 'student':
+        filename = f'student_users_export_{today}.csv'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        # Get all student users
+        users = CustomUser.objects.filter(role='student').select_related('student').order_by('username')
+
+        # Write CSV headers
+        writer = csv.writer(response)
+        writer.writerow([
+            'Username', 'Email', 'First Name', 'Last Name', 'Student ID', 'Group',
+            'Phone Number', 'City', 'Country', 'Date Joined', 'Last Login', 'Is Active'
+        ])
+
+        # Write data rows
+        for user in users:
+            student_profile = getattr(user, 'student', None)
+            writer.writerow([
+                user.username,
+                user.email,
+                user.first_name,
+                user.last_name,
+                student_profile.student_id if student_profile else 'N/A',
+                student_profile.group.group_name if student_profile and student_profile.group else 'N/A',
+                user.phone_no or 'N/A',
+                user.city or 'N/A',
+                user.country or 'N/A',
+                user.date_joined.strftime('%Y-%m-%d %H:%M:%S') if user.date_joined else 'N/A',
+                user.last_login.strftime('%Y-%m-%d %H:%M:%S') if user.last_login else 'Never',
+                'Yes' if user.is_active else 'No'
+            ])
+
+    elif user_type == 'doctor':
+        filename = f'doctor_users_export_{today}.csv'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        # Get all doctor users
+        users = CustomUser.objects.filter(role='doctor').select_related('doctor_profile').prefetch_related('doctor_profile__departments').order_by('username')
+
+        # Write CSV headers
+        writer = csv.writer(response)
+        writer.writerow([
+            'Username', 'Email', 'First Name', 'Last Name', 'Speciality', 'Departments',
+            'Phone Number', 'City', 'Country', 'Date Joined', 'Last Login', 'Is Active'
+        ])
+
+        # Write data rows
+        for user in users:
+            doctor_profile = getattr(user, 'doctor_profile', None)
+            departments = ', '.join([dept.name for dept in doctor_profile.departments.all()]) if doctor_profile else 'N/A'
+
+            writer.writerow([
+                user.username,
+                user.email,
+                user.first_name,
+                user.last_name,
+                user.speciality or 'N/A',  # speciality is on CustomUser, not Doctor
+                departments,
+                user.phone_no or 'N/A',
+                user.city or 'N/A',
+                user.country or 'N/A',
+                user.date_joined.strftime('%Y-%m-%d %H:%M:%S') if user.date_joined else 'N/A',
+                user.last_login.strftime('%Y-%m-%d %H:%M:%S') if user.last_login else 'Never',
+                'Yes' if user.is_active else 'No'
+            ])
+
+    elif user_type == 'staff':
+        filename = f'staff_users_export_{today}.csv'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        # Get all staff users
+        users = CustomUser.objects.filter(role='staff').select_related('staff_profile').order_by('username')
+
+        # Write CSV headers
+        writer = csv.writer(response)
+        writer.writerow([
+            'Username', 'Email', 'First Name', 'Last Name', 'Phone Number', 'City', 'Country',
+            'Date Joined', 'Last Login', 'Is Active'
+        ])
+
+        # Write data rows
+        for user in users:
+            writer.writerow([
+                user.username,
+                user.email,
+                user.first_name,
+                user.last_name,
+                user.phone_no or 'N/A',
+                user.city or 'N/A',
+                user.country or 'N/A',
+                user.date_joined.strftime('%Y-%m-%d %H:%M:%S') if user.date_joined else 'N/A',
+                user.last_login.strftime('%Y-%m-%d %H:%M:%S') if user.last_login else 'Never',
+                'Yes' if user.is_active else 'No'
+            ])
+
+    else:  # all users
+        filename = f'all_users_export_{today}.csv'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        # Get all users
+        users = CustomUser.objects.all().select_related('student', 'doctor_profile', 'staff_profile').prefetch_related('doctor_profile__departments').order_by('role', 'username')
+
+        # Write CSV headers
+        writer = csv.writer(response)
+        writer.writerow([
+            'Username', 'Email', 'First Name', 'Last Name', 'Role', 'Student ID', 'Speciality', 'Departments',
+            'Group', 'Phone Number', 'City', 'Country', 'Date Joined', 'Last Login', 'Is Active'
+        ])
+
+        # Write data rows
+        for user in users:
+            student_profile = getattr(user, 'student', None)
+            doctor_profile = getattr(user, 'doctor_profile', None)
+            departments = ', '.join([dept.name for dept in doctor_profile.departments.all()]) if doctor_profile else 'N/A'
+
+            writer.writerow([
+                user.username,
+                user.email,
+                user.first_name,
+                user.last_name,
+                user.role.title(),
+                student_profile.student_id if student_profile else 'N/A',
+                user.speciality or 'N/A',  # speciality is on CustomUser, not Doctor
+                departments,
+                student_profile.group.group_name if student_profile and student_profile.group else 'N/A',
+                user.phone_no or 'N/A',
+                user.city or 'N/A',
+                user.country or 'N/A',
+                user.date_joined.strftime('%Y-%m-%d %H:%M:%S') if user.date_joined else 'N/A',
+                user.last_login.strftime('%Y-%m-%d %H:%M:%S') if user.last_login else 'Never',
+                'Yes' if user.is_active else 'No'
+            ])
+
+    return response

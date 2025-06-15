@@ -108,7 +108,7 @@ class AttendanceForm(forms.Form):
             'type': 'date',
             'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
             'max': date.today().isoformat(),  # Disable future dates
-            'min': date.today().isoformat(),  # Only allow today
+            'value': date.today().isoformat(),  # Default to today but allow selection
         })
     )
 
@@ -116,7 +116,7 @@ class AttendanceForm(forms.Form):
         required=False,
         widget=forms.Textarea(attrs={
             'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white h-24',
-            'placeholder': 'Optional notes about today\'s attendance',
+            'placeholder': 'Optional notes about attendance (can be updated multiple times)',
             'rows': 3
         })
     )
@@ -141,8 +141,9 @@ class AttendanceForm(forms.Form):
         attendance_date = self.cleaned_data.get('attendance_date')
         today = date.today()
 
+        # Allow attendance for today only, but allow multiple submissions
         if attendance_date != today:
-            raise forms.ValidationError("You can only take attendance for today.")
+            raise forms.ValidationError("You can only take attendance for today's date.")
 
         return attendance_date
 

@@ -172,6 +172,7 @@ urlpatterns = [
     # Bulk Add Users URLs
     path('bulk-add-users/', views.bulk_add_users, name='bulk_add_users'),
     path('download-user-template/', views.download_user_template, name='download_user_template'),
+    path('export-users/', views.export_users, name='export_users'),
 
     # AJAX endpoints
     path('api/get-user-data/', views.get_user_data, name='get_user_data'),

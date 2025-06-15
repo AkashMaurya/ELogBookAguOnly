@@ -623,31 +623,74 @@ def doctor_help(request):
 
 @login_required
 def doctor_reviews(request):
-    doctor = request.user.doctor_profile
+    """
+    Optimized Doctor Reviews Page
+    Shows student logs for review with proper filtering and status display
+    """
+    # Check if user has doctor profile
+    try:
+        doctor = request.user.doctor_profile
+    except AttributeError:
+        messages.error(request, "Doctor profile not found. Please contact the administrator.")
+        return redirect('doctor_section:doctor_dash')
 
     # Get filter parameters
     department_id = request.GET.get('department')
-    status = request.GET.get('status', 'pending')
+    status = request.GET.get('status', 'all')
     search_query = request.GET.get('q', '').strip()
+
+    # Auto-assign departments if requested (for testing)
+    if request.GET.get('auto_assign') == 'true':
+        from admin_section.models import Department
+        all_departments = Department.objects.all()
+        if all_departments.exists():
+            doctor.departments.set(all_departments)
+            messages.success(request, f"Auto-assigned Dr. {doctor.user.get_full_name()} to all departments.")
+        return redirect('doctor_section:doctor_reviews')
 
     # Get departments associated with this doctor
     doctor_departments = doctor.departments.all()
 
-    # Base queryset - filter by departments the doctor is associated with
-    logs = StudentLogFormModel.objects.filter(department__in=doctor_departments)
+    # If no departments assigned, show auto-assign option
+    if not doctor_departments.exists():
+        from admin_section.models import Department
+        all_departments = Department.objects.all()
+        context = {
+            'logs': [],
+            'departments': doctor_departments,
+            'selected_department': department_id,
+            'selected_status': status,
+            'search_query': search_query,
+            'show_auto_assign': True,
+            'available_departments': all_departments,
+            'stats': {'total': 0, 'pending': 0, 'approved': 0, 'rejected': 0}
+        }
+        if all_departments.exists():
+            messages.warning(request, "You are not assigned to any departments. Click 'Auto-assign' to assign yourself to all departments.")
+        else:
+            messages.error(request, "No departments exist in the system.")
+        return render(request, "doctor_reviews.html", context)
 
-    # Filter by review status
+    # Base queryset with optimized select_related and prefetch_related
+    logs = StudentLogFormModel.objects.select_related(
+        'student__user', 'department', 'activity_type', 'core_diagnosis'
+    ).filter(department__in=doctor_departments)
+
+    # Apply status filters
     if status == 'pending':
         logs = logs.filter(is_reviewed=False)
-    elif status == 'reviewed':
-        logs = logs.filter(is_reviewed=True)
-    # If 'all' is selected, don't apply any filter
+    elif status == 'approved':
+        logs = logs.filter(is_reviewed=True).filter(
+            models.Q(reviewer_comments__isnull=True) |
+            ~models.Q(reviewer_comments__startswith='REJECTED:')
+        )
+    elif status == 'rejected':
+        logs = logs.filter(is_reviewed=True, reviewer_comments__startswith='REJECTED:')
+    # 'all' shows everything
 
-    # Filter by specific department if selected
     if department_id:
         logs = logs.filter(department_id=department_id)
 
-    # Apply search query if provided
     if search_query:
         logs = logs.filter(
             models.Q(student__user__first_name__icontains=search_query) |
@@ -660,20 +703,54 @@ def doctor_reviews(request):
     # Order by most recent first
     logs = logs.order_by('-date', '-created_at')
 
-    # Get settings for review deadline
+    # Calculate statistics
+    all_logs = StudentLogFormModel.objects.filter(department__in=doctor_departments)
+    stats = {
+        'total': all_logs.count(),
+        'pending': all_logs.filter(is_reviewed=False).count(),
+        'approved': all_logs.filter(is_reviewed=True).filter(
+            models.Q(reviewer_comments__isnull=True) |
+            ~models.Q(reviewer_comments__startswith='REJECTED:')
+        ).count(),
+        'rejected': all_logs.filter(is_reviewed=True, reviewer_comments__startswith='REJECTED:').count(),
+    }
+
+    # Pagination
+    paginator = Paginator(logs, 15)  # 15 items per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Get review settings
     settings = DateRestrictionSettings.objects.first()
     review_period_enabled = settings and settings.doctor_review_enabled if settings else False
 
-    # Add deadline information to each log
-    for log in logs:
-        if review_period_enabled and log.review_deadline:
+    # Add computed fields to logs for template
+    for log in page_obj:
+        # Determine review status
+        if log.is_reviewed:
+            if log.reviewer_comments and log.reviewer_comments.startswith('REJECTED:'):
+                log.review_status = 'rejected'
+                log.review_status_display = 'Rejected'
+                log.review_status_class = 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100'
+                log.review_status_icon = 'fas fa-times-circle'
+            else:
+                log.review_status = 'approved'
+                log.review_status_display = 'Approved'
+                log.review_status_class = 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100'
+                log.review_status_icon = 'fas fa-check-circle'
+        else:
+            log.review_status = 'pending'
+            log.review_status_display = 'Pending'
+            log.review_status_class = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100'
+            log.review_status_icon = 'fas fa-clock'
+
+        # Add deadline information if enabled
+        if review_period_enabled and hasattr(log, 'review_deadline') and log.review_deadline:
             log.deadline_passed = timezone.now() > log.review_deadline
-            # Calculate days remaining
             if not log.deadline_passed:
                 time_remaining = log.review_deadline - timezone.now()
                 log.days_remaining = time_remaining.days
-                # Add warning flag if deadline is approaching (3 days or less)
-                log.deadline_warning = log.days_remaining <= settings.doctor_notification_days
+                log.deadline_warning = log.days_remaining <= (settings.doctor_notification_days if settings else 3)
             else:
                 log.days_remaining = 0
                 log.deadline_warning = False
@@ -682,21 +759,13 @@ def doctor_reviews(request):
             log.days_remaining = None
             log.deadline_warning = False
 
-    # Pagination
-    paginator = Paginator(logs, 10)  # 10 items per page
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
-    # Create batch review form
-    batch_form = BatchReviewForm()
-
     context = {
         'logs': page_obj,
         'departments': doctor_departments,
         'selected_department': department_id,
         'selected_status': status,
         'search_query': search_query,
-        'batch_form': batch_form,
+        'stats': stats,
         'review_period_enabled': review_period_enabled,
         'review_period_days': settings.doctor_review_period if settings else 30,
         'notification_days': settings.doctor_notification_days if settings else 3,
@@ -935,23 +1004,31 @@ def export_logs(request):
 
     # Get filter parameters (same as in doctor_reviews view)
     department_id = request.GET.get('department')
-    status = request.GET.get('status', 'pending')
+    status = request.GET.get('status', 'all')
     search_query = request.GET.get('q', '').strip()
 
     # Get departments associated with this doctor
     doctor_departments = doctor.departments.all()
 
     # Base queryset - filter by departments the doctor is associated with
-    logs = StudentLogFormModel.objects.filter(department__in=doctor_departments)
+    logs = StudentLogFormModel.objects.select_related(
+        'student__user', 'department', 'activity_type', 'core_diagnosis'
+    ).filter(department__in=doctor_departments)
 
-    # Apply filters
-    if department_id:
-        logs = logs.filter(department_id=department_id)
-
+    # Apply status filters (same logic as doctor_reviews)
     if status == 'pending':
         logs = logs.filter(is_reviewed=False)
-    elif status == 'reviewed':
-        logs = logs.filter(is_reviewed=True)
+    elif status == 'approved':
+        logs = logs.filter(is_reviewed=True).filter(
+            models.Q(reviewer_comments__isnull=True) |
+            ~models.Q(reviewer_comments__startswith='REJECTED:')
+        )
+    elif status == 'rejected':
+        logs = logs.filter(is_reviewed=True, reviewer_comments__startswith='REJECTED:')
+    # 'all' shows everything
+
+    if department_id:
+        logs = logs.filter(department_id=department_id)
 
     if search_query:
         logs = logs.filter(
@@ -995,7 +1072,7 @@ def export_logs_csv(logs, filename_base):
     for log in logs:
         status = 'Pending'
         if log.is_reviewed:
-            status = 'Rejected' if log.reviewer_comments and 'REJECTED:' in log.reviewer_comments else 'Approved'
+            status = 'Rejected' if log.reviewer_comments and log.reviewer_comments.startswith('REJECTED:') else 'Approved'
 
         writer.writerow([
             log.student.student_id,
@@ -1049,7 +1126,7 @@ def export_logs_pdf(logs, filename_base, doctor):
     for log in logs:
         status = 'Pending'
         if log.is_reviewed:
-            status = 'Rejected' if log.reviewer_comments and 'REJECTED:' in log.reviewer_comments else 'Approved'
+            status = 'Rejected' if log.reviewer_comments and log.reviewer_comments.startswith('REJECTED:') else 'Approved'
 
         data.append([
             log.student.student_id,
@@ -1096,4 +1173,58 @@ def export_logs_pdf(logs, filename_base, doctor):
     buffer.close()
     response.write(pdf)
 
+    return response
+
+
+@login_required
+def debug_doctor_reviews(request):
+    """Debug endpoint to check doctor status and departments"""
+    debug_info = {
+        'user_authenticated': request.user.is_authenticated,
+        'user_role': getattr(request.user, 'role', 'No role attribute'),
+        'username': request.user.username,
+        'user_id': request.user.id,
+    }
+
+    # Check doctor profile
+    try:
+        doctor = request.user.doctor_profile
+        debug_info['doctor_profile_exists'] = True
+        debug_info['doctor_id'] = doctor.id
+        debug_info['doctor_departments'] = [dept.name for dept in doctor.departments.all()]
+        debug_info['doctor_departments_count'] = doctor.departments.count()
+
+        # Check logs for this doctor
+        logs = StudentLogFormModel.objects.filter(department__in=doctor.departments.all())
+        debug_info['total_logs'] = logs.count()
+        debug_info['pending_logs'] = logs.filter(is_reviewed=False).count()
+        debug_info['reviewed_logs'] = logs.filter(is_reviewed=True).count()
+
+        # Check all logs in system
+        all_logs = StudentLogFormModel.objects.all()
+        debug_info['total_logs_in_system'] = all_logs.count()
+        debug_info['all_departments_with_logs'] = list(set([log.department.name for log in all_logs]))
+
+        # Check if there are any students in the system
+        from accounts.models import Student
+        all_students = Student.objects.all()
+        debug_info['total_students_in_system'] = all_students.count()
+        debug_info['students_in_doctor_departments'] = Student.objects.filter(
+            group__departments__in=doctor.departments.all()
+        ).count() if doctor.departments.exists() else 0
+
+    except AttributeError:
+        debug_info['doctor_profile_exists'] = False
+        debug_info['doctor_error'] = 'Doctor profile does not exist'
+
+        # Check if any doctor profiles exist
+        from accounts.models import Doctor
+        all_doctors = Doctor.objects.all()
+        debug_info['total_doctors_in_system'] = all_doctors.count()
+        debug_info['all_doctor_usernames'] = [d.user.username for d in all_doctors]
+
+    # Create a properly formatted JSON response
+    import json
+    json_data = json.dumps(debug_info, indent=2, ensure_ascii=False)
+    response = HttpResponse(json_data, content_type='application/json')
     return response

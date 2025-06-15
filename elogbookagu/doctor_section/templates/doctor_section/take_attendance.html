@@ -74,7 +74,7 @@
         <div>
           <h1 class="text-3xl font-bold">Take Attendance</h1>
           <p class="mt-2 text-blue-100">
-            Mark student attendance for today: {{ today|date:"F d, Y" }}
+            Mark student attendance for today: {{ today|date:"F d, Y" }} (can be updated multiple times)
           </p>
         </div>
         <div class="flex space-x-3">
@@ -125,7 +125,7 @@
               {% if form.attendance_date.errors %}
                 <p class="mt-1 text-sm text-red-600">{{ form.attendance_date.errors.0 }}</p>
               {% endif %}
-              <p class="mt-1 text-sm text-gray-500">You can only take attendance for today</p>
+              <p class="mt-1 text-sm text-gray-500">Attendance can be taken multiple times for today's date</p>
             </div>
           </div>
 
@@ -239,7 +239,7 @@
                       {% if student_data.existing_attendance %}
                         <div class="mt-2 text-xs text-blue-600 dark:text-blue-400">
                           <i class="fas fa-info-circle mr-1"></i>
-                          Previously marked as {{ student_data.existing_attendance.status }}
+                          Previously marked as {{ student_data.existing_attendance.status }} (can be updated)
                         </div>
                       {% endif %}
                     </div>
