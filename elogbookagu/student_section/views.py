@@ -663,6 +663,7 @@ def generate_records_pdf(request):
         'student_info': student_info,
         'generated_date': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         'status_type': review_status,
+        'MEDIA_URL': settings.MEDIA_URL,
     }
 
     # Render HTML content

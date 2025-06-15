@@ -490,6 +490,79 @@
       </div>
     </div>
 
+    <!-- Export Student Logs Section -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border-t-4 border-emerald-500 mb-8 print-break-inside-avoid">
+      <div class="px-6 py-4 bg-emerald-100 dark:bg-emerald-900/50 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+          <i class="fas fa-download text-emerald-600 dark:text-emerald-400 mr-2"></i> Export Student Logs
+        </h3>
+      </div>
+      <div class="p-6">
+        <form id="exportLogsForm" class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+
+          <!-- Year Filter -->
+          <div class="col-span-1">
+            <label for="export_year" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Academic Year</label>
+            <div class="relative rounded-md shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fas fa-calendar-alt text-emerald-500 dark:text-emerald-400"></i>
+              </div>
+              <select name="export_year" id="export_year" class="pl-10 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-500 focus:ring-opacity-50 py-2">
+                <option value="">All Years</option>
+                {% for year in years %}
+                <option value="{{ year.id }}">{{ year.year_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- Section/Department Filter -->
+          <div class="col-span-1">
+            <label for="export_section" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Section/Department</label>
+            <div class="relative rounded-md shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i class="fas fa-building text-emerald-500 dark:text-emerald-400"></i>
+              </div>
+              <select name="export_section" id="export_section" class="pl-10 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white shadow-sm focus:border-emerald-500 focus:ring focus:ring-emerald-500 focus:ring-opacity-50 py-2">
+                <option value="">All Sections</option>
+                {% for dept in departments %}
+                <option value="{{ dept.id }}">{{ dept.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- Export Buttons -->
+          <div class="flex space-x-3">
+            <button type="button" id="exportPdfBtn" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md shadow-sm transition-colors duration-200 flex items-center justify-center">
+              <i class="fas fa-file-pdf mr-2"></i>
+              <span class="export-text">PDF</span>
+              <span class="loading-text hidden">
+                <i class="fas fa-spinner fa-spin mr-1"></i>...
+              </span>
+            </button>
+            <button type="button" id="exportExcelBtn" class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-sm transition-colors duration-200 flex items-center justify-center">
+              <i class="fas fa-file-excel mr-2"></i>
+              <span class="export-text">Excel</span>
+              <span class="loading-text hidden">
+                <i class="fas fa-spinner fa-spin mr-1"></i>...
+              </span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Simple Export Info -->
+        <div class="mt-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+          <div class="flex items-center">
+            <i class="fas fa-info-circle text-emerald-600 dark:text-emerald-400 mr-2"></i>
+            <div class="text-sm text-emerald-700 dark:text-emerald-200">
+              <strong>Export all student logs</strong> (approved and not approved) with AGU logo. Filter by year and section as needed.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Performance Charts -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8 print:grid-cols-2 print-break-inside-avoid">
       <!-- Pie Chart: Review Status -->
@@ -2424,21 +2497,45 @@
 
                                   const pdfWidth = pdf.internal.pageSize.getWidth();
                                   const pdfHeight = pdf.internal.pageSize.getHeight();
+
+                                  // Add AGU header
+                                  pdf.setFontSize(16);
+                                  pdf.setFont('helvetica', 'bold');
+                                  pdf.text('Arabian Gulf University', pdfWidth / 2, 20, { align: 'center' });
+
+                                  pdf.setFontSize(14);
+                                  pdf.text('Student Report', pdfWidth / 2, 30, { align: 'center' });
+
+                                  // Add generated date
+                                  pdf.setFontSize(10);
+                                  pdf.setFont('helvetica', 'normal');
+                                  pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, pdfWidth / 2, 40, { align: 'center' });
+
+                                  // Adjust image position to account for header
                                   const imgWidth = pdfWidth - 20;
                                   const imgHeight = canvas.height * imgWidth / canvas.width;
+                                  const startY = 50; // Start below header
 
-                                  pdf.addImage(imgData, 'JPEG', 10, 10, imgWidth, imgHeight);
+                                  pdf.addImage(imgData, 'JPEG', 10, startY, imgWidth, imgHeight);
 
                                   // Handle multi-page if needed
                                   let heightLeft = imgHeight;
-                                  let position = 10;
-                                  heightLeft -= (pdfHeight - 20);
+                                  let position = startY;
+                                  heightLeft -= (pdfHeight - startY - 10);
 
                                   while (heightLeft > 0) {
-                                      position = -(imgHeight - heightLeft - 10);
+                                      position = -(imgHeight - heightLeft - startY);
                                       pdf.addPage();
+
+                                      // Add header to each page
+                                      pdf.setFontSize(16);
+                                      pdf.setFont('helvetica', 'bold');
+                                      pdf.text('Arabian Gulf University', pdfWidth / 2, 20, { align: 'center' });
+                                      pdf.setFontSize(14);
+                                      pdf.text('Student Report (Continued)', pdfWidth / 2, 30, { align: 'center' });
+
                                       pdf.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight);
-                                      heightLeft -= (pdfHeight - 20);
+                                      heightLeft -= (pdfHeight - startY - 10);
                                   }
 
                                   pdf.save(filename);
@@ -2499,19 +2596,42 @@
 
                   const pdfWidth = pdf.internal.pageSize.getWidth();
                   const pdfHeight = pdf.internal.pageSize.getHeight();
+
+                  // Add AGU header
+                  pdf.setFontSize(16);
+                  pdf.setFont('helvetica', 'bold');
+                  pdf.text('Arabian Gulf University', pdfWidth / 2, 20, { align: 'center' });
+
+                  pdf.setFontSize(14);
+                  pdf.text('Department Details Report', pdfWidth / 2, 30, { align: 'center' });
+
+                  // Add generated date
+                  pdf.setFontSize(10);
+                  pdf.setFont('helvetica', 'normal');
+                  pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, pdfWidth / 2, 40, { align: 'center' });
+
+                  // Adjust image position to account for header
                   const imgWidth = pdfWidth - 20; // Margin
                   const imgHeight = canvas.height * imgWidth / canvas.width;
                   let heightLeft = imgHeight;
-                  let position = 10; // Top margin
+                  let position = 50; // Start below header
 
                   pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-                  heightLeft -= (pdfHeight - 20);
+                  heightLeft -= (pdfHeight - 50);
 
                   while (heightLeft > 0) {
-                      position = heightLeft - imgHeight + 10;
+                      position = heightLeft - imgHeight + 50;
                       pdf.addPage();
+
+                      // Add header to each page
+                      pdf.setFontSize(16);
+                      pdf.setFont('helvetica', 'bold');
+                      pdf.text('Arabian Gulf University', pdfWidth / 2, 20, { align: 'center' });
+                      pdf.setFontSize(14);
+                      pdf.text('Department Details Report (Continued)', pdfWidth / 2, 30, { align: 'center' });
+
                       pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-                      heightLeft -= (pdfHeight - 20);
+                      heightLeft -= (pdfHeight - 50);
                   }
 
                   // Get student name for filename if available
@@ -2527,6 +2647,73 @@
                   showNotification('Error generating Department PDF.', 'error');
                   hiddenElements.forEach(el => el.style.display = ''); // Restore visibility on error
               });
+          });
+      }
+
+      // Export Student Logs Functionality
+      const exportPdfBtn = document.getElementById('exportPdfBtn');
+      const exportExcelBtn = document.getElementById('exportExcelBtn');
+
+      // Function to show loading state for export buttons
+      function showExportLoading(button) {
+          const exportText = button.querySelector('.export-text');
+          const loadingText = button.querySelector('.loading-text');
+          exportText.classList.add('hidden');
+          loadingText.classList.remove('hidden');
+          button.disabled = true;
+      }
+
+      // Function to hide loading state for export buttons
+      function hideExportLoading(button) {
+          const exportText = button.querySelector('.export-text');
+          const loadingText = button.querySelector('.loading-text');
+          exportText.classList.remove('hidden');
+          loadingText.classList.add('hidden');
+          button.disabled = false;
+      }
+
+      // Function to handle student logs export
+      function handleStudentLogsExport(format, button) {
+          showExportLoading(button);
+
+          const year = document.getElementById('export_year').value;
+          const section = document.getElementById('export_section').value;
+
+          // Build URL parameters
+          const params = new URLSearchParams();
+          params.set('format', format);
+
+          if (year) params.set('years', year);
+          if (section) params.set('department', section);
+
+          // Create export URL
+          const exportUrl = `{% url "admin_section:export_department_logs" %}?${params.toString()}`;
+
+          // Trigger download
+          const link = document.createElement('a');
+          link.href = exportUrl;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          // Hide loading state after a short delay
+          setTimeout(() => {
+              hideExportLoading(button);
+              showNotification(`${format.toUpperCase()} export started successfully!`, 'success');
+          }, 1500);
+      }
+
+      // Event listeners for export buttons
+      if (exportPdfBtn) {
+          exportPdfBtn.addEventListener('click', function() {
+              handleStudentLogsExport('pdf', this);
+          });
+      }
+
+      if (exportExcelBtn) {
+          exportExcelBtn.addEventListener('click', function() {
+              handleStudentLogsExport('excel', this);
           });
       }
 

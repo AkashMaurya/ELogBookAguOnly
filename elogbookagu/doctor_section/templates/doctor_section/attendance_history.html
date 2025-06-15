@@ -57,7 +57,7 @@
         <div>
           <h1 class="text-3xl font-bold">Attendance History</h1>
           <p class="mt-2 text-blue-100">
-            View and manage attendance records you have marked
+            View, filter, and export attendance records you have marked
           </p>
         </div>
         <div class="flex space-x-3">
@@ -77,22 +77,28 @@
 
     <!-- Filters Section -->
     <div class="filter-card rounded-lg p-6 mb-8">
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+      <h3 class="text-lg font-semibold text-gray-900 dark:text-black mb-4 flex items-center ">
         <i class="fas fa-filter mr-2 text-blue-600"></i>
         Filter Attendance Records
       </h3>
       
-      <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- Date Filter -->
+      <form method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <!-- Date Range Filters -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date</label>
-          <input type="date" name="date" value="{{ selected_date }}" 
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-900 mb-2">Start Date</label>
+          <input type="date" name="start_date" value="{{ start_date }}"
+                 class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-900 mb-2">End Date</label>
+          <input type="date" name="end_date" value="{{ end_date }}"
                  class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
         </div>
 
         <!-- Training Site Filter -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Training Site</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-900 mb-2">Training Site</label>
           <select name="training_site" class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
             <option value="">All Training Sites</option>
             {% for site in training_sites %}
@@ -103,8 +109,25 @@
           </select>
         </div>
 
+        <!-- Status Filter -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-900 mb-2">Status</label>
+          <select name="status" class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+            <option value="all" {% if selected_status == 'all' or not selected_status %}selected{% endif %}>All Status</option>
+            <option value="present" {% if selected_status == 'present' %}selected{% endif %}>Present</option>
+            <option value="absent" {% if selected_status == 'absent' %}selected{% endif %}>Absent</option>
+          </select>
+        </div>
+
+        <!-- Student Search -->
+        <div class="md:col-span-2 lg:col-span-1">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-900 mb-2">Student Search</label>
+          <input type="text" name="student_search" value="{{ student_search }}" placeholder="Name, ID, or username"
+                 class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+        </div>
+
         <!-- Filter Buttons -->
-        <div class="flex items-end space-x-2">
+        <div class="flex items-end space-x-2 md:col-span-2 lg:col-span-1">
           <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200 font-medium">
             <i class="fas fa-search mr-2"></i>Apply Filters
           </button>
@@ -112,7 +135,52 @@
             <i class="fas fa-times mr-2"></i>Clear
           </a>
         </div>
+
+        <!-- Single Date Filter (for backward compatibility) -->
+        <div class="hidden">
+          <input type="date" name="date" value="{{ selected_date }}">
+        </div>
       </form>
+    </div>
+
+    <!-- Export Section -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
+      <div class="px-6 py-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+          <i class="fas fa-download mr-2 text-green-600"></i>
+          Export Attendance Records
+        </h3>
+        <div class="flex flex-wrap gap-3">
+          {% if attendances %}
+            <a href="{% url 'doctor_section:export_attendance' %}?format=csv&{{ request.GET.urlencode }}" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 font-medium">
+              <i class="fas fa-file-csv mr-2"></i>Export CSV
+            </a>
+            <a href="{% url 'doctor_section:export_attendance' %}?format=excel&{{ request.GET.urlencode }}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 font-medium">
+              <i class="fas fa-file-excel mr-2"></i>Export Excel
+            </a>
+            <a href="{% url 'doctor_section:export_attendance' %}?format=pdf&{{ request.GET.urlencode }}" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200 font-medium">
+              <i class="fas fa-file-pdf mr-2"></i>Export PDF
+            </a>
+          {% else %}
+            <button class="inline-flex items-center px-4 py-2 bg-gray-400 cursor-not-allowed text-white rounded-lg font-medium" disabled>
+              <i class="fas fa-file-csv mr-2"></i>Export CSV
+            </button>
+            <button class="inline-flex items-center px-4 py-2 bg-gray-400 cursor-not-allowed text-white rounded-lg font-medium" disabled>
+              <i class="fas fa-file-excel mr-2"></i>Export Excel
+            </button>
+            <button class="inline-flex items-center px-4 py-2 bg-gray-400 cursor-not-allowed text-white rounded-lg font-medium" disabled>
+              <i class="fas fa-file-pdf mr-2"></i>Export PDF
+            </button>
+          {% endif %}
+        </div>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          {% if attendances %}
+            Export will include all filtered records ({{ total_records }} records)
+          {% else %}
+            No records available to export. Please add some attendance records first.
+          {% endif %}
+        </p>
+      </div>
     </div>
 
     <!-- Attendance Records -->
@@ -304,4 +372,131 @@
     {% endif %}
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- JavaScript for Export Functionality -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Export functionality
+    const exportCsvBtn = document.getElementById('export-csv');
+    const exportExcelBtn = document.getElementById('export-excel');
+    const exportPdfBtn = document.getElementById('export-pdf');
+
+    // Function to show loading state
+    function showLoading(button) {
+        const exportText = button.querySelector('.export-text');
+        const loadingText = button.querySelector('.loading-text');
+        exportText.classList.add('hidden');
+        loadingText.classList.remove('hidden');
+        button.disabled = true;
+    }
+
+    // Function to hide loading state
+    function hideLoading(button) {
+        const exportText = button.querySelector('.export-text');
+        const loadingText = button.querySelector('.loading-text');
+        exportText.classList.remove('hidden');
+        loadingText.classList.add('hidden');
+        button.disabled = false;
+    }
+
+    // Function to show notification
+    function showNotification(message, type = 'success') {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white ${
+            type === 'success' ? 'bg-green-500' :
+            type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+        }`;
+        notification.innerHTML = `
+            <div class="flex items-center">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+
+        document.body.appendChild(notification);
+
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+
+    // Function to handle export
+    function handleExport(format, button) {
+        console.log(`Starting export for format: ${format}`);
+        showLoading(button);
+
+        const params = new URLSearchParams(window.location.search);
+        params.set('format', format);
+
+        // Use window.open to trigger download
+        const exportUrl = '/doctors/export-attendance/?' + params.toString();
+        console.log(`Export URL: ${exportUrl}`);
+
+        // Try to open in new window/tab for download
+        const downloadWindow = window.open(exportUrl, '_blank');
+
+        // If popup blocked, use direct navigation
+        if (!downloadWindow) {
+            console.log('Popup blocked, using direct navigation');
+            window.location.href = exportUrl;
+        }
+
+        // Hide loading state after a short delay
+        setTimeout(() => {
+            hideLoading(button);
+            showNotification(`${format.toUpperCase()} export started successfully!`);
+        }, 1500);
+    }
+
+    // Event listeners for export buttons
+    if (exportCsvBtn) {
+        console.log('CSV export button found, adding event listener');
+        exportCsvBtn.addEventListener('click', function() {
+            if (this.disabled) {
+                console.log('CSV export button is disabled');
+                showNotification('No records available to export', 'error');
+                return;
+            }
+            console.log('CSV export button clicked');
+            handleExport('csv', this);
+        });
+    } else {
+        console.log('CSV export button not found');
+    }
+
+    if (exportExcelBtn) {
+        console.log('Excel export button found, adding event listener');
+        exportExcelBtn.addEventListener('click', function() {
+            if (this.disabled) {
+                console.log('Excel export button is disabled');
+                showNotification('No records available to export', 'error');
+                return;
+            }
+            console.log('Excel export button clicked');
+            handleExport('excel', this);
+        });
+    } else {
+        console.log('Excel export button not found');
+    }
+
+    if (exportPdfBtn) {
+        console.log('PDF export button found, adding event listener');
+        exportPdfBtn.addEventListener('click', function() {
+            if (this.disabled) {
+                console.log('PDF export button is disabled');
+                showNotification('No records available to export', 'error');
+                return;
+            }
+            console.log('PDF export button clicked');
+            handleExport('pdf', this);
+        });
+    } else {
+        console.log('PDF export button not found');
+    }
+});
+</script>
 {% endblock %}

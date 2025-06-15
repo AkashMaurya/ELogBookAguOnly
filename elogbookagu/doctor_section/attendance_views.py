@@ -1,10 +1,20 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db import transaction
 from django.utils import timezone
-from datetime import date
+from django.db.models import Q
+from datetime import date, timedelta
+import csv
+import io
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.units import inch
+import tablib
+from utils.pdf_utils import add_agu_header, get_common_styles, add_footer_info
 from .models import StudentAttendance
 from .forms import AttendanceForm, StudentAttendanceForm
 from accounts.models import Student, Doctor
@@ -164,7 +174,7 @@ def process_attendance_submission(request, doctor, training_site, attendance_dat
 
 @login_required
 def attendance_history(request):
-    """View attendance history for the doctor"""
+    """View attendance history for the doctor with enhanced filtering"""
     try:
         doctor = request.user.doctor_profile
     except Doctor.DoesNotExist:
@@ -178,19 +188,53 @@ def attendance_history(request):
         'student__user', 'training_site', 'group'
     ).order_by('-date', '-marked_at')
 
-    # Filter by date if provided
-    date_filter = request.GET.get('date')
-    if date_filter:
+    # Enhanced filtering
+    # Date range filtering
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    if start_date:
         try:
-            filter_date = date.fromisoformat(date_filter)
+            start_date_obj = date.fromisoformat(start_date)
+            attendances = attendances.filter(date__gte=start_date_obj)
+        except ValueError:
+            start_date = None
+
+    if end_date:
+        try:
+            end_date_obj = date.fromisoformat(end_date)
+            attendances = attendances.filter(date__lte=end_date_obj)
+        except ValueError:
+            end_date = None
+
+    # Single date filter (for backward compatibility)
+    single_date = request.GET.get('date')
+    if single_date and not start_date and not end_date:
+        try:
+            filter_date = date.fromisoformat(single_date)
             attendances = attendances.filter(date=filter_date)
         except ValueError:
-            pass
+            single_date = None
 
-    # Filter by training site if provided
+    # Training site filter
     training_site_filter = request.GET.get('training_site')
     if training_site_filter:
         attendances = attendances.filter(training_site_id=training_site_filter)
+
+    # Student search filter
+    student_search = request.GET.get('student_search', '').strip()
+    if student_search:
+        attendances = attendances.filter(
+            Q(student__user__first_name__icontains=student_search) |
+            Q(student__user__last_name__icontains=student_search) |
+            Q(student__user__username__icontains=student_search) |
+            Q(student__student_id__icontains=student_search)
+        )
+
+    # Status filter
+    status_filter = request.GET.get('status')
+    if status_filter and status_filter != 'all':
+        attendances = attendances.filter(status=status_filter)
 
     # Get training sites for filter dropdown
     training_sites = TrainingSite.objects.filter(
@@ -206,8 +250,12 @@ def attendance_history(request):
     context = {
         'attendances': attendances,
         'training_sites': training_sites,
-        'selected_date': date_filter,
+        'selected_date': single_date,
+        'start_date': start_date,
+        'end_date': end_date,
         'selected_training_site': training_site_filter,
+        'student_search': student_search,
+        'selected_status': status_filter,
         'total_records': total_records,
         'present_count': present_count,
         'absent_count': absent_count,
@@ -355,3 +403,251 @@ def debug_doctor_status(request):
         debug_info['doctor_error'] = f'AttributeError: {str(e)}'
 
     return JsonResponse(debug_info, indent=2)
+
+
+@login_required
+def export_attendance(request):
+    """Export attendance records as CSV, PDF, or Excel based on the current filters"""
+    try:
+        doctor = request.user.doctor_profile
+    except Doctor.DoesNotExist:
+        messages.error(request, "You must be a doctor to access this page.")
+        return redirect('doctor_section:doctor_dash')
+
+    # Debug: Log the request
+    print(f"Export request received: format={request.GET.get('format')}, user={request.user.username}")
+
+    export_format = request.GET.get('format', 'csv').lower()
+
+    # Apply the same filtering logic as attendance_history view
+    attendances = StudentAttendance.objects.filter(
+        doctor=doctor
+    ).select_related(
+        'student__user', 'training_site', 'group'
+    ).order_by('-date', '-marked_at')
+
+    # Date range filtering
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    if start_date:
+        try:
+            start_date_obj = date.fromisoformat(start_date)
+            attendances = attendances.filter(date__gte=start_date_obj)
+        except ValueError:
+            pass
+
+    if end_date:
+        try:
+            end_date_obj = date.fromisoformat(end_date)
+            attendances = attendances.filter(date__lte=end_date_obj)
+        except ValueError:
+            pass
+
+    # Single date filter (for backward compatibility)
+    single_date = request.GET.get('date')
+    if single_date and not start_date and not end_date:
+        try:
+            filter_date = date.fromisoformat(single_date)
+            attendances = attendances.filter(date=filter_date)
+        except ValueError:
+            pass
+
+    # Training site filter
+    training_site_filter = request.GET.get('training_site')
+    if training_site_filter:
+        attendances = attendances.filter(training_site_id=training_site_filter)
+
+    # Student search filter
+    student_search = request.GET.get('student_search', '').strip()
+    if student_search:
+        attendances = attendances.filter(
+            Q(student__user__first_name__icontains=student_search) |
+            Q(student__user__last_name__icontains=student_search) |
+            Q(student__user__username__icontains=student_search) |
+            Q(student__student_id__icontains=student_search)
+        )
+
+    # Status filter
+    status_filter = request.GET.get('status')
+    if status_filter and status_filter != 'all':
+        attendances = attendances.filter(status=status_filter)
+
+    # Prepare filename with timestamp
+    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+    filename_base = f"attendance_records_{timestamp}"
+
+    try:
+        if export_format == 'csv':
+            return export_attendance_csv(attendances, filename_base)
+        elif export_format == 'pdf':
+            return export_attendance_pdf(attendances, filename_base, doctor)
+        elif export_format == 'excel':
+            return export_attendance_excel(attendances, filename_base)
+        else:
+            # Default to CSV if format is not recognized
+            return export_attendance_csv(attendances, filename_base)
+    except Exception as e:
+        print(f"Export error: {str(e)}")
+        messages.error(request, f"Export failed: {str(e)}")
+        return redirect('doctor_section:attendance_history')
+
+
+def export_attendance_csv(attendances, filename_base):
+    """Export attendance records as CSV file"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{filename_base}.csv"'
+
+    writer = csv.writer(response)
+
+    # Write header row
+    writer.writerow([
+        'Student ID', 'Student Name', 'Training Site', 'Group',
+        'Date', 'Status', 'Marked At', 'Notes'
+    ])
+
+    # Write data rows
+    for attendance in attendances:
+        writer.writerow([
+            attendance.student.student_id,
+            attendance.student.user.get_full_name() or attendance.student.user.username,
+            attendance.training_site.name,
+            attendance.group.group_name,
+            attendance.date.strftime('%Y-%m-%d'),
+            attendance.status.title(),
+            attendance.marked_at.strftime('%Y-%m-%d %H:%M:%S'),
+            attendance.notes or ''
+        ])
+
+    return response
+
+
+def export_attendance_pdf(attendances, filename_base, doctor):
+    """Export attendance records as PDF file"""
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename_base}.pdf"'
+
+    # Create a buffer for the PDF
+    buffer = io.BytesIO()
+
+    # Create the PDF document with landscape orientation for better table fit
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+    elements = []
+
+    # Add AGU header with logo and university name
+    elements = add_agu_header(elements, "Attendance Records Report")
+
+    # Get custom styles
+    custom_styles = get_common_styles()
+
+    # Add doctor and export info
+    doctor_name = doctor.user.get_full_name() or doctor.user.username
+    elements.append(Paragraph(f"Doctor: {doctor_name}", custom_styles['subtitle']))
+    elements.append(Paragraph(f"Total Records: {attendances.count()}", custom_styles['normal']))
+    elements.append(Spacer(1, 0.3*inch))
+
+    if attendances.exists():
+        # Create table data
+        table_data = [
+            ['Student ID', 'Student Name', 'Training Site', 'Group', 'Date', 'Status', 'Marked At', 'Notes']
+        ]
+
+        for attendance in attendances:
+            table_data.append([
+                attendance.student.student_id,
+                attendance.student.user.get_full_name() or attendance.student.user.username,
+                attendance.training_site.name,
+                attendance.group.group_name,
+                attendance.date.strftime('%Y-%m-%d'),
+                attendance.status.title(),
+                attendance.marked_at.strftime('%Y-%m-%d %H:%M'),
+                attendance.notes[:50] + '...' if attendance.notes and len(attendance.notes) > 50 else (attendance.notes or '')
+            ])
+
+        # Create table
+        table = Table(table_data)
+
+        # Define table style
+        table_style = TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ])
+
+        table.setStyle(table_style)
+        elements.append(table)
+    else:
+        elements.append(Paragraph("No attendance records found for the selected criteria.", custom_styles['normal']))
+
+    # Add footer information
+    elements = add_footer_info(
+        elements,
+        generated_by=doctor_name,
+        export_date=timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+    )
+
+    # Build the PDF
+    doc.build(elements)
+
+    # Get the value of the buffer and write it to the response
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
+
+    return response
+
+
+def export_attendance_excel(attendances, filename_base):
+    """Export attendance records as Excel file"""
+    # Create a new dataset
+    data = tablib.Dataset()
+
+    # Add headers
+    data.headers = [
+        'Student ID', 'Student Name', 'Training Site', 'Group',
+        'Date', 'Status', 'Marked At', 'Notes'
+    ]
+
+    # Add data rows
+    for attendance in attendances:
+        data.append([
+            attendance.student.student_id,
+            attendance.student.user.get_full_name() or attendance.student.user.username,
+            attendance.training_site.name,
+            attendance.group.group_name,
+            attendance.date.strftime('%Y-%m-%d'),
+            attendance.status.title(),
+            attendance.marked_at.strftime('%Y-%m-%d %H:%M:%S'),
+            attendance.notes or ''
+        ])
+
+    # Create HTTP response with Excel content type
+    response = HttpResponse(
+        data.export('xlsx'),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename_base}.xlsx"'
+
+    return response
+
+
+@login_required
+def test_export(request):
+    """Test export functionality with sample data"""
+    # Create a simple CSV response for testing
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="test_export.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Test', 'Export', 'Working'])
+    writer.writerow(['This', 'is', 'a test'])
+
+    return response

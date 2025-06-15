@@ -173,6 +173,7 @@ urlpatterns = [
     path('bulk-add-users/', views.bulk_add_users, name='bulk_add_users'),
     path('download-user-template/', views.download_user_template, name='download_user_template'),
     path('export-users/', views.export_users, name='export_users'),
+    path('export-department-logs/', views.export_department_logs, name='export_department_logs'),
 
     # AJAX endpoints
     path('api/get-user-data/', views.get_user_data, name='get_user_data'),

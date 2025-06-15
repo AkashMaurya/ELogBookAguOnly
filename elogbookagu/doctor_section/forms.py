@@ -1,6 +1,6 @@
 from django import forms
 from django.utils import timezone
-from datetime import date
+from datetime import date, timedelta
 from .models import DoctorSupportTicket, StudentAttendance
 from student_section.models import StudentLogFormModel
 from accounts.models import Student
@@ -108,6 +108,7 @@ class AttendanceForm(forms.Form):
             'type': 'date',
             'class': 'w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white',
             'max': date.today().isoformat(),  # Disable future dates
+            'min': (date.today() - timedelta(days=30)).isoformat(),  # Allow up to 30 days back
             'value': date.today().isoformat(),  # Default to today but allow selection
         })
     )
@@ -140,10 +141,14 @@ class AttendanceForm(forms.Form):
     def clean_attendance_date(self):
         attendance_date = self.cleaned_data.get('attendance_date')
         today = date.today()
+        thirty_days_ago = today - timedelta(days=30)
 
-        # Allow attendance for today only, but allow multiple submissions
-        if attendance_date != today:
-            raise forms.ValidationError("You can only take attendance for today's date.")
+        # Allow attendance for any day from today up to the last 30 days
+        if attendance_date > today:
+            raise forms.ValidationError("You cannot take attendance for future dates.")
+
+        if attendance_date < thirty_days_ago:
+            raise forms.ValidationError("You can only take attendance for dates within the last 30 days.")
 
         return attendance_date
 
