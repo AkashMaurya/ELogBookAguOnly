@@ -53,6 +53,11 @@ urlpatterns = [
     path("admin_reviews/", views.admin_reviews, name="admin_reviews"),
     path("admin_profile/", views.admin_profile, name="admin_profile"),
     path("admin_final_records/", views.final_records, name="admin_final_records"),
+
+    # Report URLs
+    path("department_report/", views.department_report, name="department_report"),
+    path("student_report/", views.student_report, name="student_report"),
+    path("tutor_report/", views.tutor_report, name="tutor_report"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     # Activity Type URLs
     path("add_activity_type/", add_activity_type, name="add_activity_type"),

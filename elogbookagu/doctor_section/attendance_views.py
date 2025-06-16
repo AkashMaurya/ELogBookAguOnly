@@ -5,6 +5,7 @@ from django.http import JsonResponse, HttpResponse
 from django.db import transaction
 from django.utils import timezone
 from django.db.models import Q
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from datetime import date, timedelta
 import csv
 import io
@@ -247,8 +248,31 @@ def attendance_history(request):
     present_count = attendances.filter(status='present').count()
     absent_count = attendances.filter(status='absent').count()
 
+    # Pagination
+    page = request.GET.get('page', 1)
+    per_page = request.GET.get('per_page', 20)  # Default 20 records per page
+
+    # Validate per_page parameter
+    try:
+        per_page = int(per_page)
+        if per_page not in [10, 20, 50, 100]:
+            per_page = 20
+    except (ValueError, TypeError):
+        per_page = 20
+
+    paginator = Paginator(attendances, per_page)
+
+    try:
+        attendances_page = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page
+        attendances_page = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range, deliver last page of results
+        attendances_page = paginator.page(paginator.num_pages)
+
     context = {
-        'attendances': attendances,
+        'attendances': attendances_page,
         'training_sites': training_sites,
         'selected_date': single_date,
         'start_date': start_date,
@@ -259,6 +283,8 @@ def attendance_history(request):
         'total_records': total_records,
         'present_count': present_count,
         'absent_count': absent_count,
+        'per_page': per_page,
+        'paginator': paginator,
     }
 
     return render(request, 'doctor_section/attendance_history.html', context)

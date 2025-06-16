@@ -66,48 +66,39 @@
 
       <!-- Header with AGU Logo -->
       <div class="text-center mb-12 animate-slide-in">
-        <div class="inline-flex items-center justify-center mb-6">
-          <img src="{{ MEDIA_URL }}agulogo.png" alt="Arabian Gulf University Logo" class="h-16 w-auto mr-4 animate-pulse-glow rounded-lg">
-          <div class="text-left">
-            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Arabian Gulf University</h1>
-            <p class="text-sm text-gray-600 dark:text-gray-300">MedLogBook Platform</p>
+        <div class="flex flex-col items-center justify-center mb-6">
+          <img src="/media/agulogo.png" alt="Arabian Gulf University Logo" class="h-20 w-auto mb-4 animate-pulse-glow rounded-lg shadow-lg">
+          <div class="text-center">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">Arabian Gulf University</h1>
+            <p class="text-sm md:text-base text-gray-600 dark:text-gray-300 mt-1">MedLogBook Platform</p>
           </div>
         </div>
       </div>
 
       <!-- Main 403 Content -->
-      <div class="grid lg:grid-cols-2 gap-12 items-center">
+      <div class="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
 
         <!-- Left Side - 403 Illustration -->
-        <div class="text-center lg:text-left animate-slide-in" style="animation-delay: 0.2s;">
-          <div class="relative">
+        <div class="text-center animate-slide-in order-2 lg:order-1" style="animation-delay: 0.2s;">
+          <div class="relative flex flex-col items-center justify-center">
             <!-- Large 403 Text -->
             <div class="text-center mb-8">
-              <h2 class="text-9xl md:text-[12rem] font-black text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-pink-600 to-rose-600 dark:from-red-400 dark:via-pink-400 dark:to-rose-400 leading-none">
+              <h2 class="text-8xl md:text-9xl lg:text-[10rem] font-black text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-pink-600 to-rose-600 dark:from-red-400 dark:via-pink-400 dark:to-rose-400 leading-none">
                 403
               </h2>
-              <div class="absolute inset-0 text-9xl md:text-[12rem] font-black text-red-100 dark:text-gray-800 leading-none -z-10 transform translate-x-2 translate-y-2">
+              <div class="absolute inset-0 text-8xl md:text-9xl lg:text-[10rem] font-black text-red-100 dark:text-gray-800 leading-none -z-10 transform translate-x-2 translate-y-2">
                 403
               </div>
             </div>
 
-            <!-- Large Lock Icon -->
-            <div class="flex justify-center mb-8">
-              <i class="fas fa-lock text-6xl text-red-500 animate-lock-shake"></i>
-            </div>
 
-            <!-- Floating Security Icons -->
-            <div class="absolute top-0 left-0 w-full h-full pointer-events-none">
-              <i class="fas fa-shield-alt text-red-400 text-2xl absolute top-10 left-10 animate-float"></i>
-              <i class="fas fa-user-lock text-pink-400 text-xl absolute top-20 right-16 animate-float" style="animation-delay: 1s;"></i>
-              <i class="fas fa-key text-rose-400 text-lg absolute bottom-20 left-20 animate-float" style="animation-delay: 2s;"></i>
-              <i class="fas fa-ban text-red-500 text-xl absolute bottom-10 right-10 animate-float" style="animation-delay: 0.5s;"></i>
-            </div>
+
+
           </div>
         </div>
 
         <!-- Right Side - Error Message and Actions -->
-        <div class="space-y-8 animate-slide-in" style="animation-delay: 0.4s;">
+        <div class="space-y-6 lg:space-y-8 animate-slide-in order-1 lg:order-2" style="animation-delay: 0.4s;">
 
           <!-- Error Message -->
           <div class="glass-effect rounded-2xl p-8 shadow-2xl">
@@ -134,41 +125,32 @@
 
           <!-- Quick Actions -->
           <div class="glass-effect rounded-2xl p-8 shadow-2xl">
-            <h4 class="text-xl font-semibold text-gray-800 dark:text-white mb-6 flex items-center">
-              <i class="fas fa-key text-red-500 mr-3"></i>
+            <h4 class="text-xl font-semibold text-gray-800 dark:text-white mb-6">
               Access Options
             </h4>
 
             <div class="space-y-4 mb-6">
-              <div class="flex items-start p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                <i class="fas fa-sign-in-alt text-red-500 mt-1 mr-3"></i>
-                <div>
-                  <p class="font-medium text-gray-800 dark:text-white">Login Required</p>
-                  <p class="text-sm text-gray-600 dark:text-gray-300">You may need to log in to access this content</p>
-                </div>
+              <div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                <p class="font-medium text-gray-800 dark:text-white">Login Required</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300">You may need to log in to access this content</p>
               </div>
 
-              <div class="flex items-start p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                <i class="fas fa-user-shield text-red-500 mt-1 mr-3"></i>
-                <div>
-                  <p class="font-medium text-gray-800 dark:text-white">Insufficient Privileges</p>
-                  <p class="text-sm text-gray-600 dark:text-gray-300">Your account may not have the required permissions</p>
-                </div>
+              <div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                <p class="font-medium text-gray-800 dark:text-white">Insufficient Privileges</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300">Your account may not have the required permissions</p>
               </div>
             </div>
 
             <div class="grid sm:grid-cols-2 gap-4">
-              <a href="{% url 'login' %}" class="group flex items-center p-4 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
-                <i class="fas fa-sign-in-alt text-xl mr-3 group-hover:animate-bounce"></i>
-                <div>
+              <a href="{% url 'login' %}" class="group flex items-center justify-center p-4 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+                <div class="text-center">
                   <div class="font-semibold">Login</div>
                   <div class="text-sm opacity-90">Access your account</div>
                 </div>
               </a>
 
-              <a href="{% url 'home_page' %}" class="group flex items-center p-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
-                <i class="fas fa-home text-xl mr-3 group-hover:animate-bounce"></i>
-                <div>
+              <a href="{% url 'home_page' %}" class="group flex items-center justify-center p-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+                <div class="text-center">
                   <div class="font-semibold">Home Page</div>
                   <div class="text-sm opacity-90">Return to safety</div>
                 </div>
@@ -178,8 +160,7 @@
 
           <!-- Help & Support -->
           <div class="glass-effect rounded-2xl p-8 shadow-2xl">
-            <h4 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-              <i class="fas fa-life-ring text-orange-500 mr-3"></i>
+            <h4 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">
               Need Access?
             </h4>
             <p class="text-gray-600 dark:text-gray-300 mb-4">
@@ -188,11 +169,9 @@
 
             <div class="flex flex-col sm:flex-row gap-3">
               <a href="mailto:admin@agu.edu.bh" class="flex items-center justify-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg">
-                <i class="fas fa-envelope mr-2"></i>
                 Contact Admin
               </a>
               <button onclick="window.history.back()" class="flex items-center justify-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg">
-                <i class="fas fa-arrow-left mr-2"></i>
                 Go Back
               </button>
             </div>
@@ -204,7 +183,6 @@
       <div class="text-center mt-16 animate-slide-in" style="animation-delay: 0.6s;">
         <div class="glass-effect rounded-xl p-6 inline-block">
           <p class="text-gray-600 dark:text-gray-300">
-            <i class="fas fa-shield-alt text-red-500 mr-2"></i>
             Your security and privacy are our priority - MedLogBook Platform
           </p>
         </div>

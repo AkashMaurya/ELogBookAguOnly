@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 import os
 import csv
 import io
+import json
 from datetime import timedelta
 from django.contrib.auth.hashers import make_password
 
@@ -35,6 +36,502 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.units import inch
 import tablib
 from utils.pdf_utils import add_agu_header, get_common_styles, add_footer_info
+
+@login_required
+def department_report(request):
+    """View for Department Report"""
+    if request.user.role != 'admin':
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('admin_section:admin_dash')
+
+    # Get all departments with related data
+    departments = Department.objects.all().order_by('name')
+
+    # Get filter parameters
+    department_filter = request.GET.get('department')
+    year_filter = request.GET.get('year')
+    section_filter = request.GET.get('section')
+
+    # Base queryset for logs
+    logs = StudentLogFormModel.objects.select_related('student', 'department', 'activity_type', 'training_site')
+
+    # Apply filters if provided
+    if department_filter:
+        logs = logs.filter(department_id=department_filter)
+        # Get the specific department for filtering
+        selected_department = departments.filter(id=department_filter).first()
+        if selected_department:
+            departments = departments.filter(id=department_filter)
+    if year_filter:
+        logs = logs.filter(log_year_id=year_filter)
+    if section_filter:
+        logs = logs.filter(log_year_section_id=section_filter)
+
+    # Calculate department statistics
+    department_stats = []
+    for dept in departments:
+        dept_logs = logs.filter(department=dept)
+        total_logs = dept_logs.count()
+        reviewed_logs = dept_logs.filter(is_reviewed=True).count()
+        pending_logs = total_logs - reviewed_logs
+        approved_logs = dept_logs.filter(is_reviewed=True).exclude(reviewer_comments__startswith='REJECTED').count()
+        rejected_logs = dept_logs.filter(is_reviewed=True, reviewer_comments__startswith='REJECTED').count()
+
+        department_stats.append({
+            'department': dept,
+            'total_logs': total_logs,
+            'reviewed_logs': reviewed_logs,
+            'pending_logs': pending_logs,
+            'approved_logs': approved_logs,
+            'rejected_logs': rejected_logs,
+            'doctors_count': dept.doctors.count(),
+            'students_count': Student.objects.filter(group__log_year_section=dept.log_year_section).count() if dept.log_year_section else 0
+        })
+
+    # Prepare chart data
+    import json
+    from django.db.models import Count
+
+    # Case Types Data (Activity Types) - Real data from logs
+    case_types = logs.values('activity_type__name').annotate(count=Count('id')).order_by('-count')
+    case_types_data = {
+        'labels': [item['activity_type__name'] or 'Unknown' for item in case_types],
+        'data': [item['count'] for item in case_types]
+    }
+
+    # Training Sites Data - Real data from logs
+    training_sites = logs.values('training_site__name').annotate(count=Count('id')).order_by('-count')
+    training_sites_data = {
+        'labels': [item['training_site__name'] or 'Unknown' for item in training_sites],
+        'data': [item['count'] for item in training_sites]
+    }
+
+    # Activity Types Data (same as case types but can be filtered)
+    activity_types_data = case_types_data.copy()
+
+    # Participation Data - Real data from logs
+    participation_logs = logs.values('participation_type').annotate(count=Count('id')).order_by('-count')
+    participation_data = {
+        'labels': [item['participation_type'] or 'Not Specified' for item in participation_logs],
+        'data': [item['count'] for item in participation_logs]
+    }
+
+    # Monthly Data - Real data from logs
+    monthly_logs = logs.annotate(month=TruncMonth('date')).values('month').annotate(count=Count('id')).order_by('month')
+    monthly_data = {
+        'labels': [item['month'].strftime('%B %Y') if item['month'] else 'Unknown' for item in monthly_logs],
+        'data': [item['count'] for item in monthly_logs]
+    }
+
+    # Core Diagnosis Data - Additional chart data
+    core_diagnosis_logs = logs.values('core_diagnosis__name').annotate(count=Count('id')).order_by('-count')[:10]  # Top 10
+    core_diagnosis_data = {
+        'labels': [item['core_diagnosis__name'] or 'Unknown' for item in core_diagnosis_logs],
+        'data': [item['count'] for item in core_diagnosis_logs]
+    }
+
+    # Patient Gender Data - Additional chart data
+    gender_logs = logs.values('patient_gender').annotate(count=Count('id')).order_by('-count')
+    gender_data = {
+        'labels': [item['patient_gender'] or 'Not Specified' for item in gender_logs],
+        'data': [item['count'] for item in gender_logs]
+    }
+
+    # Department-wise case distribution
+    dept_case_logs = logs.values('department__name').annotate(count=Count('id')).order_by('-count')
+    dept_case_data = {
+        'labels': [item['department__name'] or 'Unknown' for item in dept_case_logs],
+        'data': [item['count'] for item in dept_case_logs]
+    }
+
+    # Approval Status Data
+    total_logs_count = logs.count()
+    reviewed_count = logs.filter(is_reviewed=True).count()
+    pending_count = total_logs_count - reviewed_count
+    approved_count = logs.filter(is_reviewed=True).exclude(reviewer_comments__startswith='REJECTED').count()
+    rejected_count = logs.filter(is_reviewed=True, reviewer_comments__startswith='REJECTED').count()
+
+    approval_status_data = {
+        'approved': approved_count,
+        'pending': pending_count,
+        'rejected': rejected_count
+    }
+
+    # Get years and sections for filters
+    years = LogYear.objects.all().order_by('-year_name')
+    sections = LogYearSection.objects.all().order_by('year_section_name')
+    all_departments = Department.objects.all().order_by('name')
+
+    # Calculate totals
+    total_doctors = Doctor.objects.filter(departments__in=departments).distinct().count() if department_filter else Doctor.objects.count()
+    total_training_sites = TrainingSite.objects.count()
+    total_activity_types = ActivityType.objects.filter(department__in=departments).count() if department_filter else ActivityType.objects.count()
+
+    context = {
+        'department_stats': department_stats,
+        'departments': all_departments,
+        'years': years,
+        'sections': sections,
+        'selected_department': department_filter,
+        'selected_year': year_filter,
+        'selected_section': section_filter,
+        'total_departments': departments.count(),
+        'total_logs': logs.count(),
+        'total_doctors': total_doctors,
+        'total_training_sites': total_training_sites,
+        'total_activity_types': total_activity_types,
+        # Chart data as JSON
+        'case_types_data': json.dumps(case_types_data),
+        'training_sites_data': json.dumps(training_sites_data),
+        'activity_types_data': json.dumps(activity_types_data),
+        'participation_data': json.dumps(participation_data),
+        'monthly_data': json.dumps(monthly_data),
+        'approval_status_data': json.dumps(approval_status_data),
+        'core_diagnosis_data': json.dumps(core_diagnosis_data),
+        'gender_data': json.dumps(gender_data),
+        'dept_case_data': json.dumps(dept_case_data),
+    }
+
+    return render(request, 'admin_section/department_report.html', context)
+
+@login_required
+def student_report(request):
+    """View for Student Report with enhanced dashboard and filtering"""
+    if request.user.role != 'admin':
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('admin_section:admin_dash')
+
+    # Get filter parameters
+    department_filter = request.GET.get('department')
+    student_filter = request.GET.get('student')
+    search_query = request.GET.get('q', '').strip()
+
+    # Base queryset for logs
+    logs = StudentLogFormModel.objects.select_related(
+        'student', 'student__user', 'department', 'activity_type',
+        'training_site', 'core_diagnosis', 'tutor'
+    ).all()
+
+    # Apply department filter
+    if department_filter:
+        logs = logs.filter(department_id=department_filter)
+
+    # Apply student filter
+    if student_filter:
+        logs = logs.filter(student_id=student_filter)
+
+    # Apply search filter
+    if search_query:
+        logs = logs.filter(
+            Q(student__user__first_name__icontains=search_query) |
+            Q(student__user__last_name__icontains=search_query) |
+            Q(student__user__email__icontains=search_query) |
+            Q(student__student_id__icontains=search_query)
+        )
+
+    # Calculate summary statistics
+    total_logs = logs.count()
+    reviewed_logs = logs.filter(is_reviewed=True).count()
+    pending_logs = logs.filter(is_reviewed=False).count()
+    approved_logs = logs.filter(is_reviewed=True).exclude(reviewer_comments__startswith='REJECTED').count()
+    rejected_logs = logs.filter(is_reviewed=True, reviewer_comments__startswith='REJECTED').count()
+
+    # Get unique doctors - fix duplicate issue
+    unique_doctor_ids = logs.values_list('tutor', flat=True).distinct()
+    doctors = Doctor.objects.filter(id__in=unique_doctor_ids).select_related('user')
+    doctor_names = []
+    for doctor in doctors:
+        full_name = f"{doctor.user.first_name} {doctor.user.last_name}".strip()
+        if full_name:
+            doctor_names.append(full_name)
+        else:
+            doctor_names.append(doctor.user.username)
+    doctor_names = sorted(set(doctor_names))  # Remove any remaining duplicates and sort
+
+    # Case Types Data (using core_diagnosis as case type)
+    case_types_data = logs.values('core_diagnosis__name').annotate(
+        count=Count('id')
+    ).order_by('-count')
+
+    case_types_chart = {
+        'labels': [item['core_diagnosis__name'] or 'Unknown' for item in case_types_data],
+        'data': [item['count'] for item in case_types_data]
+    }
+
+    # Training Sites Data
+    training_sites_data = logs.values('training_site__name').annotate(
+        count=Count('id')
+    ).order_by('-count')
+
+    training_sites_chart = {
+        'labels': [item['training_site__name'] for item in training_sites_data],
+        'data': [item['count'] for item in training_sites_data]
+    }
+
+    # Activity Types Data
+    activity_types_data = logs.values('activity_type__name').annotate(
+        count=Count('id')
+    ).order_by('-count')
+
+    activity_types_chart = {
+        'labels': [item['activity_type__name'] for item in activity_types_data],
+        'data': [item['count'] for item in activity_types_data]
+    }
+
+    # Participation Types Data
+    participation_data = logs.values('participation_type').annotate(
+        count=Count('id')
+    ).order_by('-count')
+
+    participation_chart = {
+        'labels': [item['participation_type'] for item in participation_data],
+        'data': [item['count'] for item in participation_data]
+    }
+
+    # Monthly Cases Data
+    from django.db.models.functions import TruncMonth
+    monthly_data = logs.annotate(
+        month=TruncMonth('date')
+    ).values('month').annotate(
+        count=Count('id')
+    ).order_by('month')
+
+    monthly_chart = {
+        'labels': [item['month'].strftime('%b %Y') for item in monthly_data],
+        'data': [item['count'] for item in monthly_data]
+    }
+
+    # Approval Status Data
+    approval_status_chart = {
+        'approved': approved_logs,
+        'pending': pending_logs,
+        'rejected': rejected_logs
+    }
+
+    # Get filter options
+    departments = Department.objects.all().order_by('name')
+    students = Student.objects.select_related('user', 'group').all().order_by('user__first_name', 'user__last_name')
+
+    # Initialize variables
+    selected_student_obj = None
+    search_results_info = None
+
+    # Get selected student details if a specific student is selected
+    if student_filter:
+        try:
+            selected_student_obj = Student.objects.select_related('user', 'group').get(id=student_filter)
+        except Student.DoesNotExist:
+            pass
+    elif search_query:
+        # If searching, try to find matching students
+        search_students = Student.objects.select_related('user', 'group').filter(
+            Q(user__first_name__icontains=search_query) |
+            Q(user__last_name__icontains=search_query) |
+            Q(user__email__icontains=search_query) |
+            Q(student_id__icontains=search_query)
+        )
+
+        # Check for exact ID match first
+        exact_id_match = Student.objects.select_related('user', 'group').filter(
+            student_id__iexact=search_query
+        ).first()
+
+        if exact_id_match:
+            # Exact ID match takes priority
+            selected_student_obj = exact_id_match
+        elif search_students.count() == 1:
+            # If search returns exactly one student, show their profile
+            selected_student_obj = search_students.first()
+        elif search_students.count() > 1:
+            # Multiple results - prepare search results info
+            search_results_info = {
+                'count': search_students.count(),
+                'students': search_students[:5]  # Show first 5 matches
+            }
+
+    context = {
+        'total_logs': total_logs,
+        'reviewed_logs': reviewed_logs,
+        'pending_logs': pending_logs,
+        'approved_logs': approved_logs,
+        'rejected_logs': rejected_logs,
+        'doctor_names': doctor_names,
+        'total_doctors': len(doctor_names),
+        'departments': departments,
+        'students': students,
+        'selected_department': department_filter,
+        'selected_student': student_filter,
+        'selected_student_obj': selected_student_obj,
+        'search_query': search_query,
+        'search_results_info': search_results_info,
+        'case_types_data': json.dumps(case_types_chart),
+        'training_sites_data': json.dumps(training_sites_chart),
+        'activity_types_data': json.dumps(activity_types_chart),
+        'participation_data': json.dumps(participation_chart),
+        'monthly_data': json.dumps(monthly_chart),
+        'approval_status_data': json.dumps(approval_status_chart),
+    }
+
+    return render(request, 'admin_section/student_report.html', context)
+
+@login_required
+def tutor_report(request):
+    """View for Tutor Report with enhanced dashboard and filtering"""
+    if request.user.role != 'admin':
+        messages.error(request, "You don't have permission to access this page.")
+        return redirect('admin_section:admin_dash')
+
+    # Get filter parameters
+    department_filter = request.GET.get('department')
+    doctor_filter = request.GET.get('doctor')
+    search_query = request.GET.get('q', '').strip()
+
+    # Base queryset for logs supervised by doctors
+    logs = StudentLogFormModel.objects.select_related(
+        'tutor', 'tutor__user', 'student', 'student__user', 'department',
+        'activity_type', 'core_diagnosis', 'training_site'
+    ).all()
+
+    # Apply department filter
+    if department_filter:
+        logs = logs.filter(department_id=department_filter)
+
+    # Apply doctor filter
+    if doctor_filter:
+        logs = logs.filter(tutor_id=doctor_filter)
+
+    # Apply search filter
+    if search_query:
+        logs = logs.filter(
+            Q(tutor__user__first_name__icontains=search_query) |
+            Q(tutor__user__last_name__icontains=search_query) |
+            Q(tutor__user__email__icontains=search_query)
+        )
+
+    # Calculate summary statistics
+    total_logs = logs.count()
+    reviewed_logs = logs.filter(is_reviewed=True).count()
+    pending_logs = logs.filter(is_reviewed=False).count()
+    approved_logs = logs.filter(is_reviewed=True).exclude(reviewer_comments__startswith='REJECTED').count()
+    rejected_logs = logs.filter(is_reviewed=True, reviewer_comments__startswith='REJECTED').count()
+
+    # Get unique doctors from filtered logs
+    unique_doctor_ids = logs.values_list('tutor', flat=True).distinct()
+    doctors = Doctor.objects.filter(id__in=unique_doctor_ids).select_related('user').prefetch_related('departments')
+    total_doctors = doctors.count()
+
+    # Case Types Data (using core_diagnosis)
+    case_types_data = logs.values('core_diagnosis__name').annotate(
+        count=Count('id')
+    ).order_by('-count')
+
+    case_types_chart = {
+        'labels': [item['core_diagnosis__name'] or 'Unknown' for item in case_types_data],
+        'data': [item['count'] for item in case_types_data]
+    }
+
+    # Diagnosis Types Data (same as case types but can be filtered)
+    diagnosis_types_chart = case_types_chart.copy()
+
+    # Activity Types Data
+    activity_types_data = logs.values('activity_type__name').annotate(
+        count=Count('id')
+    ).order_by('-count')
+
+    activity_types_chart = {
+        'labels': [item['activity_type__name'] for item in activity_types_data],
+        'data': [item['count'] for item in activity_types_data]
+    }
+
+    # Monthly Cases Data
+    from django.db.models.functions import TruncMonth
+    monthly_data = logs.annotate(
+        month=TruncMonth('date')
+    ).values('month').annotate(
+        count=Count('id')
+    ).order_by('month')
+
+    monthly_chart = {
+        'labels': [item['month'].strftime('%b %Y') for item in monthly_data],
+        'data': [item['count'] for item in monthly_data]
+    }
+
+    # Supervision Types Data (based on training sites or supervision levels)
+    supervision_types_data = logs.values('training_site__name').annotate(
+        count=Count('id')
+    ).order_by('-count')
+
+    supervision_types_chart = {
+        'labels': [item['training_site__name'] or 'Unknown' for item in supervision_types_data],
+        'data': [item['count'] for item in supervision_types_data]
+    }
+
+    # Approval Status Data
+    approval_status_chart = {
+        'approved': approved_logs,
+        'pending': pending_logs,
+        'rejected': rejected_logs
+    }
+
+    # Get filter options
+    departments = Department.objects.all().order_by('name')
+    all_doctors = Doctor.objects.select_related('user').prefetch_related('departments').all().order_by('user__first_name', 'user__last_name')
+
+    # Handle doctor search and profile display
+    selected_doctor_obj = None
+    search_results_info = None
+
+    if doctor_filter:
+        try:
+            selected_doctor_obj = Doctor.objects.select_related('user').prefetch_related('departments').get(id=doctor_filter)
+        except Doctor.DoesNotExist:
+            pass
+    elif search_query:
+        # Search for doctors
+        search_doctors = Doctor.objects.select_related('user').prefetch_related('departments').filter(
+            Q(user__first_name__icontains=search_query) |
+            Q(user__last_name__icontains=search_query) |
+            Q(user__email__icontains=search_query)
+        )
+
+        # Check for exact email match first
+        exact_email_match = Doctor.objects.select_related('user').prefetch_related('departments').filter(
+            user__email__iexact=search_query
+        ).first()
+
+        if exact_email_match:
+            selected_doctor_obj = exact_email_match
+        elif search_doctors.count() == 1:
+            selected_doctor_obj = search_doctors.first()
+        elif search_doctors.count() > 1:
+            search_results_info = {
+                'count': search_doctors.count(),
+                'doctors': search_doctors[:5]
+            }
+
+    context = {
+        'total_logs': total_logs,
+        'reviewed_logs': reviewed_logs,
+        'pending_logs': pending_logs,
+        'approved_logs': approved_logs,
+        'rejected_logs': rejected_logs,
+        'total_doctors': total_doctors,
+        'departments': departments,
+        'doctors': all_doctors,
+        'selected_department': department_filter,
+        'selected_doctor': doctor_filter,
+        'selected_doctor_obj': selected_doctor_obj,
+        'search_query': search_query,
+        'search_results_info': search_results_info,
+        'case_types_data': json.dumps(case_types_chart),
+        'diagnosis_types_data': json.dumps(diagnosis_types_chart),
+        'activity_types_data': json.dumps(activity_types_chart),
+        'supervision_data': json.dumps(supervision_types_chart),
+        'monthly_data': json.dumps(monthly_chart),
+        'approval_status_data': json.dumps(approval_status_chart),
+    }
+
+    return render(request, 'admin_section/tutor_report.html', context)
 
 @login_required
 def bulk_add_users(request):
