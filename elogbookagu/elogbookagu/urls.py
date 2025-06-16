@@ -23,7 +23,7 @@ from django.views.generic import TemplateView
 from .views import set_theme, custom_400, custom_403, custom_404, custom_500
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    path("admin1@admin/", admin.site.urls),
     path("", include("publicpage.urls")),
     path("accounts/", include("accounts.urls")),
     path("doctors/", include("doctor_section.urls")),

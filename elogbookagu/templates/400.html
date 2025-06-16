@@ -1,15 +1,239 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}400 Bad Request{% endblock %}
+{% block title %}400 - Bad Request | MedLogBook{% endblock %}
 
-{% block content %}
-<div class="container mx-auto px-4 py-16">
-    <div class="text-center">
-        <h1 class="text-4xl font-bold text-gray-800 dark:text-gray-200 mb-4">400 Bad Request</h1>
-        <p class="text-gray-600 dark:text-gray-400 mb-8">The server could not understand your request.</p>
-        <a href="{% url 'home_page' %}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
-            Return Home
-        </a>
+{% block extra_head %}
+<style>
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+    20%, 40%, 60%, 80% { transform: translateX(10px); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+    50% { box-shadow: 0 0 40px rgba(239, 68, 68, 0.6); }
+  }
+
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-float { animation: float 3s ease-in-out infinite; }
+  .animate-shake { animation: shake 0.5s ease-in-out; }
+  .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+  .animate-slide-in { animation: slide-in 0.6s ease-out; }
+
+  .bg-pattern {
+    background-image:
+      radial-gradient(circle at 25% 25%, rgba(239, 68, 68, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, rgba(245, 101, 101, 0.1) 0%, transparent 50%);
+  }
+
+  .glass-effect {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .dark .glass-effect {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+</style>
+{% endblock %}
+
+{% block content_container %}
+<!-- Full-width 400 Section -->
+<section class="w-full min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 bg-pattern relative overflow-hidden">
+  <!-- Animated Background Elements -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-20 left-10 w-32 h-32 bg-red-200 dark:bg-red-800 rounded-full opacity-20 animate-float"></div>
+    <div class="absolute top-40 right-20 w-24 h-24 bg-orange-200 dark:bg-orange-800 rounded-full opacity-20 animate-float" style="animation-delay: 1s;"></div>
+    <div class="absolute bottom-20 left-1/4 w-40 h-40 bg-yellow-200 dark:bg-yellow-800 rounded-full opacity-20 animate-float" style="animation-delay: 2s;"></div>
+    <div class="absolute bottom-40 right-1/3 w-28 h-28 bg-pink-200 dark:bg-pink-800 rounded-full opacity-20 animate-float" style="animation-delay: 0.5s;"></div>
+  </div>
+
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
+    <div class="max-w-6xl mx-auto">
+
+      <!-- Header with AGU Logo -->
+      <div class="text-center mb-12 animate-slide-in">
+        <div class="inline-flex items-center justify-center mb-6">
+          <img src="{{ MEDIA_URL }}agulogo.png" alt="Arabian Gulf University Logo" class="h-16 w-auto mr-4 animate-pulse-glow rounded-lg">
+          <div class="text-left">
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Arabian Gulf University</h1>
+            <p class="text-sm text-gray-600 dark:text-gray-300">MedLogBook Platform</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main 400 Content -->
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+
+        <!-- Left Side - 400 Illustration -->
+        <div class="text-center lg:text-left animate-slide-in" style="animation-delay: 0.2s;">
+          <div class="relative">
+            <!-- Large 400 Text -->
+            <div class="text-center mb-8">
+              <h2 class="text-9xl md:text-[12rem] font-black text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 dark:from-red-400 dark:via-orange-400 dark:to-yellow-400 leading-none animate-shake">
+                400
+              </h2>
+              <div class="absolute inset-0 text-9xl md:text-[12rem] font-black text-red-100 dark:text-gray-800 leading-none -z-10 transform translate-x-2 translate-y-2">
+                400
+              </div>
+            </div>
+
+            <!-- Floating Warning Icons -->
+            <div class="absolute top-0 left-0 w-full h-full pointer-events-none">
+              <i class="fas fa-exclamation-triangle text-red-400 text-2xl absolute top-10 left-10 animate-float"></i>
+              <i class="fas fa-times-circle text-orange-400 text-xl absolute top-20 right-16 animate-float" style="animation-delay: 1s;"></i>
+              <i class="fas fa-ban text-yellow-400 text-lg absolute bottom-20 left-20 animate-float" style="animation-delay: 2s;"></i>
+              <i class="fas fa-warning text-red-500 text-xl absolute bottom-10 right-10 animate-float" style="animation-delay: 0.5s;"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side - Error Message and Actions -->
+        <div class="space-y-8 animate-slide-in" style="animation-delay: 0.4s;">
+
+          <!-- Error Message -->
+          <div class="glass-effect rounded-2xl p-8 shadow-2xl">
+            <div class="text-center lg:text-left">
+              <h3 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-4">
+                Bad Request
+              </h3>
+              <p class="text-lg text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+                The server couldn't understand your request. This might be due to malformed syntax or invalid request parameters. Let's get you back on track!
+              </p>
+
+              <!-- Error Details -->
+              <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+                <div class="flex items-center">
+                  <i class="fas fa-exclamation-triangle text-red-500 mr-3"></i>
+                  <div>
+                    <p class="text-sm font-medium text-red-800 dark:text-red-200">Error Code: 400</p>
+                    <p class="text-sm text-red-600 dark:text-red-300">The request could not be understood by the server due to malformed syntax.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="glass-effect rounded-2xl p-8 shadow-2xl">
+            <h4 class="text-xl font-semibold text-gray-800 dark:text-white mb-6 flex items-center">
+              <i class="fas fa-tools text-orange-500 mr-3"></i>
+              Troubleshooting Steps
+            </h4>
+
+            <div class="space-y-4 mb-6">
+              <div class="flex items-start p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                <i class="fas fa-check-circle text-orange-500 mt-1 mr-3"></i>
+                <div>
+                  <p class="font-medium text-gray-800 dark:text-white">Check your input</p>
+                  <p class="text-sm text-gray-600 dark:text-gray-300">Ensure all form fields are filled correctly</p>
+                </div>
+              </div>
+
+              <div class="flex items-start p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                <i class="fas fa-refresh text-orange-500 mt-1 mr-3"></i>
+                <div>
+                  <p class="font-medium text-gray-800 dark:text-white">Try again</p>
+                  <p class="text-sm text-gray-600 dark:text-gray-300">Refresh the page and retry your action</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid sm:grid-cols-2 gap-4">
+              <a href="{% url 'home_page' %}" class="group flex items-center p-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+                <i class="fas fa-home text-xl mr-3 group-hover:animate-bounce"></i>
+                <div>
+                  <div class="font-semibold">Home Page</div>
+                  <div class="text-sm opacity-90">Start fresh</div>
+                </div>
+              </a>
+
+              <button onclick="window.location.reload()" class="group flex items-center p-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg">
+                <i class="fas fa-redo text-xl mr-3 group-hover:animate-spin"></i>
+                <div>
+                  <div class="font-semibold">Refresh Page</div>
+                  <div class="text-sm opacity-90">Try again</div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Help & Support -->
+          <div class="glass-effect rounded-2xl p-8 shadow-2xl">
+            <h4 class="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
+              <i class="fas fa-life-ring text-red-500 mr-3"></i>
+              Still Having Issues?
+            </h4>
+            <p class="text-gray-600 dark:text-gray-300 mb-4">
+              If the problem persists, please contact our technical support team with details about what you were trying to do.
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+              <a href="mailto:support@agu.edu.bh" class="flex items-center justify-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg">
+                <i class="fas fa-envelope mr-2"></i>
+                Report Issue
+              </a>
+              <button onclick="window.history.back()" class="flex items-center justify-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-all duration-300 hover:shadow-lg">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Go Back
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Message -->
+      <div class="text-center mt-16 animate-slide-in" style="animation-delay: 0.6s;">
+        <div class="glass-effect rounded-xl p-6 inline-block">
+          <p class="text-gray-600 dark:text-gray-300">
+            <i class="fas fa-shield-alt text-orange-500 mr-2"></i>
+            Your request security is important to us - MedLogBook Platform
+          </p>
+        </div>
+      </div>
     </div>
-</div>
+  </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Add hover effects to floating icons
+  const floatingIcons = document.querySelectorAll('.animate-float');
+  floatingIcons.forEach(icon => {
+    icon.addEventListener('mouseenter', function() {
+      this.style.animationPlayState = 'paused';
+      this.style.transform = 'translateY(-10px) scale(1.2)';
+    });
+
+    icon.addEventListener('mouseleave', function() {
+      this.style.animationPlayState = 'running';
+      this.style.transform = '';
+    });
+  });
+
+  // Add click effect to the 400 number
+  const errorNumber = document.querySelector('.animate-shake');
+  if (errorNumber) {
+    errorNumber.addEventListener('click', function() {
+      this.style.animation = 'none';
+      setTimeout(() => {
+        this.style.animation = 'shake 0.5s ease-in-out';
+      }, 100);
+    });
+  }
+});
+</script>
 {% endblock %}
