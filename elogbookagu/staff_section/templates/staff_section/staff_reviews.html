@@ -20,6 +20,21 @@
           All Student Logs
         {% endif %}
       </h2>
+      <!-- Export Buttons -->
+      <div class="flex space-x-2">
+        <button id="export-csv" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center transition-all duration-200 transform hover:scale-105">
+          <i class="fas fa-file-csv mr-2"></i>
+          Export CSV
+        </button>
+        <button id="export-excel" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center transition-all duration-200 transform hover:scale-105">
+          <i class="fas fa-file-excel mr-2"></i>
+          Export Excel
+        </button>
+        <button id="export-pdf" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center transition-all duration-200 transform hover:scale-105">
+          <i class="fas fa-file-pdf mr-2"></i>
+          Export PDF
+        </button>
+      </div>
     </div>
 
     <!-- Filters Section -->
@@ -295,6 +310,33 @@
 
       // Initialize
       updateSelectedLogIds();
+
+      // Export functionality
+      const exportCsvBtn = document.getElementById('export-csv');
+      const exportExcelBtn = document.getElementById('export-excel');
+      const exportPdfBtn = document.getElementById('export-pdf');
+
+      if (exportCsvBtn) {
+        exportCsvBtn.addEventListener('click', function() {
+          const params = new URLSearchParams(window.location.search);
+          params.set('format', 'csv');
+          window.open(`{% url "staff_section:export_staff_reviews" %}?${params.toString()}`, '_blank');
+        });
+      }
+      if (exportExcelBtn) {
+        exportExcelBtn.addEventListener('click', function() {
+          const params = new URLSearchParams(window.location.search);
+          params.set('format', 'excel');
+          window.open(`{% url "staff_section:export_staff_reviews" %}?${params.toString()}`, '_blank');
+        });
+      }
+      if (exportPdfBtn) {
+        exportPdfBtn.addEventListener('click', function() {
+          const params = new URLSearchParams(window.location.search);
+          params.set('format', 'pdf');
+          window.open(`{% url "staff_section:export_staff_reviews" %}?${params.toString()}`, '_blank');
+        });
+      }
     });
   </script>
 {% endblock %}

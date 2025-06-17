@@ -16,6 +16,8 @@ from admin_section.models import ActivityType, CoreDiaProSession, LogYear, Depar
 from accounts.models import Doctor, Student, CustomUser
 from django.contrib import messages
 from doctor_section.models import Notification
+import openpyxl
+from openpyxl.drawing.image import Image as OpenpyxlImage
 
 # Create your views here.
 
@@ -691,6 +693,64 @@ def generate_records_pdf(request):
     if pisa_status.err:
         return HttpResponse('Error generating PDF', status=500)
 
+    return response
+
+
+@login_required
+def export_final_records_excel(request):
+    student = request.user.student
+    department_id = request.GET.get('department')
+    activity_type_id = request.GET.get('activity_type')
+    review_status = request.GET.get('status', 'pending')
+    search_query = request.GET.get('q', '').strip()
+    logs = StudentLogFormModel.objects.filter(student=student)
+    if review_status == 'pending':
+        logs = logs.filter(is_reviewed=False)
+    elif review_status == 'reviewed':
+        logs = logs.filter(is_reviewed=True)
+    if department_id:
+        logs = logs.filter(department_id=department_id)
+    if activity_type_id:
+        logs = logs.filter(activity_type_id=activity_type_id)
+    if search_query:
+        logs = logs.filter(
+            models.Q(description__icontains=search_query) |
+            models.Q(patient_id__icontains=search_query) |
+            models.Q(core_diagnosis__name__icontains=search_query)
+        )
+    logs = logs.order_by('-date', '-created_at')
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Student Records"
+    # Insert AGU logo
+    logo_path = os.path.join(settings.MEDIA_ROOT, 'agulogo.png')
+    if os.path.exists(logo_path):
+        img = OpenpyxlImage(logo_path)
+        img.height = 80
+        img.width = 80
+        ws.add_image(img, 'A1')
+    ws.append(["Student Records Export"])
+    ws.append([""])
+    ws.append([
+        'Date', 'Department', 'Activity Type', 'Core Diagnosis', 'Tutor', 'Status', 'Review Date', 'Comments'
+    ])
+    for log in logs:
+        status = 'Pending'
+        if log.is_reviewed:
+            status = 'Rejected' if log.reviewer_comments and log.reviewer_comments.startswith('REJECTED:') else 'Approved'
+        ws.append([
+            log.date.strftime('%Y-%m-%d'),
+            log.department.name,
+            log.activity_type.name,
+            getattr(log.core_diagnosis, 'name', ''),
+            log.tutor.user.get_full_name() if log.tutor else '',
+            status,
+            log.review_date.strftime('%Y-%m-%d') if log.review_date else '',
+            log.reviewer_comments or ''
+        ])
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="student_records_{student.student_id}_{review_status}.xlsx"'
+    wb.save(response)
     return response
 
 

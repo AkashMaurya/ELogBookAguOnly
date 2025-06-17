@@ -14,6 +14,17 @@ from student_section.models import StudentLogFormModel
 from admin_section.models import Department, AdminNotification
 from .models import StaffSupportTicket, StaffNotification
 from .forms import LogReviewForm, BatchReviewForm, ProfileUpdateForm, StaffSupportTicketForm
+from django.http import HttpResponse
+import csv
+import io
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from utils.pdf_utils import add_agu_header, get_common_styles, add_footer_info
+import tablib
+from django.conf import settings
+from datetime import datetime
 
 # Staff Dashboard View
 
@@ -651,3 +662,148 @@ def delete_support_ticket(request, ticket_id):
     else:
         messages.error(request, "Cannot delete a ticket that has been resolved.")
     return redirect('staff_section:staff_support')
+
+@login_required
+def export_staff_reviews(request):
+    staff = request.user.staff_profile
+    export_format = request.GET.get('format', 'csv').lower()
+    department_id = request.GET.get('department')
+    status = request.GET.get('status', 'pending')
+    search_query = request.GET.get('q', '').strip()
+    staff_departments = staff.departments.all()
+    logs = StudentLogFormModel.objects.select_related(
+        'student__user', 'department', 'activity_type', 'core_diagnosis'
+    ).filter(department__in=staff_departments)
+    if status == 'pending':
+        logs = logs.filter(is_reviewed=False)
+    elif status == 'reviewed':
+        logs = logs.filter(is_reviewed=True)
+    if department_id:
+        logs = logs.filter(department_id=department_id)
+    if search_query:
+        logs = logs.filter(
+            models.Q(student__user__first_name__icontains=search_query) |
+            models.Q(student__user__last_name__icontains=search_query) |
+            models.Q(student__student_id__icontains=search_query) |
+            models.Q(patient_id__icontains=search_query)
+        )
+    logs = logs.order_by('-date', '-created_at')
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename_base = f"staff_reviews_{timestamp}"
+    if export_format == 'csv':
+        return export_staff_reviews_csv(logs, filename_base)
+    elif export_format == 'excel':
+        return export_staff_reviews_excel(logs, filename_base)
+    elif export_format == 'pdf':
+        return export_staff_reviews_pdf(logs, filename_base, staff)
+    else:
+        return export_staff_reviews_csv(logs, filename_base)
+
+def export_staff_reviews_csv(logs, filename_base):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{filename_base}.csv"'
+    writer = csv.writer(response)
+    writer.writerow([
+        'Student ID', 'Student Name', 'Date', 'Department',
+        'Activity Type', 'Core Diagnosis', 'Status', 'Review Date', 'Comments'
+    ])
+    for log in logs:
+        status = 'Pending'
+        if log.is_reviewed:
+            status = 'Rejected' if log.reviewer_comments and log.reviewer_comments.startswith('REJECTED:') else 'Approved'
+        writer.writerow([
+            log.student.student_id,
+            log.student.user.get_full_name(),
+            log.date.strftime('%Y-%m-%d'),
+            log.department.name,
+            log.activity_type.name,
+            getattr(log.core_diagnosis, 'name', ''),
+            status,
+            log.review_date.strftime('%Y-%m-%d') if log.review_date else '',
+            log.reviewer_comments or ''
+        ])
+    return response
+
+def export_staff_reviews_excel(logs, filename_base):
+    data = tablib.Dataset()
+    data.headers = [
+        'Student ID', 'Student Name', 'Date', 'Department',
+        'Activity Type', 'Core Diagnosis', 'Status', 'Review Date', 'Comments'
+    ]
+    for log in logs:
+        status = 'Pending'
+        if log.is_reviewed:
+            status = 'Rejected' if log.reviewer_comments and log.reviewer_comments.startswith('REJECTED:') else 'Approved'
+        data.append([
+            log.student.student_id,
+            log.student.user.get_full_name(),
+            log.date.strftime('%Y-%m-%d'),
+            log.department.name,
+            log.activity_type.name,
+            getattr(log.core_diagnosis, 'name', ''),
+            status,
+            log.review_date.strftime('%Y-%m-%d') if log.review_date else '',
+            log.reviewer_comments or ''
+        ])
+    response = HttpResponse(
+        data.export('xlsx'),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename_base}.xlsx"'
+    return response
+
+def export_staff_reviews_pdf(logs, filename_base, staff):
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename_base}.pdf"'
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    elements = []
+    elements = add_agu_header(elements, "Staff Reviews Report")
+    custom_styles = get_common_styles()
+    staff_name = staff.user.get_full_name() or staff.user.username
+    elements.append(Paragraph(f"Staff: {staff_name}", custom_styles['subtitle']))
+    elements.append(Paragraph(f"Departments: {', '.join([dept.name for dept in staff.departments.all()])}", custom_styles['normal']))
+    elements.append(Paragraph(f"Total Records: {len(logs)}", custom_styles['normal']))
+    elements.append(Spacer(1, 0.3*inch))
+    data = [
+        ['Student ID', 'Student Name', 'Date', 'Department', 'Activity Type', 'Status']
+    ]
+    for log in logs:
+        status = 'Pending'
+        if log.is_reviewed:
+            status = 'Rejected' if log.reviewer_comments and log.reviewer_comments.startswith('REJECTED:') else 'Approved'
+        data.append([
+            log.student.student_id,
+            log.student.user.get_full_name(),
+            log.date.strftime('%Y-%m-%d'),
+            log.department.name,
+            log.activity_type.name,
+            status
+        ])
+    table = Table(data, repeatRows=1)
+    table_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ])
+    for i in range(1, len(data)):
+        if i % 2 == 0:
+            table_style.add('BACKGROUND', (0, i), (-1, i), colors.lightgrey)
+    table.setStyle(table_style)
+    elements.append(table)
+    elements = add_footer_info(
+        elements,
+        generated_by=staff_name,
+        export_date=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    )
+    doc.build(elements)
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
+    return response

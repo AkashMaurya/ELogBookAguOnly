@@ -38,4 +38,5 @@ urlpatterns = [
     path("delete-support-ticket/<int:ticket_id>/", views.delete_support_ticket, name="delete_support_ticket"),
     path("notifications/", views.notifications, name="notifications"),
     path("get-log-details/<int:log_id>/", views.get_log_details, name="get_log_details"),
+    path("export-final-records-excel/", views.export_final_records_excel, name="export_final_records_excel"),
 ]

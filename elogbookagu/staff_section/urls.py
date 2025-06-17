@@ -27,4 +27,7 @@ urlpatterns = [
 
     # ye django ka logout class based view jo apne aap logout karwa dega if user want to log out
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+
+    # Export staff reviews
+    path("export-staff-reviews/", views.export_staff_reviews, name="export_staff_reviews"),
 ]

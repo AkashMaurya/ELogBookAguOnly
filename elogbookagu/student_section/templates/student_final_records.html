@@ -58,12 +58,18 @@
         <p class="text-gray-600 dark:text-gray-400 mt-1">Manage and track your clinical activity logs</p>
       </div>
 
-      <!-- PDF Download Button -->
-      <a href="{% url 'student_section:generate_records_pdf' %}?status={{ selected_status }}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_activity_type %}&activity_type={{ selected_activity_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
-         class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center transition-all duration-200 transform hover:scale-105">
-        <i class="fas fa-file-pdf mr-2"></i>
-        Download PDF
-      </a>
+      <!-- PDF & Excel Download Buttons -->
+      <div class="flex space-x-2">
+        <a href="{% url 'student_section:generate_records_pdf' %}?status={{ selected_status }}{% if selected_department %}&department={{ selected_department }}{% endif %}{% if selected_activity_type %}&activity_type={{ selected_activity_type }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+           class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center transition-all duration-200 transform hover:scale-105">
+          <i class="fas fa-file-pdf mr-2"></i>
+          Download PDF
+        </a>
+        <button id="export-excel" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center transition-all duration-200 transform hover:scale-105">
+          <i class="fas fa-file-excel mr-2"></i>
+          Download Excel
+        </button>
+      </div>
     </div>
 
     <!-- Student Info Card -->
@@ -738,4 +744,18 @@
       }
     }
   </script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const exportExcelBtn = document.getElementById('export-excel');
+  if (exportExcelBtn) {
+    exportExcelBtn.addEventListener('click', function() {
+      const params = new URLSearchParams(window.location.search);
+      window.open(`{% url 'student_section:export_final_records_excel' %}?${params.toString()}`, '_blank');
+    });
+  }
+});
+</script>
 {% endblock %}
