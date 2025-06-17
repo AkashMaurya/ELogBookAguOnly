@@ -574,18 +574,20 @@ def get_date_restrictions(request):
             settings = DateRestrictionSettings.objects.create(
                 past_days_limit=7,
                 allow_future_dates=False,
-                future_days_limit=0
+                future_days_limit=0,
+                doctor_past_days_limit=30,
+                doctor_allow_future_dates=False,
+                doctor_future_days_limit=0,
+                allowed_days_for_students='0,1,2,3,4,5,6',
+                allowed_days_for_doctors='0,1,2,3,4,5,6',
+                is_active=True
             )
 
         # Get current day of week (0=Monday, 6=Sunday)
         current_day = timezone.now().weekday()
 
-        # Get allowed days from session or use default
-        allowed_days_str = request.session.get('allowed_days_for_students', '0,1,2,3,4,5,6')
-        allowed_days = [int(day) for day in allowed_days_str.split(',') if day.strip()]
-
-        # Get active status from session or use default
-        is_active = request.session.get('date_restrictions_active', True)
+        # Get allowed days from model
+        allowed_days = settings.get_allowed_days_for_students()
 
         # Return settings as JSON
         data = {
@@ -594,7 +596,7 @@ def get_date_restrictions(request):
             "futureDaysLimit": settings.future_days_limit,
             "isCurrentDayAllowed": current_day in allowed_days,
             "allowedDays": allowed_days,
-            "isActive": is_active
+            "isActive": settings.is_active
         }
         return JsonResponse(data)
     except Exception as e:

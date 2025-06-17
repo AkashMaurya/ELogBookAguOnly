@@ -44,7 +44,7 @@
         <div class="mb-6">
           <div class="flex items-center">
             <label class="inline-flex relative items-center cursor-pointer">
-              <input type="checkbox" name="is_active" class="sr-only peer" checked>
+              <input type="checkbox" name="is_active" class="sr-only peer" {% if settings.is_active %}checked{% endif %}>
               <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
               <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enable Date Restrictions</span>
             </label>
@@ -62,7 +62,7 @@
                 Past Days Limit
               </label>
               <div class="relative">
-                <input type="number" name="student_past_days_limit" id="student_past_days_limit" min="0" max="365" value="7" class="block w-full pl-10 pr-4 py-2 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200">
+                <input type="number" name="student_past_days_limit" id="student_past_days_limit" min="0" max="365" value="{{ settings.past_days_limit }}" class="block w-full pl-10 pr-4 py-2 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <i class="fas fa-history text-gray-400"></i>
                 </div>
@@ -77,7 +77,7 @@
               </label>
               <div class="flex items-center">
                 <label class="inline-flex relative items-center cursor-pointer">
-                  <input type="checkbox" name="student_allow_future_dates" id="student_allow_future_dates" class="sr-only peer">
+                  <input type="checkbox" name="student_allow_future_dates" id="student_allow_future_dates" class="sr-only peer" {% if settings.allow_future_dates %}checked{% endif %}>
                   <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                   <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Allow students to select future dates</span>
                 </label>
@@ -148,7 +148,7 @@
                 Past Days Limit
               </label>
               <div class="relative">
-                <input type="number" name="doctor_past_days_limit" id="doctor_past_days_limit" min="0" max="365" value="{{ doctor_past_days_limit }}" class="block w-full pl-10 pr-4 py-2 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200">
+                <input type="number" name="doctor_past_days_limit" id="doctor_past_days_limit" min="0" max="365" value="{{ settings.doctor_past_days_limit }}" class="block w-full pl-10 pr-4 py-2 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <i class="fas fa-history text-gray-400"></i>
                 </div>
@@ -163,7 +163,7 @@
               </label>
               <div class="flex items-center">
                 <label class="inline-flex relative items-center cursor-pointer">
-                  <input type="checkbox" name="doctor_allow_future_dates" id="doctor_allow_future_dates" class="sr-only peer" {% if doctor_allow_future_dates %}checked{% endif %}>
+                  <input type="checkbox" name="doctor_allow_future_dates" id="doctor_allow_future_dates" class="sr-only peer" {% if settings.doctor_allow_future_dates %}checked{% endif %}>
                   <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                   <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Allow doctors to review future-dated logs</span>
                 </label>
@@ -176,7 +176,7 @@
                 Future Days Limit
               </label>
               <div class="relative">
-                <input type="number" name="doctor_future_days_limit" id="doctor_future_days_limit" min="0" max="365" value="{{ doctor_future_days_limit }}" class="block w-full pl-10 pr-4 py-2 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200" {% if not doctor_allow_future_dates %}disabled{% endif %}>
+                <input type="number" name="doctor_future_days_limit" id="doctor_future_days_limit" min="0" max="365" value="{{ settings.doctor_future_days_limit }}" class="block w-full pl-10 pr-4 py-2 text-base border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors duration-200" {% if not settings.doctor_allow_future_dates %}disabled{% endif %}>
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <i class="fas fa-calendar-plus text-gray-400"></i>
                 </div>
@@ -192,7 +192,7 @@
               <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
                 {% for day_value, day_name in settings.DAYS_OF_WEEK %}
                 <div class="flex items-center mb-2">
-                  <input type="checkbox" name="doctor_days_{{ day_value }}" id="doctor_days_{{ day_value }}" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600" {% if day_value|stringformat:"i" in allowed_days_for_doctors %}checked{% endif %}>
+                  <input type="checkbox" name="doctor_days_{{ day_value }}" id="doctor_days_{{ day_value }}" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600" {% if day_value|stringformat:"i" in settings.allowed_days_for_doctors %}checked{% endif %}>
                   <label for="doctor_days_{{ day_value }}" class="ml-2 text-sm font-medium text-gray-900 dark:text-gray-300">{{ day_name }}</label>
                 </div>
                 {% endfor %}
@@ -265,6 +265,48 @@
                       <code class="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-sm font-mono">python manage.py send_deadline_notifications</code>
                     </p>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attendance Tracking Settings -->
+        <div class="mb-6">
+          <h4 class="text-lg font-medium text-gray-800 dark:text-white mb-4">Attendance Tracking Settings</h4>
+
+          <div class="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+            <div class="flex items-center justify-between">
+              <div>
+                <h5 class="text-md font-medium text-green-800 dark:text-green-300 mb-2">
+                  <i class="fas fa-user-check mr-2"></i> Student Attendance Tracking
+                </h5>
+                <p class="text-sm text-green-600 dark:text-green-400">
+                  Allow doctors to track student attendance during training sessions at various training sites.
+                </p>
+              </div>
+              <div class="ml-4">
+                <label class="inline-flex relative items-center cursor-pointer">
+                  <input type="checkbox" name="attendance_tracking_enabled" id="attendance_tracking_enabled" class="sr-only peer" {% if settings.attendance_tracking_enabled %}checked{% endif %}>
+                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+                  <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Enable Attendance Tracking</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="mt-3 bg-white dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+              <div class="flex items-start">
+                <div class="flex-shrink-0 mt-0.5">
+                  <i class="fas fa-info-circle text-green-500"></i>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm text-gray-600 dark:text-gray-300">
+                    When enabled, doctors can access attendance tracking features to mark student presence/absence during training sessions.
+                    This includes taking attendance, viewing attendance history, and generating attendance reports.
+                  </p>
+                  <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">
+                    When disabled, all attendance tracking features will be hidden from doctors and they will receive an error message if they try to access attendance pages.
+                  </p>
                 </div>
               </div>
             </div>

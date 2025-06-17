@@ -164,40 +164,50 @@ class DateRestrictionSettings(models.Model):
     def student_future_days_limit(self):
         return self.future_days_limit
 
-    # Properties for doctor settings
-    @property
-    def doctor_past_days_limit(self):
-        return getattr(self, '_doctor_past_days_limit', 30)
+    # Doctor settings
+    doctor_past_days_limit = models.PositiveIntegerField(
+        default=30,
+        help_text="Maximum number of days in the past a doctor can review logs"
+    )
+    doctor_allow_future_dates = models.BooleanField(
+        default=False,
+        help_text="Whether doctors can review future-dated logs"
+    )
+    doctor_future_days_limit = models.PositiveIntegerField(
+        default=0,
+        help_text="Maximum number of days in the future a doctor can review logs (if future dates are allowed)"
+    )
 
-    @property
-    def doctor_allow_future_dates(self):
-        return getattr(self, '_doctor_allow_future_dates', False)
+    # Allowed days settings
+    allowed_days_for_students = models.CharField(
+        max_length=20,
+        default='0,1,2,3,4,5,6',
+        help_text="Comma-separated list of allowed days of week for students (0=Monday, 6=Sunday)"
+    )
+    allowed_days_for_doctors = models.CharField(
+        max_length=20,
+        default='0,1,2,3,4,5,6',
+        help_text="Comma-separated list of allowed days of week for doctors (0=Monday, 6=Sunday)"
+    )
 
-    @property
-    def doctor_future_days_limit(self):
-        return getattr(self, '_doctor_future_days_limit', 0)
+    # Active status
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether date restrictions are active"
+    )
 
-    # Properties for allowed days
-    @property
-    def allowed_days_for_students(self):
-        return getattr(self, '_allowed_days_for_students', "0,1,2,3,4,5,6")
-
-    @property
-    def allowed_days_for_doctors(self):
-        return getattr(self, '_allowed_days_for_doctors', "0,1,2,3,4,5,6")
-
-    @property
-    def is_active(self):
-        return getattr(self, '_is_active', True)
+    # Attendance tracking settings
+    attendance_tracking_enabled = models.BooleanField(
+        default=True,
+        help_text="Whether doctors can track student attendance"
+    )
 
     # Helper methods for getting allowed days as lists
     def get_allowed_days_for_students(self):
-        allowed_days_str = getattr(self, '_allowed_days_for_students', '0,1,2,3,4,5,6')
-        return [int(day) for day in allowed_days_str.split(',') if day.strip()]
+        return [int(day) for day in self.allowed_days_for_students.split(',') if day.strip()]
 
     def get_allowed_days_for_doctors(self):
-        allowed_days_str = getattr(self, '_allowed_days_for_doctors', '0,1,2,3,4,5,6')
-        return [int(day) for day in allowed_days_str.split(',') if day.strip()]
+        return [int(day) for day in self.allowed_days_for_doctors.split(',') if day.strip()]
 
 # Admin Notification Model
 class AdminNotification(models.Model):

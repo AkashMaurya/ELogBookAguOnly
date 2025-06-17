@@ -1,10 +1,19 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db import transaction
 from django.utils import timezone
 from datetime import date
+import csv
+import io
+import tablib
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.lib import colors
+from utils.pdf_utils import add_agu_header, get_common_styles, add_footer_info
 from .models import StaffEmergencyAttendance
 from .forms import EmergencyAttendanceForm, StudentEmergencyAttendanceForm
 from accounts.models import Student, Staff
@@ -173,7 +182,7 @@ def emergency_attendance_history(request):
 
     # Get departments for filter dropdown
     departments = Department.objects.filter(
-        staff_members=staff
+        staff=staff
     ).distinct()
 
     # Calculate statistics for the filtered attendances
@@ -210,7 +219,7 @@ def emergency_attendance_summary(request):
 
     # Get recent attendance by department
     departments_stats = []
-    departments = Department.objects.filter(staff_members=staff).distinct()
+    departments = Department.objects.filter(staff=staff).distinct()
 
     for dept in departments:
         dept_attendances = StaffEmergencyAttendance.objects.filter(
@@ -280,3 +289,201 @@ def get_students_for_department(request):
         return JsonResponse({'error': 'Training site not found'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def export_emergency_attendance(request):
+    """Export emergency attendance records as CSV, PDF, or Excel based on the current filters"""
+    try:
+        staff = request.user.staff_profile
+    except Staff.DoesNotExist:
+        messages.error(request, "You must be a staff member to access this page.")
+        return redirect('staff_section:staff_dash')
+
+    export_format = request.GET.get('format', 'csv').lower()
+
+    # Get emergency attendance records marked by this staff
+    attendances = StaffEmergencyAttendance.objects.filter(
+        staff=staff
+    ).select_related(
+        'student__user', 'department', 'training_site', 'group'
+    ).order_by('-date', '-marked_at')
+
+    # Apply same filtering logic as emergency_attendance_history view
+    date_filter = request.GET.get('date')
+    if date_filter:
+        try:
+            filter_date = date.fromisoformat(date_filter)
+            attendances = attendances.filter(date=filter_date)
+        except ValueError:
+            pass
+
+    department_filter = request.GET.get('department')
+    if department_filter:
+        attendances = attendances.filter(department_id=department_filter)
+
+    status_filter = request.GET.get('status')
+    if status_filter:
+        attendances = attendances.filter(status=status_filter)
+
+    # Prepare filename with timestamp
+    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+    filename_base = f"emergency_attendance_{timestamp}"
+
+    try:
+        if export_format == 'csv':
+            return export_emergency_attendance_csv(attendances, filename_base)
+        elif export_format == 'pdf':
+            return export_emergency_attendance_pdf(attendances, filename_base, staff)
+        elif export_format == 'excel':
+            return export_emergency_attendance_excel(attendances, filename_base)
+        else:
+            # Default to CSV if format is not recognized
+            return export_emergency_attendance_csv(attendances, filename_base)
+    except Exception as e:
+        print(f"Export error: {str(e)}")
+        messages.error(request, f"Export failed: {str(e)}")
+        return redirect('staff_section:emergency_attendance_history')
+
+
+def export_emergency_attendance_csv(attendances, filename_base):
+    """Export emergency attendance records as CSV file"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{filename_base}.csv"'
+
+    writer = csv.writer(response)
+
+    # Write header row
+    writer.writerow([
+        'Student ID', 'Student Name', 'Department', 'Training Site', 'Group',
+        'Date', 'Status', 'Marked At', 'Notes'
+    ])
+
+    # Write data rows
+    for attendance in attendances:
+        writer.writerow([
+            attendance.student.student_id,
+            attendance.student.user.get_full_name() or attendance.student.user.username,
+            attendance.department.name,
+            attendance.training_site.name if attendance.training_site else 'N/A',
+            attendance.group.group_name,
+            attendance.date.strftime('%Y-%m-%d'),
+            attendance.status.title(),
+            attendance.marked_at.strftime('%Y-%m-%d %H:%M:%S'),
+            attendance.notes or ''
+        ])
+
+    return response
+
+
+def export_emergency_attendance_excel(attendances, filename_base):
+    """Export emergency attendance records as Excel file"""
+    # Create a new dataset
+    data = tablib.Dataset()
+
+    # Add headers
+    data.headers = [
+        'Student ID', 'Student Name', 'Department', 'Training Site', 'Group',
+        'Date', 'Status', 'Marked At', 'Notes'
+    ]
+
+    # Add data rows
+    for attendance in attendances:
+        data.append([
+            attendance.student.student_id,
+            attendance.student.user.get_full_name() or attendance.student.user.username,
+            attendance.department.name,
+            attendance.training_site.name if attendance.training_site else 'N/A',
+            attendance.group.group_name,
+            attendance.date.strftime('%Y-%m-%d'),
+            attendance.status.title(),
+            attendance.marked_at.strftime('%Y-%m-%d %H:%M:%S'),
+            attendance.notes or ''
+        ])
+
+    # Create HTTP response with Excel content type
+    response = HttpResponse(
+        data.export('xlsx'),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename_base}.xlsx"'
+
+    return response
+
+
+def export_emergency_attendance_pdf(attendances, filename_base, staff):
+    """Export emergency attendance records as PDF file"""
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename_base}.pdf"'
+
+    # Create a buffer for the PDF
+    buffer = io.BytesIO()
+
+    # Create the PDF document with landscape orientation for better table fit
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
+    elements = []
+
+    # Add AGU header with logo and university name
+    elements = add_agu_header(elements, "Emergency Attendance Records Report")
+
+    # Get custom styles
+    custom_styles = get_common_styles()
+
+    # Add staff information
+    staff_name = staff.user.get_full_name() or staff.user.username
+    elements.append(Paragraph(f"Generated by: {staff_name}", custom_styles['subtitle']))
+    elements.append(Spacer(1, 0.2*inch))
+
+    # Create table data
+    data = [['Student ID', 'Student Name', 'Department', 'Training Site', 'Group', 'Date', 'Status', 'Notes']]
+
+    # Add attendance data to table
+    for attendance in attendances:
+        data.append([
+            attendance.student.student_id,
+            attendance.student.user.get_full_name() or attendance.student.user.username,
+            attendance.department.name,
+            attendance.training_site.name if attendance.training_site else 'N/A',
+            attendance.group.group_name,
+            attendance.date.strftime('%Y-%m-%d'),
+            attendance.status.title(),
+            attendance.notes[:50] + '...' if attendance.notes and len(attendance.notes) > 50 else (attendance.notes or '')
+        ])
+
+    # Create table
+    table = Table(data, repeatRows=1)
+
+    # Style the table
+    table_style = TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563eb')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ])
+
+    table.setStyle(table_style)
+    elements.append(table)
+
+    # Add footer information
+    elements = add_footer_info(
+        elements,
+        generated_by=staff_name,
+        export_date=timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+    )
+
+    # Build the PDF
+    doc.build(elements)
+
+    # Get the value of the buffer and write it to the response
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
+
+    return response

@@ -22,6 +22,7 @@ urlpatterns = [
     path("emergency-attendance/", emergency_attendance_views.emergency_attendance, name="emergency_attendance"),
     path("emergency-attendance-history/", emergency_attendance_views.emergency_attendance_history, name="emergency_attendance_history"),
     path("emergency-attendance-summary/", emergency_attendance_views.emergency_attendance_summary, name="emergency_attendance_summary"),
+    path("export-emergency-attendance/", emergency_attendance_views.export_emergency_attendance, name="export_emergency_attendance"),
     path("api/get-students-for-department/", emergency_attendance_views.get_students_for_department, name="get_students_for_department"),
 
     # ye django ka logout class based view jo apne aap logout karwa dega if user want to log out

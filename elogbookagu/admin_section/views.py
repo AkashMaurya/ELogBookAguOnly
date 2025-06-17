@@ -686,7 +686,7 @@ def date_restrictions(request):
     if request.method == 'POST':
         # Process form data
         try:
-            # Student settings (using the original fields)
+            # Student settings
             settings.past_days_limit = int(request.POST.get('student_past_days_limit', 7))
             settings.allow_future_dates = 'student_allow_future_dates' in request.POST
             settings.future_days_limit = int(request.POST.get('student_future_days_limit', 0))
@@ -695,12 +695,11 @@ def date_restrictions(request):
             settings.doctor_review_enabled = 'doctor_review_enabled' in request.POST
             settings.doctor_review_period = int(request.POST.get('doctor_review_period', 30))
             settings.doctor_notification_days = int(request.POST.get('doctor_notification_days', 3))
-
-            # Store doctor settings and other fields in session for now
-            # In a real implementation, these would be stored in the database
-            request.session['doctor_past_days_limit'] = int(request.POST.get('doctor_past_days_limit', 30))
-            request.session['doctor_allow_future_dates'] = 'doctor_allow_future_dates' in request.POST
-            request.session['doctor_future_days_limit'] = int(request.POST.get('doctor_future_days_limit', 0))
+            
+            # Doctor settings
+            settings.doctor_past_days_limit = int(request.POST.get('doctor_past_days_limit', 30))
+            settings.doctor_allow_future_dates = 'doctor_allow_future_dates' in request.POST
+            settings.doctor_future_days_limit = int(request.POST.get('doctor_future_days_limit', 0))
 
             # Process allowed days for students
             student_days = []
@@ -709,10 +708,7 @@ def date_restrictions(request):
                     student_days.append(str(day_value))
 
             # If no days selected, default to all days
-            if not student_days:
-                student_days = ['0', '1', '2', '3', '4', '5', '6']
-
-            request.session['allowed_days_for_students'] = ','.join(student_days)
+            settings.allowed_days_for_students = ','.join(student_days) if student_days else '0,1,2,3,4,5,6'
 
             # Process allowed days for doctors
             doctor_days = []
@@ -721,20 +717,19 @@ def date_restrictions(request):
                     doctor_days.append(str(day_value))
 
             # If no days selected, default to all days
-            if not doctor_days:
-                doctor_days = ['0', '1', '2', '3', '4', '5', '6']
+            settings.allowed_days_for_doctors = ','.join(doctor_days) if doctor_days else '0,1,2,3,4,5,6'
+            
+            # Active status
+            settings.is_active = 'is_active' in request.POST
 
-            request.session['allowed_days_for_doctors'] = ','.join(doctor_days)
-            request.session['date_restrictions_active'] = 'is_active' in request.POST
+            # Attendance tracking setting
+            settings.attendance_tracking_enabled = 'attendance_tracking_enabled' in request.POST
 
             # Set updated by
             settings.updated_by = request.user
 
             # Save settings
             settings.save()
-
-            # Save session
-            request.session.modified = True
 
             messages.success(request, "Date restrictions updated successfully.")
         except Exception as e:
@@ -743,25 +738,10 @@ def date_restrictions(request):
     # Get unread notifications count for the admin
     unread_notifications_count = AdminNotification.objects.filter(recipient=request.user, is_read=False).count()
 
-    # Get session values for template rendering
-    doctor_past_days_limit = request.session.get('doctor_past_days_limit', 30)
-    doctor_allow_future_dates = request.session.get('doctor_allow_future_dates', False)
-    doctor_future_days_limit = request.session.get('doctor_future_days_limit', 0)
-    allowed_days_for_students = request.session.get('allowed_days_for_students', '0,1,2,3,4,5,6')
-    allowed_days_for_doctors = request.session.get('allowed_days_for_doctors', '0,1,2,3,4,5,6')
-    date_restrictions_active = request.session.get('date_restrictions_active', True)
-
-    # Session variables are now handled by the context processor
     context = {
         'settings': settings,
         'unread_notifications_count': unread_notifications_count,
         'admin_unread_notifications_count': unread_notifications_count,
-        'doctor_past_days_limit': doctor_past_days_limit,
-        'doctor_allow_future_dates': doctor_allow_future_dates,
-        'doctor_future_days_limit': doctor_future_days_limit,
-        'allowed_days_for_students': allowed_days_for_students,
-        'allowed_days_for_doctors': allowed_days_for_doctors,
-        'date_restrictions_active': date_restrictions_active,
     }
 
     return render(request, 'admin_section/date_restrictions_simple.html', context)

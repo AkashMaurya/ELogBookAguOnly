@@ -521,23 +521,24 @@ def get_date_restrictions(request):
             settings = DateRestrictionSettings.objects.create(
                 past_days_limit=7,
                 allow_future_dates=False,
-                future_days_limit=0
+                future_days_limit=0,
+                doctor_past_days_limit=30,
+                doctor_allow_future_dates=False,
+                doctor_future_days_limit=0,
+                allowed_days_for_students='0,1,2,3,4,5,6',
+                allowed_days_for_doctors='0,1,2,3,4,5,6',
+                is_active=True
             )
 
         # Get current day of week (0=Monday, 6=Sunday)
         current_day = timezone.now().weekday()
 
-        # Get doctor settings from session or use defaults
-        doctor_past_days_limit = request.session.get('doctor_past_days_limit', 30)
-        doctor_allow_future_dates = request.session.get('doctor_allow_future_dates', False)
-        doctor_future_days_limit = request.session.get('doctor_future_days_limit', 0)
-
-        # Get allowed days from session or use default
-        allowed_days_str = request.session.get('allowed_days_for_doctors', '0,1,2,3,4,5,6')
-        allowed_days = [int(day) for day in allowed_days_str.split(',') if day.strip()]
-
-        # Get active status from session or use default
-        is_active = request.session.get('date_restrictions_active', True)
+        # Get settings from the model
+        doctor_past_days_limit = settings.doctor_past_days_limit
+        doctor_allow_future_dates = settings.doctor_allow_future_dates
+        doctor_future_days_limit = settings.doctor_future_days_limit
+        allowed_days = settings.get_allowed_days_for_doctors()
+        is_active = settings.is_active
 
         # Return settings as JSON
         data = {
@@ -902,11 +903,16 @@ def review_log(request, log_id):
         time_remaining = log.review_deadline - now
         days_remaining = max(0, time_remaining.days)
 
+    # Get date restriction settings for doctor
+    date_settings = DateRestrictionSettings.objects.first()
+    doctor_past_days_limit = date_settings.doctor_past_days_limit if date_settings else 30
+
     context = {
         'form': form,
         'log': log,
         'now': now,
         'days_remaining': days_remaining,
+        'doctor_past_days_limit': doctor_past_days_limit,
     }
 
     return render(request, 'doctor_review_log.html', context)

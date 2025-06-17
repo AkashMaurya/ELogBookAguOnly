@@ -19,7 +19,7 @@ from utils.pdf_utils import add_agu_header, get_common_styles, add_footer_info
 from .models import StudentAttendance
 from .forms import AttendanceForm, StudentAttendanceForm
 from accounts.models import Student, Doctor
-from admin_section.models import MappedAttendance, TrainingSite, Group
+from admin_section.models import MappedAttendance, TrainingSite, Group, DateRestrictionSettings
 
 
 @login_required
@@ -28,6 +28,12 @@ def take_attendance(request):
     # Check if user has doctor role
     if not hasattr(request.user, 'role') or request.user.role != 'doctor':
         messages.error(request, "You must be a doctor to access this page.")
+        return redirect('doctor_section:doctor_dash')
+
+    # Check if attendance tracking is enabled
+    settings = DateRestrictionSettings.objects.first()
+    if settings and not settings.attendance_tracking_enabled:
+        messages.error(request, "Student attendance tracking is currently disabled by the administrator.")
         return redirect('doctor_section:doctor_dash')
 
     # Check if doctor profile exists
@@ -85,12 +91,17 @@ def take_attendance(request):
     else:
         form = AttendanceForm(doctor=doctor)
 
+    # Get date restriction settings
+    date_settings = DateRestrictionSettings.objects.first()
+    doctor_past_days_limit = date_settings.doctor_past_days_limit if date_settings else 30
+
     context = {
         'form': form,
         'mapped_attendances': mapped_attendances,
         'students_data': students_data,
         'selected_training_site': selected_training_site,
         'today': today,
+        'doctor_past_days_limit': doctor_past_days_limit,
     }
 
     return render(request, 'doctor_section/take_attendance.html', context)
@@ -176,6 +187,12 @@ def process_attendance_submission(request, doctor, training_site, attendance_dat
 @login_required
 def attendance_history(request):
     """View attendance history for the doctor with enhanced filtering"""
+    # Check if attendance tracking is enabled
+    settings = DateRestrictionSettings.objects.first()
+    if settings and not settings.attendance_tracking_enabled:
+        messages.error(request, "Student attendance tracking is currently disabled by the administrator.")
+        return redirect('doctor_section:doctor_dash')
+
     try:
         doctor = request.user.doctor_profile
     except Doctor.DoesNotExist:
@@ -332,6 +349,12 @@ def get_students_for_site(request):
 @login_required
 def attendance_summary(request):
     """View attendance summary and statistics"""
+    # Check if attendance tracking is enabled
+    settings = DateRestrictionSettings.objects.first()
+    if settings and not settings.attendance_tracking_enabled:
+        messages.error(request, "Student attendance tracking is currently disabled by the administrator.")
+        return redirect('doctor_section:doctor_dash')
+
     try:
         doctor = request.user.doctor_profile
     except Doctor.DoesNotExist:
@@ -434,6 +457,12 @@ def debug_doctor_status(request):
 @login_required
 def export_attendance(request):
     """Export attendance records as CSV, PDF, or Excel based on the current filters"""
+    # Check if attendance tracking is enabled
+    settings = DateRestrictionSettings.objects.first()
+    if settings and not settings.attendance_tracking_enabled:
+        messages.error(request, "Student attendance tracking is currently disabled by the administrator.")
+        return redirect('doctor_section:doctor_dash')
+
     try:
         doctor = request.user.doctor_profile
     except Doctor.DoesNotExist:
