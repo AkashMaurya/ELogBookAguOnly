@@ -462,12 +462,12 @@
 
   // Chart data from backend
   const chartData = {
-    caseTypes: {{ case_types_data|safe }},
-    diagnosisTypes: {{ diagnosis_types_data|safe }},
-    activityTypes: {{ activity_types_data|safe }},
-    supervision: {{ supervision_data|safe }},
-    monthly: {{ monthly_data|safe }},
-    approvalStatus: {{ approval_status_data|safe }}
+    caseTypes: JSON.parse("{{ case_types_data|default:'{}'|escapejs }}"),
+    diagnosisTypes: JSON.parse("{{ diagnosis_types_data|default:'{}'|escapejs }}"),
+    activityTypes: JSON.parse("{{ activity_types_data|default:'{}'|escapejs }}"),
+    supervision: JSON.parse("{{ supervision_data|default:'{}'|escapejs }}"),
+    monthly: JSON.parse("{{ monthly_data|default:'{}'|escapejs }}"),
+    approvalStatus: JSON.parse("{{ approval_status_data|default:'{}'|escapejs }}")
   };
 
   // Initialize charts
