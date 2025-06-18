@@ -42,16 +42,16 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # my projects app names
+    
     "publicpage",
     "accounts",
     "doctor_section",
     "admin_section",
     "student_section",
     "staff_section",
-    # Third-party apps
+   
     "django_extensions",
-    # Allauth apps ke names
+   
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
